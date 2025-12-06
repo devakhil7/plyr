@@ -179,6 +179,29 @@ export default function TournamentDetails() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    Team Format
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Players per team</span>
+                    <span className="font-medium">{tournament.min_players_per_team} - {tournament.max_players_per_team}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Playing on field</span>
+                    <span className="font-medium">{tournament.max_playing_players || 7}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Max substitutes</span>
+                    <span className="font-medium">{tournament.max_subs || 4}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-yellow-500" />
                     Prizes
                   </CardTitle>
@@ -191,7 +214,7 @@ export default function TournamentDetails() {
               </Card>
 
               {tournament.rules && (
-                <Card className="md:col-span-2">
+                <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Rules & Format</CardTitle>
                   </CardHeader>

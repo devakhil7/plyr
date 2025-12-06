@@ -33,6 +33,8 @@ interface TournamentFormData {
   advance_value: number | null;
   min_players_per_team: number;
   max_players_per_team: number;
+  max_playing_players: number;
+  max_subs: number;
   registration_open: boolean;
   registration_deadline: string;
   prize_details: string;
@@ -66,6 +68,8 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
       advance_value: null,
       min_players_per_team: 5,
       max_players_per_team: 11,
+      max_playing_players: 7,
+      max_subs: 4,
       registration_open: true,
       registration_deadline: "",
       prize_details: "",
@@ -109,6 +113,8 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
         advance_value: existingTournament.advance_value || null,
         min_players_per_team: existingTournament.min_players_per_team || 5,
         max_players_per_team: existingTournament.max_players_per_team || 11,
+        max_playing_players: existingTournament.max_playing_players || 7,
+        max_subs: existingTournament.max_subs || 4,
         registration_open: existingTournament.registration_open ?? true,
         registration_deadline: existingTournament.registration_deadline?.slice(0, 16) || "",
         prize_details: existingTournament.prize_details || "",
@@ -146,6 +152,8 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
         advance_value: data.allow_part_payment ? data.advance_value : null,
         min_players_per_team: data.min_players_per_team,
         max_players_per_team: data.max_players_per_team,
+        max_playing_players: data.max_playing_players,
+        max_subs: data.max_subs,
         registration_open: data.registration_open,
         registration_deadline: data.registration_deadline || null,
         prize_details: data.prize_details || null,
@@ -410,6 +418,28 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
                 min="1"
                 {...register("max_players_per_team", { valueAsNumber: true })}
               />
+            </div>
+
+            <div>
+              <Label htmlFor="max_playing_players">Max Playing Players (on field)</Label>
+              <Input
+                id="max_playing_players"
+                type="number"
+                min="1"
+                {...register("max_playing_players", { valueAsNumber: true })}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Players allowed on the field at once</p>
+            </div>
+
+            <div>
+              <Label htmlFor="max_subs">Max Substitutes</Label>
+              <Input
+                id="max_subs"
+                type="number"
+                min="0"
+                {...register("max_subs", { valueAsNumber: true })}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Substitute players allowed per team</p>
             </div>
 
             <div className="flex items-center gap-3">
