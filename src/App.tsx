@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import AuthPage from "./pages/Auth";
+import AdminLogin from "./pages/AdminLogin";
+import TurfOwnerLogin from "./pages/TurfOwnerLogin";
 import CompleteProfile from "./pages/CompleteProfile";
 import Dashboard from "./pages/Dashboard";
 import BrowseMatches from "./pages/BrowseMatches";
@@ -31,6 +33,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
+            <Route path="/turf-login" element={<TurfOwnerLogin />} />
             <Route path="/complete-profile" element={<CompleteProfile />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/matches" element={<BrowseMatches />} />
