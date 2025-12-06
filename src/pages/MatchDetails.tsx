@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MapPin, Calendar, Clock, Users, ArrowLeft, Play, Upload, Trophy, Target, Percent } from "lucide-react";
+import { MapPin, Calendar, Clock, Users, ArrowLeft, Play, Upload, Trophy, Target, Percent, CreditCard, CheckCircle, Loader2 } from "lucide-react";
 
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
   open: "open",
@@ -26,6 +26,7 @@ export default function MatchDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
+  const [bookingTurf, setBookingTurf] = useState(false);
 
   const { data: match, isLoading, refetch } = useQuery({
     queryKey: ["match", id],
@@ -51,6 +52,24 @@ export default function MatchDetails() {
   const isJoined = confirmedPlayers.some((p: any) => p.user_id === user?.id);
   const slotsLeft = (match?.total_slots || 0) - confirmedPlayers.length;
   const analytics = match?.analytics?.[0];
+
+  // Check if turf is booked for this match
+  const { data: turfBooking } = useQuery({
+    queryKey: ["match-turf-booking", id],
+    queryFn: async () => {
+      if (!match?.turf_id) return null;
+      const { data } = await supabase
+        .from("turf_bookings")
+        .select("*")
+        .eq("match_id", id)
+        .eq("payment_status", "completed")
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!match?.turf_id && !!id,
+  });
+
+  const isTurfBooked = !!turfBooking;
 
   const joinMutation = useMutation({
     mutationFn: async () => {
@@ -91,6 +110,116 @@ export default function MatchDetails() {
       toast.error(err.message || "Failed to leave match");
     },
   });
+
+  // Helper to convert time to end time
+  const calculateEndTime = (startTime: string, durationMinutes: number): string => {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + durationMinutes;
+    const endHours = Math.floor(totalMinutes / 60);
+    const endMins = totalMinutes % 60;
+    return `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}:00`;
+  };
+
+  // Load Razorpay script
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  // Book turf for this match
+  const handleBookTurf = async () => {
+    if (!user || !match || !match.turfs) return;
+
+    setBookingTurf(true);
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error('Failed to load payment gateway');
+      }
+
+      const amount = (match.turfs.price_per_hour || 0) * (match.duration_minutes / 60);
+      const endTime = calculateEndTime(match.match_time, match.duration_minutes);
+
+      // Create order
+      const response = await supabase.functions.invoke('create-razorpay-order', {
+        body: {
+          turf_id: match.turf_id,
+          booking_date: match.match_date,
+          start_time: match.match_time,
+          end_time: endTime,
+          duration_minutes: match.duration_minutes,
+          amount: amount,
+          match_id: match.id,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to create order');
+      }
+
+      const orderData = response.data;
+
+      // Open Razorpay checkout
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'SPORTIQ',
+        description: `Turf Booking - ${match.turfs.name}`,
+        order_id: orderData.order_id,
+        handler: async (razorpayResponse: any) => {
+          try {
+            const verifyResponse = await supabase.functions.invoke('verify-razorpay-payment', {
+              body: {
+                razorpay_order_id: razorpayResponse.razorpay_order_id,
+                razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                razorpay_signature: razorpayResponse.razorpay_signature,
+                booking_id: orderData.booking_id,
+              },
+            });
+
+            if (verifyResponse.error) {
+              throw new Error('Payment verification failed');
+            }
+
+            toast.success('Turf booked successfully! Your slot is now reserved.');
+            queryClient.invalidateQueries({ queryKey: ["match-turf-booking", id] });
+          } catch (error: any) {
+            console.error('Payment verification error:', error);
+            toast.error('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          email: user.email,
+        },
+        theme: {
+          color: '#0A3D91',
+        },
+        modal: {
+          ondismiss: () => {
+            setBookingTurf(false);
+          },
+        },
+      };
+
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+    } catch (error: any) {
+      console.error('Booking error:', error);
+      toast.error(error.message || 'Failed to process booking');
+    } finally {
+      setBookingTurf(false);
+    }
+  };
 
   const updateStatusMutation = useMutation({
     mutationFn: async (newStatus: "open" | "full" | "in_progress" | "completed" | "cancelled") => {
@@ -251,7 +380,39 @@ export default function MatchDetails() {
               
               {user ? (
                 isHost ? (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
+                    {/* Turf Booking Status for Host */}
+                    {match.turf_id && (
+                      isTurfBooked ? (
+                        <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-green-700">Turf Booked</p>
+                            <p className="text-xs text-green-600">Payment confirmed</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <Button
+                          className="w-full"
+                          variant="outline"
+                          onClick={handleBookTurf}
+                          disabled={bookingTurf}
+                        >
+                          {bookingTurf ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="h-4 w-4 mr-2" />
+                              Book & Pay Turf (₹{((match.turfs?.price_per_hour || 0) * match.duration_minutes / 60).toLocaleString('en-IN')})
+                            </>
+                          )}
+                        </Button>
+                      )
+                    )}
+                    
                     {match.status === "open" && (
                       <Button className="w-full" onClick={() => updateStatusMutation.mutate("in_progress")}>
                         <Play className="h-4 w-4 mr-2" />
