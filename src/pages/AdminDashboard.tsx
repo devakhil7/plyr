@@ -17,7 +17,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { 
   Users, MapPin, Trophy, Shield, Plus, Trash2, Star, Search, 
-  Calendar, ChevronLeft, ChevronRight, Building, Eye, Power
+  Calendar, ChevronLeft, ChevronRight, Building, Eye, Power, Edit
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -420,6 +420,10 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
+                            <EditTurfDialog 
+                              turf={t} 
+                              onSuccess={() => queryClient.invalidateQueries({ queryKey: ["admin-turfs"] })} 
+                            />
                             <Link to={`/turfs/${t.id}`}>
                               <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
                             </Link>
@@ -682,6 +686,209 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
           </div>
           <Button type="submit" className="w-full" disabled={saving}>
             {saving ? "Adding..." : "Add Turf"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Edit Turf Dialog
+function EditTurfDialog({ turf, onSuccess }: { turf: any; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: turf.name || "",
+    location: turf.location || "",
+    city: turf.city || "",
+    latitude: turf.latitude,
+    longitude: turf.longitude,
+    price_per_hour: turf.price_per_hour || 0,
+    sport_type: turf.sport_type || "Football",
+    description: turf.description || "",
+    owner_contact: turf.owner_contact || "",
+    owner_email: turf.owner_email || "",
+    google_maps_link: turf.google_maps_link || "",
+    amenities: turf.amenities || [],
+    rules: turf.rules || "",
+    cancellation_policy: turf.cancellation_policy || "",
+    refund_policy: turf.refund_policy || "",
+    slot_duration_minutes: turf.slot_duration_minutes || 60,
+  });
+
+  const AMENITIES = ["Parking", "Changing Room", "Floodlights", "Drinking Water", "Restrooms", "First Aid", "Coaching", "Equipment Rental", "Cafeteria", "Spectator Area"];
+
+  const toggleAmenity = (amenity: string) => {
+    setForm(prev => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenity)
+        ? prev.amenities.filter((a: string) => a !== amenity)
+        : [...prev.amenities, amenity]
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("turfs").update(form).eq("id", turf.id);
+      if (error) throw error;
+      toast.success("Turf updated!");
+      setOpen(false);
+      onSuccess();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update turf");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm"><Edit className="h-4 w-4" /></Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Turf: {turf.name}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Info */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Basic Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Turf Name *</Label>
+                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              </div>
+              <div className="space-y-2">
+                <Label>City *</Label>
+                <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Full Address *</Label>
+              <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Google Maps Link</Label>
+              <Input value={form.google_maps_link} onChange={(e) => setForm({ ...form, google_maps_link: e.target.value })} placeholder="https://maps.google.com/..." />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Latitude</Label>
+                <Input type="number" step="any" value={form.latitude || ""} onChange={(e) => setForm({ ...form, latitude: e.target.value ? Number(e.target.value) : null })} placeholder="e.g., 19.0760" />
+              </div>
+              <div className="space-y-2">
+                <Label>Longitude</Label>
+                <Input type="number" step="any" value={form.longitude || ""} onChange={(e) => setForm({ ...form, longitude: e.target.value ? Number(e.target.value) : null })} placeholder="e.g., 72.8777" />
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Info */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Contact Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Owner Email</Label>
+                <Input type="email" value={form.owner_email} onChange={(e) => setForm({ ...form, owner_email: e.target.value })} placeholder="owner@example.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Owner Phone</Label>
+                <Input type="tel" value={form.owner_contact} onChange={(e) => setForm({ ...form, owner_contact: e.target.value })} placeholder="+91 9876543210" />
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing & Sport */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Pricing & Sport</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Price/hour (₹)</Label>
+                <Input type="number" value={form.price_per_hour} onChange={(e) => setForm({ ...form, price_per_hour: Number(e.target.value) })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Sport Type</Label>
+                <Select value={form.sport_type} onValueChange={(v) => setForm({ ...form, sport_type: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Football">Football</SelectItem>
+                    <SelectItem value="Cricket">Cricket</SelectItem>
+                    <SelectItem value="Basketball">Basketball</SelectItem>
+                    <SelectItem value="Badminton">Badminton</SelectItem>
+                    <SelectItem value="Tennis">Tennis</SelectItem>
+                    <SelectItem value="Multi-Sport">Multi-Sport</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Slot Duration (mins)</Label>
+                <Select value={String(form.slot_duration_minutes)} onValueChange={(v) => setForm({ ...form, slot_duration_minutes: Number(v) })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 mins</SelectItem>
+                    <SelectItem value="60">60 mins</SelectItem>
+                    <SelectItem value="90">90 mins</SelectItem>
+                    <SelectItem value="120">120 mins</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Description & Rules</h3>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Describe the turf, facilities, and what makes it special..." />
+            </div>
+            <div className="space-y-2">
+              <Label>Rules</Label>
+              <Textarea value={form.rules} onChange={(e) => setForm({ ...form, rules: e.target.value })} rows={2} placeholder="Ground rules for players..." />
+            </div>
+          </div>
+
+          {/* Amenities */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Amenities</h3>
+            <div className="flex flex-wrap gap-2">
+              {AMENITIES.map((amenity) => (
+                <Badge 
+                  key={amenity} 
+                  variant={form.amenities.includes(amenity) ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleAmenity(amenity)}
+                >
+                  {amenity}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          {/* Policies */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Policies</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Cancellation Policy</Label>
+                <Textarea value={form.cancellation_policy} onChange={(e) => setForm({ ...form, cancellation_policy: e.target.value })} rows={2} placeholder="e.g., Free cancellation up to 24 hours before..." />
+              </div>
+              <div className="space-y-2">
+                <Label>Refund Policy</Label>
+                <Textarea value={form.refund_policy} onChange={(e) => setForm({ ...form, refund_policy: e.target.value })} rows={2} placeholder="e.g., Full refund if cancelled 24 hours in advance..." />
+              </div>
+            </div>
+          </div>
+
+          <Button type="submit" className="w-full" disabled={saving}>
+            {saving ? "Saving..." : "Save Changes"}
           </Button>
         </form>
       </DialogContent>
