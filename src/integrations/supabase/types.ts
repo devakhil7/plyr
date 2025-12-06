@@ -807,6 +807,60 @@ export type Database = {
           },
         ]
       }
+      partnership_requests: {
+        Row: {
+          admin_notes: string | null
+          amenities: string[] | null
+          business_name: string
+          city: string
+          created_at: string
+          description: string | null
+          email: string
+          google_maps_link: string | null
+          id: string
+          location_address: string
+          owner_name: string
+          phone: string
+          sport_types: string[]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amenities?: string[] | null
+          business_name: string
+          city: string
+          created_at?: string
+          description?: string | null
+          email: string
+          google_maps_link?: string | null
+          id?: string
+          location_address: string
+          owner_name: string
+          phone: string
+          sport_types: string[]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amenities?: string[] | null
+          business_name?: string
+          city?: string
+          created_at?: string
+          description?: string | null
+          email?: string
+          google_maps_link?: string | null
+          id?: string
+          location_address?: string
+          owner_name?: string
+          phone?: string
+          sport_types?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount_total: number
