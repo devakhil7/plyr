@@ -6,6 +6,11 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import AuthPage from "./pages/Auth";
+import CompleteProfile from "./pages/CompleteProfile";
+import Dashboard from "./pages/Dashboard";
+import BrowseMatches from "./pages/BrowseMatches";
+import MatchDetails from "./pages/MatchDetails";
+import HostMatch from "./pages/HostMatch";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +25,11 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/complete-profile" element={<CompleteProfile />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/matches" element={<BrowseMatches />} />
+            <Route path="/matches/:id" element={<MatchDetails />} />
+            <Route path="/host-match" element={<HostMatch />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
