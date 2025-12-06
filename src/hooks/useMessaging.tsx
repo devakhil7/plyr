@@ -260,7 +260,7 @@ export function useCreateConversation(userId: string | null) {
       // Create new conversation
       const { data: conversation, error: convError } = await supabase
         .from('conversations')
-        .insert({})
+        .insert({ created_by: userId })
         .select()
         .single();
 
