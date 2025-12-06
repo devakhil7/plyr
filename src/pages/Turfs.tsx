@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -8,12 +7,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Layout } from "@/components/layout/Layout";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Search, IndianRupee, Star } from "lucide-react";
+import { MapPin, Search, IndianRupee, Star, Navigation, Loader2 } from "lucide-react";
+import { useGeolocation, calculateDistance, getCityCoordinates, formatDistance } from "@/hooks/useGeolocation";
 
 export default function Turfs() {
   const [search, setSearch] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [sportFilter, setSportFilter] = useState("all");
+  
+  const { latitude, longitude, loading: locationLoading, error: locationError } = useGeolocation();
 
   const { data: turfs, isLoading } = useQuery({
     queryKey: ["all-turfs"],
@@ -23,13 +25,49 @@ export default function Turfs() {
     },
   });
 
-  const filteredTurfs = turfs?.filter((turf: any) => {
-    const matchesSearch = turf.name.toLowerCase().includes(search.toLowerCase()) ||
-      turf.location.toLowerCase().includes(search.toLowerCase());
-    const matchesCity = cityFilter === "all" || turf.city === cityFilter;
-    const matchesSport = sportFilter === "all" || turf.sport_type === sportFilter;
-    return matchesSearch && matchesCity && matchesSport;
-  });
+  // Calculate distances and sort turfs
+  const turfsWithDistance = useMemo(() => {
+    if (!turfs) return [];
+    
+    return turfs.map((turf: any) => {
+      let distance: number | null = null;
+      
+      if (latitude && longitude) {
+        const cityCoords = getCityCoordinates(turf.city);
+        if (cityCoords) {
+          distance = calculateDistance(latitude, longitude, cityCoords.lat, cityCoords.lng);
+        }
+      }
+      
+      return { ...turf, distance };
+    });
+  }, [turfs, latitude, longitude]);
+
+  // Sort by distance if location available, otherwise by featured
+  const sortedTurfs = useMemo(() => {
+    const filtered = turfsWithDistance.filter((turf: any) => {
+      const matchesSearch = turf.name.toLowerCase().includes(search.toLowerCase()) ||
+        turf.location.toLowerCase().includes(search.toLowerCase());
+      const matchesCity = cityFilter === "all" || turf.city === cityFilter;
+      const matchesSport = sportFilter === "all" || turf.sport_type === sportFilter;
+      return matchesSearch && matchesCity && matchesSport;
+    });
+
+    // Sort: featured first if no location, otherwise by distance
+    if (latitude && longitude) {
+      return filtered.sort((a: any, b: any) => {
+        // Featured always first
+        if (a.is_featured && !b.is_featured) return -1;
+        if (!a.is_featured && b.is_featured) return 1;
+        // Then by distance
+        if (a.distance === null) return 1;
+        if (b.distance === null) return -1;
+        return a.distance - b.distance;
+      });
+    }
+    
+    return filtered;
+  }, [turfsWithDistance, search, cityFilter, sportFilter, latitude, longitude]);
 
   const cities = [...new Set(turfs?.map((t: any) => t.city).filter(Boolean))];
   const sports = [...new Set(turfs?.map((t: any) => t.sport_type).filter(Boolean))];
@@ -41,6 +79,25 @@ export default function Turfs() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Find Turfs</h1>
           <p className="text-muted-foreground">Discover the best sports venues near you</p>
+          
+          {/* Location Status */}
+          <div className="mt-3 flex items-center gap-2 text-sm">
+            {locationLoading ? (
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Getting your location...
+              </span>
+            ) : latitude && longitude ? (
+              <span className="flex items-center gap-1 text-primary">
+                <Navigation className="h-3 w-3" />
+                Sorted by distance from you
+              </span>
+            ) : (
+              <span className="text-muted-foreground text-xs">
+                Enable location for distance-based sorting
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -91,15 +148,21 @@ export default function Turfs() {
               </Card>
             ))}
           </div>
-        ) : filteredTurfs && filteredTurfs.length > 0 ? (
+        ) : sortedTurfs && sortedTurfs.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTurfs.map((turf: any) => (
+            {sortedTurfs.map((turf: any) => (
               <Link key={turf.id} to={`/turfs/${turf.id}`}>
                 <Card className="h-full card-hover overflow-hidden">
                   <div className="h-40 bg-gradient-to-br from-primary/20 to-secondary/20 relative flex items-center justify-center">
                     {turf.is_featured && (
                       <Badge className="absolute top-3 right-3 bg-amber-500 text-white">
                         <Star className="h-3 w-3 mr-1" /> Featured
+                      </Badge>
+                    )}
+                    {turf.distance !== null && (
+                      <Badge variant="secondary" className="absolute top-3 left-3">
+                        <Navigation className="h-3 w-3 mr-1" />
+                        {formatDistance(turf.distance)}
                       </Badge>
                     )}
                     <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
