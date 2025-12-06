@@ -640,10 +640,11 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label>Search Location (Google Maps) *</Label>
+            <Label>Location *</Label>
             <GooglePlacesAutocomplete
               value={form.location}
               onChange={handlePlaceSelect}
+              onManualChange={(val) => setForm({ ...form, location: val })}
               placeholder="Search for turf location..."
             />
             {form.latitude && form.longitude && (
