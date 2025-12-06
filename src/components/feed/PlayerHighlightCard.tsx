@@ -45,8 +45,11 @@ export function PlayerHighlightCard({
   return (
     <Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-border/50">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-lg">
+      <Link 
+        to={post.player_id ? `/players/${post.player_id}` : "#"}
+        className="flex items-center gap-3 p-4 border-b border-border/50 hover:bg-accent/50 transition-colors"
+      >
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-lg overflow-hidden">
           {post.profiles?.profile_photo_url ? (
             <img 
               src={post.profiles.profile_photo_url} 
@@ -58,7 +61,7 @@ export function PlayerHighlightCard({
           )}
         </div>
         <div className="flex-1">
-          <p className="font-semibold text-foreground">{post.profiles?.name || "Unknown Player"}</p>
+          <p className="font-semibold text-foreground hover:text-primary">{post.profiles?.name || "Unknown Player"}</p>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {post.profiles?.position && (
               <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full">
@@ -77,7 +80,7 @@ export function PlayerHighlightCard({
           <User className="h-3 w-3" />
           Player Highlight
         </div>
-      </div>
+      </Link>
 
       {/* Video/Media */}
       <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 relative group cursor-pointer">

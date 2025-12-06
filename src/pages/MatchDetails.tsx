@@ -497,15 +497,22 @@ export default function MatchDetails() {
                   <CardTitle className="text-lg">Host</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                      {match.profiles?.name?.charAt(0) || "H"}
+                  <Link 
+                    to={`/players/${match.host_id}`}
+                    className="flex items-center gap-4 hover:bg-accent/50 p-2 -m-2 rounded-lg transition-colors"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold overflow-hidden">
+                      {match.profiles?.profile_photo_url ? (
+                        <img src={match.profiles.profile_photo_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        match.profiles?.name?.charAt(0) || "H"
+                      )}
                     </div>
                     <div>
-                      <p className="font-medium">{match.profiles?.name || "Host"}</p>
+                      <p className="font-medium hover:text-primary">{match.profiles?.name || "Host"}</p>
                       <p className="text-sm text-muted-foreground">Match Organizer</p>
                     </div>
-                  </div>
+                  </Link>
                 </CardContent>
               </Card>
             </div>
@@ -517,15 +524,23 @@ export default function MatchDetails() {
                 {confirmedPlayers.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {confirmedPlayers.map((mp: any) => (
-                      <div key={mp.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
-                          {mp.profiles?.name?.charAt(0) || "P"}
+                      <Link 
+                        key={mp.id} 
+                        to={`/players/${mp.user_id}`}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm overflow-hidden">
+                          {mp.profiles?.profile_photo_url ? (
+                            <img src={mp.profiles.profile_photo_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            mp.profiles?.name?.charAt(0) || "P"
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{mp.profiles?.name || "Player"}</p>
+                          <p className="font-medium truncate hover:text-primary">{mp.profiles?.name || "Player"}</p>
                           <p className="text-xs text-muted-foreground capitalize">{mp.role} • Team {mp.team}</p>
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 ) : (
