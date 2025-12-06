@@ -330,6 +330,8 @@ export type Database = {
       payments: {
         Row: {
           amount_total: number
+          commission_type_used: string | null
+          commission_value_used: number | null
           created_at: string | null
           currency: string
           id: string
@@ -338,6 +340,7 @@ export type Database = {
           payer_id: string | null
           payment_method: string
           payment_reference: string | null
+          payout_id: string | null
           platform_fee: number
           status: string
           turf_amount: number
@@ -345,6 +348,8 @@ export type Database = {
         }
         Insert: {
           amount_total?: number
+          commission_type_used?: string | null
+          commission_value_used?: number | null
           created_at?: string | null
           currency?: string
           id?: string
@@ -353,6 +358,7 @@ export type Database = {
           payer_id?: string | null
           payment_method?: string
           payment_reference?: string | null
+          payout_id?: string | null
           platform_fee?: number
           status?: string
           turf_amount?: number
@@ -360,6 +366,8 @@ export type Database = {
         }
         Update: {
           amount_total?: number
+          commission_type_used?: string | null
+          commission_value_used?: number | null
           created_at?: string | null
           currency?: string
           id?: string
@@ -368,6 +376,7 @@ export type Database = {
           payer_id?: string | null
           payment_method?: string
           payment_reference?: string | null
+          payout_id?: string | null
           platform_fee?: number
           status?: string
           turf_amount?: number
@@ -379,6 +388,13 @@ export type Database = {
             columns: ["match_id"]
             isOneToOne: false
             referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_payout_id_fkey"
+            columns: ["payout_id"]
+            isOneToOne: false
+            referencedRelation: "payouts"
             referencedColumns: ["id"]
           },
           {
@@ -439,6 +455,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -647,6 +687,8 @@ export type Database = {
           blocked_slots: Json | null
           cancellation_policy: string | null
           city: string
+          commission_type: string | null
+          commission_value: number | null
           created_at: string | null
           description: string | null
           google_maps_link: string | null
@@ -659,6 +701,7 @@ export type Database = {
           opening_hours: Json | null
           owner_contact: string | null
           owner_email: string | null
+          payout_frequency: string | null
           photos: string[] | null
           price_per_hour: number | null
           pricing_rules: Json | null
@@ -674,6 +717,8 @@ export type Database = {
           blocked_slots?: Json | null
           cancellation_policy?: string | null
           city: string
+          commission_type?: string | null
+          commission_value?: number | null
           created_at?: string | null
           description?: string | null
           google_maps_link?: string | null
@@ -686,6 +731,7 @@ export type Database = {
           opening_hours?: Json | null
           owner_contact?: string | null
           owner_email?: string | null
+          payout_frequency?: string | null
           photos?: string[] | null
           price_per_hour?: number | null
           pricing_rules?: Json | null
@@ -701,6 +747,8 @@ export type Database = {
           blocked_slots?: Json | null
           cancellation_policy?: string | null
           city?: string
+          commission_type?: string | null
+          commission_value?: number | null
           created_at?: string | null
           description?: string | null
           google_maps_link?: string | null
@@ -713,6 +761,7 @@ export type Database = {
           opening_hours?: Json | null
           owner_contact?: string | null
           owner_email?: string | null
+          payout_frequency?: string | null
           photos?: string[] | null
           price_per_hour?: number | null
           pricing_rules?: Json | null
