@@ -85,10 +85,25 @@ export default function AdminDashboard() {
   const { data: turfOwners } = useQuery({
     queryKey: ["admin-turf-owners"],
     queryFn: async () => {
-      const { data } = await supabase
+      // Fetch turf_owners and join with profiles manually since user_id references auth.users
+      const { data: owners } = await supabase
         .from("turf_owners")
-        .select("*, profiles(name, email), turfs(name)");
-      return data || [];
+        .select("id, turf_id, user_id, is_primary_owner");
+      
+      if (!owners || owners.length === 0) return [];
+
+      // Get unique user IDs and fetch their profiles
+      const userIds = [...new Set(owners.map(o => o.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, name, email")
+        .in("id", userIds);
+
+      // Map profiles to owners
+      return owners.map(owner => ({
+        ...owner,
+        profiles: profiles?.find(p => p.id === owner.user_id) || null
+      }));
     },
     enabled: isAdmin,
   });
