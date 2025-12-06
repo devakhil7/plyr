@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { MapPin, Calendar, Clock, Users, ArrowLeft, Play, Upload, Trophy, Target, Percent, CreditCard, CheckCircle, Loader2 } from "lucide-react";
+import { MatchInviteDialog } from "@/components/match/MatchInviteDialog";
+import { MatchShareDialog } from "@/components/match/MatchShareDialog";
 
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
   open: "open",
@@ -345,7 +347,7 @@ export default function MatchDetails() {
             </div>
             <h1 className="text-3xl font-bold mb-4">{match.match_name}</h1>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-muted-foreground">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-muted-foreground mb-6">
               <div className="flex items-center">
                 <MapPin className="h-5 w-5 mr-3 text-primary" />
                 <div>
@@ -366,6 +368,38 @@ export default function MatchDetails() {
                   <p className="text-sm">{match.match_time?.slice(0, 5)} • {match.duration_minutes} min</p>
                 </div>
               </div>
+            </div>
+
+            {/* Invite & Share Buttons */}
+            <div className="flex flex-wrap gap-3">
+              {user && (isHost || isJoined) && match.status === "open" && (
+                <MatchInviteDialog
+                  matchId={match.id}
+                  matchDetails={{
+                    name: match.match_name,
+                    date: new Date(match.match_date).toLocaleDateString("en-IN", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    }),
+                    time: match.match_time?.slice(0, 5),
+                    turf: match.turfs?.name || "TBD",
+                  }}
+                  userId={user.id}
+                  existingPlayerIds={confirmedPlayers.map((p: any) => p.user_id)}
+                />
+              )}
+              <MatchShareDialog
+                matchId={match.id}
+                matchName={match.match_name}
+                matchDate={new Date(match.match_date).toLocaleDateString("en-IN", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+                matchTime={match.match_time?.slice(0, 5)}
+                turfName={match.turfs?.name || "TBD"}
+              />
             </div>
           </div>
 
