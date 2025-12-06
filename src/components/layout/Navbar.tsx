@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X, User, LogOut, LayoutDashboard, Shield, Building } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard, Shield, Building, MessageSquare, Trophy } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ const navigation = [
   { name: "Feed", href: "/feed" },
   { name: "Matches", href: "/matches" },
   { name: "Turfs", href: "/turfs" },
+  { name: "Tournaments", href: "/tournaments" },
 ];
 
 export function Navbar() {
@@ -64,6 +65,11 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           {user ? (
             <>
+              <Link to="/messages" className="hidden md:block">
+                <Button variant="ghost" size="icon">
+                  <MessageSquare className="h-5 w-5" />
+                </Button>
+              </Link>
               <Link to="/dashboard" className="hidden md:block">
                 <Button variant="outline" size="sm">
                   <LayoutDashboard className="h-4 w-4 mr-2" />
