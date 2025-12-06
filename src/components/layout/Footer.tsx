@@ -39,14 +39,14 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Support */}
+          {/* For Business */}
           <div>
-            <h4 className="font-semibold mb-4">Support</h4>
+            <h4 className="font-semibold mb-4">For Business</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Help Center</a></li>
+              <li><Link to="/partner" className="hover:text-foreground transition-colors">Partner With Us</Link></li>
+              <li><Link to="/turf-login" className="hover:text-foreground transition-colors">Turf Owner Login</Link></li>
               <li><a href="#" className="hover:text-foreground transition-colors">Contact Us</a></li>
               <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
             </ul>
           </div>
         </div>

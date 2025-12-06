@@ -27,8 +27,9 @@ import { AdminPayoutsTab } from "@/components/admin/AdminPayoutsTab";
 import { AdminReportsTab } from "@/components/admin/AdminReportsTab";
 import { AdminSettingsTab } from "@/components/admin/AdminSettingsTab";
 import { AdminCommissionsTab } from "@/components/admin/AdminCommissionsTab";
+import AdminPartnershipInbox from "@/components/admin/AdminPartnershipInbox";
 
-const TABS = ["overview", "turfs", "commissions", "users", "matches", "payments", "payouts", "reports", "settings"] as const;
+const TABS = ["overview", "turfs", "partnerships", "commissions", "users", "matches", "payments", "payouts", "reports", "settings"] as const;
 type TabType = typeof TABS[number];
 
 export default function AdminDashboard() {
@@ -276,6 +277,7 @@ export default function AdminDashboard() {
             const icons: Record<string, any> = { 
               overview: Trophy, 
               turfs: MapPin, 
+              partnerships: Building,
               commissions: Wallet,
               users: Users, 
               matches: Calendar,
@@ -619,6 +621,8 @@ export default function AdminDashboard() {
         {activeTab === "payments" && <AdminPaymentsTab />}
 
         {activeTab === "payouts" && <AdminPayoutsTab />}
+
+        {activeTab === "partnerships" && <AdminPartnershipInbox />}
 
         {activeTab === "reports" && <AdminReportsTab />}
 
