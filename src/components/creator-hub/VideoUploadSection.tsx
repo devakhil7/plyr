@@ -64,14 +64,34 @@ const VideoUploadSection = ({ onUpload, isUploading }: VideoUploadSectionProps) 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       if (file.type.startsWith('video/')) {
-        onUpload(file, selectedMatchId || undefined);
+        // Sanitize file name to remove emojis and special characters
+        const sanitizedName = file.name
+          .replace(/[^\w\s.-]/g, '')
+          .replace(/\s+/g, '_')
+          .replace(/_+/g, '_')
+          .trim() || 'video.mp4';
+        const sanitizedFile = new File([file], sanitizedName, { type: file.type });
+        onUpload(sanitizedFile, selectedMatchId || undefined);
       }
     }
   };
 
+  const sanitizeFileName = (fileName: string): string => {
+    // Remove emojis and special characters, keep only alphanumeric, dots, dashes, underscores
+    return fileName
+      .replace(/[^\w\s.-]/g, '') // Remove non-alphanumeric except spaces, dots, dashes
+      .replace(/\s+/g, '_') // Replace spaces with underscores
+      .replace(/_+/g, '_') // Remove consecutive underscores
+      .trim();
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      onUpload(e.target.files[0], selectedMatchId || undefined);
+      const file = e.target.files[0];
+      // Create a new file with sanitized name
+      const sanitizedName = sanitizeFileName(file.name) || 'video.mp4';
+      const sanitizedFile = new File([file], sanitizedName, { type: file.type });
+      onUpload(sanitizedFile, selectedMatchId || undefined);
     }
   };
 
