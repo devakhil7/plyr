@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSendMatchInvite } from "@/hooks/useMessaging";
-import { Users, Search, User, Loader2 } from "lucide-react";
+import { Users, Search, User, Loader2, MapPin } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface MatchInviteDialogProps {
   matchId: string;
@@ -20,26 +22,50 @@ interface MatchInviteDialogProps {
   };
   userId: string | null;
   existingPlayerIds: string[];
+  matchCity?: string;
 }
 
-export function MatchInviteDialog({ matchId, matchDetails, userId, existingPlayerIds }: MatchInviteDialogProps) {
+export function MatchInviteDialog({ matchId, matchDetails, userId, existingPlayerIds, matchCity }: MatchInviteDialogProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [filterSameCity, setFilterSameCity] = useState(true);
 
   const sendInvite = useSendMatchInvite(userId);
 
+  // Get current user's city
+  const { data: currentUserProfile } = useQuery({
+    queryKey: ["current-user-profile", userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("city")
+        .eq("id", userId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: open && !!userId,
+  });
+
+  const city = matchCity || currentUserProfile?.city;
+
   const { data: users = [], isLoading } = useQuery({
-    queryKey: ["users-for-invite", search],
+    queryKey: ["users-for-invite", search, filterSameCity, city],
     queryFn: async () => {
       let query = supabase
         .from("profiles")
-        .select("id, name, profile_photo_url, city, position")
+        .select("id, name, profile_photo_url, city, position, skill_level")
         .neq("id", userId || "")
-        .limit(20);
+        .order("name")
+        .limit(30);
 
       if (search) {
         query = query.ilike("name", `%${search}%`);
+      }
+
+      if (filterSameCity && city) {
+        query = query.ilike("city", city);
       }
 
       const { data } = await query;
@@ -95,6 +121,29 @@ export function MatchInviteDialog({ matchId, matchDetails, userId, existingPlaye
             />
           </div>
 
+          {/* City Filter */}
+          {city && (
+            <div className="flex gap-2">
+              <Button
+                variant={filterSameCity ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilterSameCity(true)}
+                className="flex-1"
+              >
+                <MapPin className="h-4 w-4 mr-1" />
+                {city}
+              </Button>
+              <Button
+                variant={!filterSameCity ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFilterSameCity(false)}
+                className="flex-1"
+              >
+                All Cities
+              </Button>
+            </div>
+          )}
+
           {/* User List */}
           <ScrollArea className="h-64">
             {isLoading ? (
@@ -105,13 +154,26 @@ export function MatchInviteDialog({ matchId, matchDetails, userId, existingPlaye
               <div className="text-center py-8 text-muted-foreground">
                 <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No players found</p>
+                {filterSameCity && city && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => setFilterSameCity(false)}
+                    className="mt-2"
+                  >
+                    Show players from all cities
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
                 {availableUsers.map((player) => (
                   <label
                     key={player.id}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer"
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors",
+                      selectedUsers.includes(player.id) && "bg-primary/5 border border-primary/20"
+                    )}
                   >
                     <Checkbox
                       checked={selectedUsers.includes(player.id)}
@@ -125,10 +187,24 @@ export function MatchInviteDialog({ matchId, matchDetails, userId, existingPlaye
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{player.name || "Player"}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {player.position || "Player"} {player.city && `• ${player.city}`}
-                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="truncate">{player.position || "Player"}</span>
+                        {player.city && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {player.city}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
+                    {player.skill_level && (
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        {player.skill_level}
+                      </Badge>
+                    )}
                   </label>
                 ))}
               </div>
