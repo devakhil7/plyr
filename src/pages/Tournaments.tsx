@@ -8,9 +8,12 @@ import { Layout } from "@/components/layout/Layout";
 import { Link } from "react-router-dom";
 import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { CreateTournamentDialog } from "@/components/tournaments/CreateTournamentDialog";
 
 export default function Tournaments() {
   const [statusFilter, setStatusFilter] = useState<string>("upcoming");
+  const { isAdmin } = useUserRoles();
 
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ["tournaments", statusFilter],
@@ -53,6 +56,7 @@ export default function Tournaments() {
               Compete in organized sports events and win prizes
             </p>
           </div>
+          {isAdmin && <CreateTournamentDialog />}
         </div>
 
         {/* Filters */}
