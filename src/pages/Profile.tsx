@@ -21,10 +21,24 @@ const skillLevels = [
   { value: "advanced", label: "Advanced" },
 ];
 
+const TOP_CLUBS = [
+  "Real Madrid", "Barcelona", "Manchester United", "Manchester City", "Liverpool",
+  "Chelsea", "Arsenal", "Bayern Munich", "Borussia Dortmund", "Paris Saint-Germain",
+  "Juventus", "AC Milan", "Inter Milan", "Napoli", "Roma",
+  "Atletico Madrid", "Sevilla", "Tottenham Hotspur", "Newcastle United", "Aston Villa",
+  "RB Leipzig", "Bayer Leverkusen", "Ajax", "Benfica", "Porto",
+  "Sporting CP", "Celtic", "Rangers", "Marseille", "Lyon",
+  "Monaco", "Villarreal", "Real Sociedad", "Athletic Bilbao", "Valencia",
+  "Fiorentina", "Lazio", "Atalanta", "West Ham United", "Brighton",
+  "Wolverhampton", "Everton", "Leicester City", "Leeds United", "Nottingham Forest",
+  "Galatasaray", "Fenerbahce", "Besiktas", "Club Brugge", "Feyenoord"
+];
+
 export default function Profile() {
   const { user, profile, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+  const [showCustomClub, setShowCustomClub] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     city: "",
@@ -34,6 +48,7 @@ export default function Profile() {
     skill_level: "intermediate",
     bio: "",
     favourite_club: "",
+    custom_club: "",
     favourite_player: "",
     height_cm: "",
     weight_kg: "",
@@ -44,6 +59,9 @@ export default function Profile() {
     if (!loading && !user) {
       navigate("/auth");
     } else if (profile) {
+      const savedClub = (profile as any).favourite_club || "";
+      const isCustomClub = savedClub && !TOP_CLUBS.includes(savedClub);
+      setShowCustomClub(isCustomClub);
       setFormData({
         name: profile.name || "",
         city: profile.city || "",
@@ -52,7 +70,8 @@ export default function Profile() {
         position: profile.position || "",
         skill_level: profile.skill_level || "intermediate",
         bio: profile.bio || "",
-        favourite_club: (profile as any).favourite_club || "",
+        favourite_club: isCustomClub ? "other" : savedClub,
+        custom_club: isCustomClub ? savedClub : "",
         favourite_player: (profile as any).favourite_player || "",
         height_cm: (profile as any).height_cm?.toString() || "",
         weight_kg: (profile as any).weight_kg?.toString() || "",
@@ -60,6 +79,23 @@ export default function Profile() {
       });
     }
   }, [user, profile, loading, navigate]);
+
+  const handleClubChange = (value: string) => {
+    if (value === "other") {
+      setShowCustomClub(true);
+      setFormData({ ...formData, favourite_club: "other", custom_club: "" });
+    } else {
+      setShowCustomClub(false);
+      setFormData({ ...formData, favourite_club: value, custom_club: "" });
+    }
+  };
+
+  const getFinalClub = () => {
+    if (formData.favourite_club === "other") {
+      return formData.custom_club || null;
+    }
+    return formData.favourite_club || null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +113,7 @@ export default function Profile() {
           position: formData.position,
           skill_level: formData.skill_level as "beginner" | "intermediate" | "advanced",
           bio: formData.bio,
-          favourite_club: formData.favourite_club || null,
+          favourite_club: getFinalClub(),
           favourite_player: formData.favourite_player || null,
           height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
           weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
@@ -255,12 +291,28 @@ export default function Profile() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="favourite_club">Favourite Club</Label>
-                      <Input
-                        id="favourite_club"
+                      <Select
                         value={formData.favourite_club}
-                        onChange={(e) => setFormData({ ...formData, favourite_club: e.target.value })}
-                        placeholder="e.g., Manchester United"
-                      />
+                        onValueChange={handleClubChange}
+                      >
+                        <SelectTrigger className="bg-background">
+                          <SelectValue placeholder="Select a club" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50 max-h-[300px]">
+                          {TOP_CLUBS.map((club) => (
+                            <SelectItem key={club} value={club}>{club}</SelectItem>
+                          ))}
+                          <SelectItem value="other">Other (Enter manually)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {showCustomClub && (
+                        <Input
+                          value={formData.custom_club}
+                          onChange={(e) => setFormData({ ...formData, custom_club: e.target.value })}
+                          placeholder="Enter your club name"
+                          className="mt-2"
+                        />
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="favourite_player">Favourite Player</Label>
