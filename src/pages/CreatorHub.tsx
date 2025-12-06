@@ -41,6 +41,7 @@ const CreatorHub = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -350,6 +351,37 @@ const CreatorHub = () => {
     setClips([]);
   };
 
+  const handleCancelAnalysis = async () => {
+    if (!activeJob) return;
+    
+    setIsCancelling(true);
+    try {
+      // Update job status to failed/cancelled
+      await supabase
+        .from('video_analysis_jobs')
+        .update({ status: 'failed', error_message: 'Cancelled by user' })
+        .eq('id', activeJob.id);
+      
+      setActiveJob(null);
+      setClips([]);
+      setIsAnalyzing(false);
+      
+      toast({
+        title: "Analysis Cancelled",
+        description: "Video analysis has been cancelled",
+      });
+    } catch (error) {
+      console.error("Cancel error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to cancel analysis",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const formatTimestamp = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -382,7 +414,11 @@ const CreatorHub = () => {
 
         {/* Status Card when job is in progress */}
         {activeJob && ['uploading', 'analyzing', 'processing'].includes(activeJob.status) && (
-          <AnalysisStatusCard status={activeJob.status} />
+          <AnalysisStatusCard 
+            status={activeJob.status} 
+            onCancel={handleCancelAnalysis}
+            isCancelling={isCancelling}
+          />
         )}
 
         {/* Failed State */}
