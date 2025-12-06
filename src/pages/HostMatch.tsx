@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { TimeSlotPicker } from "@/components/TimeSlotPicker";
 
 const skillLevels = [
   { value: "beginner", label: "Beginner" },
@@ -23,11 +24,12 @@ const skillLevels = [
 export default function HostMatch() {
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     match_name: "",
     sport: "Football",
-    turf_id: "",
+    turf_id: searchParams.get("turf") || "",
     match_date: "",
     match_time: "",
     duration_minutes: 60,
@@ -180,45 +182,17 @@ export default function HostMatch() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="match_date">Date *</Label>
-                    <Input
-                      id="match_date"
-                      type="date"
-                      value={formData.match_date}
-                      onChange={(e) => setFormData({ ...formData, match_date: e.target.value })}
-                      min={new Date().toISOString().split("T")[0]}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="match_time">Time *</Label>
-                    <Input
-                      id="match_time"
-                      type="time"
-                      value={formData.match_time}
-                      onChange={(e) => setFormData({ ...formData, match_time: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">Duration (min)</Label>
-                    <Select
-                      value={String(formData.duration_minutes)}
-                      onValueChange={(value) => setFormData({ ...formData, duration_minutes: Number(value) })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 min</SelectItem>
-                        <SelectItem value="60">60 min</SelectItem>
-                        <SelectItem value="90">90 min</SelectItem>
-                        <SelectItem value="120">120 min</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Time Slot Picker */}
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <TimeSlotPicker
+                    turfId={formData.turf_id}
+                    selectedDate={formData.match_date}
+                    selectedTime={formData.match_time}
+                    duration={formData.duration_minutes}
+                    onDateChange={(date) => setFormData({ ...formData, match_date: date })}
+                    onTimeChange={(time) => setFormData({ ...formData, match_time: time })}
+                    onDurationChange={(duration) => setFormData({ ...formData, duration_minutes: duration })}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
