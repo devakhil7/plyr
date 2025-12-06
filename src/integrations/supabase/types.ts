@@ -429,7 +429,9 @@ export type Database = {
           description: string | null
           id: string
           is_featured: boolean | null
+          latitude: number | null
           location: string
+          longitude: number | null
           name: string
           owner_contact: string | null
           owner_email: string | null
@@ -445,7 +447,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_featured?: boolean | null
+          latitude?: number | null
           location: string
+          longitude?: number | null
           name: string
           owner_contact?: string | null
           owner_email?: string | null
@@ -461,7 +465,9 @@ export type Database = {
           description?: string | null
           id?: string
           is_featured?: boolean | null
+          latitude?: number | null
           location?: string
+          longitude?: number | null
           name?: string
           owner_contact?: string | null
           owner_email?: string | null
