@@ -11,6 +11,7 @@ import { PlayerHighlightCard } from "@/components/feed/PlayerHighlightCard";
 import { MatchHighlightCard } from "@/components/feed/MatchHighlightCard";
 import { EventCard } from "@/components/feed/EventCard";
 import { CommentsDialog } from "@/components/feed/CommentsDialog";
+import { CreatePostDialog } from "@/components/feed/CreatePostDialog";
 import { Trophy, Sparkles, Users, Calendar } from "lucide-react";
 
 type FeedTab = "for-you" | "following" | "nearby" | "events";
@@ -176,11 +177,14 @@ export default function Feed() {
       <div className="container-app py-6">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2">Community Feed</h1>
-            <p className="text-muted-foreground">
-              Highlights, matches, and events from the SPORTIQ community
-            </p>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Community Feed</h1>
+              <p className="text-muted-foreground">
+                Highlights, matches, and events from the SPORTIQ community
+              </p>
+            </div>
+            <CreatePostDialog />
           </div>
 
           {/* Tabs */}
