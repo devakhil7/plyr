@@ -1,11 +1,14 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Upload, Sparkles, Film } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Upload, Sparkles, Film, X } from "lucide-react";
 
 interface AnalysisStatusCardProps {
   status: string;
+  onCancel?: () => void;
+  isCancelling?: boolean;
 }
 
-const AnalysisStatusCard = ({ status }: AnalysisStatusCardProps) => {
+const AnalysisStatusCard = ({ status, onCancel, isCancelling }: AnalysisStatusCardProps) => {
   const getStatusInfo = () => {
     switch (status) {
       case 'uploading':
@@ -53,6 +56,24 @@ const AnalysisStatusCard = ({ status }: AnalysisStatusCardProps) => {
             <p className="font-semibold text-foreground">{statusInfo.title}</p>
             <p className="text-sm text-muted-foreground">{statusInfo.description}</p>
           </div>
+          {onCancel && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onCancel}
+              disabled={isCancelling}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              {isCancelling ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <X className="h-4 w-4 mr-1" />
+                  Cancel
+                </>
+              )}
+            </Button>
+          )}
         </div>
         
         {/* Progress Steps */}
