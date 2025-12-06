@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X, User, LogOut, Settings, LayoutDashboard, Shield } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard, Shield, Building } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ const navigation = [
 
 export function Navbar() {
   const { user, profile, signOut } = useAuth();
+  const { isAdmin, isTurfOwner } = useUserRoles();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -97,11 +99,19 @@ export function Navbar() {
                       Profile
                     </Link>
                   </DropdownMenuItem>
-                  {profile?.is_admin && (
+                  {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin" className="flex items-center cursor-pointer">
                         <Shield className="mr-2 h-4 w-4" />
                         Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {isTurfOwner && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/turf-dashboard" className="flex items-center cursor-pointer">
+                        <Building className="mr-2 h-4 w-4" />
+                        Turf Dashboard
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -171,13 +181,22 @@ export function Navbar() {
                 >
                   Dashboard
                 </Link>
-                {profile?.is_admin && (
+                {isAdmin && (
                   <Link
                     to="/admin"
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
                   >
                     Admin Panel
+                  </Link>
+                )}
+                {isTurfOwner && (
+                  <Link
+                    to="/turf-dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+                  >
+                    Turf Dashboard
                   </Link>
                 )}
               </>

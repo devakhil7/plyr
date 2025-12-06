@@ -389,8 +389,41 @@ export type Database = {
           },
         ]
       }
+      turf_owners: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_primary_owner: boolean | null
+          turf_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_primary_owner?: boolean | null
+          turf_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_primary_owner?: boolean | null
+          turf_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turf_owners_turf_id_fkey"
+            columns: ["turf_id"]
+            isOneToOne: false
+            referencedRelation: "turfs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       turfs: {
         Row: {
+          active: boolean | null
           city: string
           created_at: string | null
           description: string | null
@@ -405,6 +438,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          active?: boolean | null
           city: string
           created_at?: string | null
           description?: string | null
@@ -419,6 +453,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          active?: boolean | null
           city?: string
           created_at?: string | null
           description?: string | null
@@ -434,15 +469,47 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       analytics_status: "none" | "processing" | "completed" | "failed"
+      app_role: "player" | "admin" | "turf_owner"
       join_status: "requested" | "confirmed" | "rejected" | "cancelled"
       match_status: "open" | "full" | "in_progress" | "completed" | "cancelled"
       player_role: "host" | "player" | "substitute"
@@ -579,6 +646,7 @@ export const Constants = {
   public: {
     Enums: {
       analytics_status: ["none", "processing", "completed", "failed"],
+      app_role: ["player", "admin", "turf_owner"],
       join_status: ["requested", "confirmed", "rejected", "cancelled"],
       match_status: ["open", "full", "in_progress", "completed", "cancelled"],
       player_role: ["host", "player", "substitute"],
