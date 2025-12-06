@@ -33,6 +33,11 @@ export default function Profile() {
     position: "",
     skill_level: "intermediate",
     bio: "",
+    favourite_club: "",
+    favourite_player: "",
+    height_cm: "",
+    weight_kg: "",
+    date_of_birth: "",
   });
 
   useEffect(() => {
@@ -47,6 +52,11 @@ export default function Profile() {
         position: profile.position || "",
         skill_level: profile.skill_level || "intermediate",
         bio: profile.bio || "",
+        favourite_club: (profile as any).favourite_club || "",
+        favourite_player: (profile as any).favourite_player || "",
+        height_cm: (profile as any).height_cm?.toString() || "",
+        weight_kg: (profile as any).weight_kg?.toString() || "",
+        date_of_birth: (profile as any).date_of_birth || "",
       });
     }
   }, [user, profile, loading, navigate]);
@@ -67,6 +77,11 @@ export default function Profile() {
           position: formData.position,
           skill_level: formData.skill_level as "beginner" | "intermediate" | "advanced",
           bio: formData.bio,
+          favourite_club: formData.favourite_club || null,
+          favourite_player: formData.favourite_player || null,
+          height_cm: formData.height_cm ? parseInt(formData.height_cm) : null,
+          weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
+          date_of_birth: formData.date_of_birth || null,
         })
         .eq("id", user.id);
 
@@ -192,6 +207,71 @@ export default function Profile() {
                     placeholder="Tell others about your playing style..."
                     rows={3}
                   />
+                </div>
+
+                {/* Physical Stats Section */}
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Physical Stats (Optional)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date_of_birth">Date of Birth</Label>
+                      <Input
+                        id="date_of_birth"
+                        type="date"
+                        value={formData.date_of_birth}
+                        onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="height_cm">Height (cm)</Label>
+                      <Input
+                        id="height_cm"
+                        type="number"
+                        value={formData.height_cm}
+                        onChange={(e) => setFormData({ ...formData, height_cm: e.target.value })}
+                        placeholder="e.g., 175"
+                        min="100"
+                        max="250"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="weight_kg">Weight (kg)</Label>
+                      <Input
+                        id="weight_kg"
+                        type="number"
+                        value={formData.weight_kg}
+                        onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
+                        placeholder="e.g., 70"
+                        min="30"
+                        max="200"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Favourites Section */}
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Favourites (Optional)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="favourite_club">Favourite Club</Label>
+                      <Input
+                        id="favourite_club"
+                        value={formData.favourite_club}
+                        onChange={(e) => setFormData({ ...formData, favourite_club: e.target.value })}
+                        placeholder="e.g., Manchester United"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="favourite_player">Favourite Player</Label>
+                      <Input
+                        id="favourite_player"
+                        value={formData.favourite_player}
+                        onChange={(e) => setFormData({ ...formData, favourite_player: e.target.value })}
+                        placeholder="e.g., Cristiano Ronaldo"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <Button type="submit" className="w-full" disabled={saving}>
