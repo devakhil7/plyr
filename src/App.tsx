@@ -11,6 +11,11 @@ import Dashboard from "./pages/Dashboard";
 import BrowseMatches from "./pages/BrowseMatches";
 import MatchDetails from "./pages/MatchDetails";
 import HostMatch from "./pages/HostMatch";
+import Turfs from "./pages/Turfs";
+import TurfDetails from "./pages/TurfDetails";
+import Feed from "./pages/Feed";
+import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +35,11 @@ const App = () => (
             <Route path="/matches" element={<BrowseMatches />} />
             <Route path="/matches/:id" element={<MatchDetails />} />
             <Route path="/host-match" element={<HostMatch />} />
+            <Route path="/turfs" element={<Turfs />} />
+            <Route path="/turfs/:id" element={<TurfDetails />} />
+            <Route path="/feed" element={<Feed />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
