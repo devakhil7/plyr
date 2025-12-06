@@ -84,35 +84,14 @@ export const CalendarSlotPicker: React.FC<CalendarSlotPickerProps> = ({
     enabled: !!turfId,
   });
 
-  // Also fetch match bookings
-  const { data: matchBookings = [] } = useQuery({
-    queryKey: ['match-bookings', turfId, format(weekStart, 'yyyy-MM-dd')],
-    queryFn: async () => {
-      if (!turfId) return [];
-      
-      const weekEnd = addDays(weekStart, 6);
-      const { data, error } = await supabase
-        .from('matches')
-        .select('match_date, match_time, duration_minutes')
-        .eq('turf_id', turfId)
-        .gte('match_date', format(weekStart, 'yyyy-MM-dd'))
-        .lte('match_date', format(weekEnd, 'yyyy-MM-dd'));
-      
-      if (error) {
-        console.error('Error fetching matches:', error);
-        return [];
-      }
-      return data || [];
-    },
-    enabled: !!turfId,
-  });
-
+  // Only block slots based on COMPLETED turf bookings
+  // Matches without turf payment should NOT block slots
   const isSlotBooked = (date: Date, hour: number): boolean => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const slotStart = hour * 60;
     const slotEnd = slotStart + 30; // 30-minute slot granularity
 
-    // Check turf bookings
+    // Check only completed turf bookings
     const hasBooking = bookings.some((booking: any) => {
       if (booking.booking_date !== dateStr) return false;
       const bookingStart = timeToMinutes(booking.start_time);
@@ -120,15 +99,7 @@ export const CalendarSlotPicker: React.FC<CalendarSlotPickerProps> = ({
       return slotStart < bookingEnd && slotEnd > bookingStart;
     });
 
-    // Check match bookings
-    const hasMatch = matchBookings.some((match: any) => {
-      if (match.match_date !== dateStr) return false;
-      const matchStart = timeToMinutes(match.match_time);
-      const matchEnd = matchStart + (match.duration_minutes || 60);
-      return slotStart < matchEnd && slotEnd > matchStart;
-    });
-
-    return hasBooking || hasMatch;
+    return hasBooking;
   };
 
   const isSlotAvailable = (date: Date, hour: number, halfHour: boolean): boolean => {
