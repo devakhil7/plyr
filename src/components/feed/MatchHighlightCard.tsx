@@ -148,6 +148,8 @@ export function MatchHighlightCard({
 
         <div className="flex items-center justify-between">
           <FeedPostActions 
+            postId={post.id}
+            caption={post.caption || undefined}
             likes={post.likes || 0}
             comments={post.comments_count || 0}
             shares={post.shares || 0}
