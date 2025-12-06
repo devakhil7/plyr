@@ -101,7 +101,7 @@ export default function Feed() {
 
                   {/* Media Preview */}
                   <div className="aspect-video bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center relative">
-                    {post.matches?.team_a_score !== null && (
+                    {post.matches && post.matches.team_a_score !== null && (
                       <div className="text-center">
                         <p className="text-sm text-muted-foreground mb-2">Final Score</p>
                         <div className="flex items-center gap-4 text-4xl font-bold">
