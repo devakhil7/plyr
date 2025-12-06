@@ -387,6 +387,7 @@ export default function MatchDetails() {
                   }}
                   userId={user.id}
                   existingPlayerIds={confirmedPlayers.map((p: any) => p.user_id)}
+                  matchCity={match.turfs?.city}
                 />
               )}
               <MatchShareDialog
