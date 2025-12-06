@@ -25,6 +25,7 @@ import AdminTournaments from "./pages/AdminTournaments";
 import AdminDashboard from "./pages/AdminDashboard";
 import TurfDashboard from "./pages/TurfDashboard";
 import CreatorHub from "./pages/CreatorHub";
+import Leaderboards from "./pages/Leaderboards";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/admin/tournaments" element={<AdminTournaments />} />
             <Route path="/turf-dashboard" element={<TurfDashboard />} />
             <Route path="/creator-hub" element={<CreatorHub />} />
+            <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
