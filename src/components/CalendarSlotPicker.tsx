@@ -198,10 +198,10 @@ export const CalendarSlotPicker: React.FC<CalendarSlotPickerProps> = ({
 
       {/* Calendar grid */}
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <div className="min-w-[800px]">
+        <div className="overflow-x-auto touch-pan-x">
+          <div className="min-w-[600px]">
             {/* Day headers */}
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b bg-muted/50">
+            <div className="grid grid-cols-[50px_repeat(7,1fr)] border-b bg-muted/50 sticky top-0 z-10">
               <div className="p-2 text-center text-xs font-medium text-muted-foreground">Time</div>
               {weekDays.map((day) => (
                 <div
@@ -225,12 +225,12 @@ export const CalendarSlotPicker: React.FC<CalendarSlotPickerProps> = ({
               ))}
             </div>
 
-            {/* Time slots */}
-            <div className="max-h-[400px] overflow-y-auto">
+            {/* Time slots - reduced height for better mobile scrolling */}
+            <div className="max-h-[280px] md:max-h-[350px] overflow-y-auto overscroll-contain">
               {HOURS.map((hour) => (
                 <React.Fragment key={hour}>
                   {/* Full hour row */}
-                  <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b">
+                  <div className="grid grid-cols-[50px_repeat(7,1fr)] border-b">
                     <div className="p-1 text-xs text-muted-foreground text-right pr-2 border-r">
                       {formatHour(hour)}
                     </div>
@@ -257,7 +257,7 @@ export const CalendarSlotPicker: React.FC<CalendarSlotPickerProps> = ({
                     })}
                   </div>
                   {/* Half hour row */}
-                  <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-dashed">
+                  <div className="grid grid-cols-[50px_repeat(7,1fr)] border-b border-dashed">
                     <div className="p-1 text-xs text-muted-foreground text-right pr-2 border-r" />
                     {weekDays.map((day) => {
                       const available = isSlotAvailable(day, hour, true);
