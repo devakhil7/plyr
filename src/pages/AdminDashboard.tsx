@@ -346,7 +346,8 @@ export default function AdminDashboard() {
                       <TableHead>City</TableHead>
                       <TableHead>Sport</TableHead>
                       <TableHead>Price/hr</TableHead>
-                      <TableHead>Owners</TableHead>
+                      <TableHead>Contact Info</TableHead>
+                      <TableHead>Assigned Owners</TableHead>
                       <TableHead>Active</TableHead>
                       <TableHead>Featured</TableHead>
                       <TableHead>Actions</TableHead>
@@ -359,6 +360,13 @@ export default function AdminDashboard() {
                         <TableCell>{t.city}</TableCell>
                         <TableCell>{t.sport_type}</TableCell>
                         <TableCell>₹{t.price_per_hour}</TableCell>
+                        <TableCell>
+                          <div className="text-sm space-y-0.5">
+                            {t.owner_email && <p className="text-muted-foreground">{t.owner_email}</p>}
+                            {t.owner_contact && <p className="text-muted-foreground">{t.owner_contact}</p>}
+                            {!t.owner_email && !t.owner_contact && <span className="text-muted-foreground">—</span>}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {getTurfOwners(t.id).map((to: any) => (
@@ -587,6 +595,7 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
     sport_type: "Football",
     description: "",
     owner_contact: "",
+    owner_email: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -597,7 +606,7 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
       if (error) throw error;
       toast.success("Turf added!");
       setOpen(false);
-      setForm({ name: "", location: "", city: "", price_per_hour: 1000, sport_type: "Football", description: "", owner_contact: "" });
+      setForm({ name: "", location: "", city: "", price_per_hour: 1000, sport_type: "Football", description: "", owner_contact: "", owner_email: "" });
       onSuccess();
     } catch (err: any) {
       toast.error(err.message || "Failed to add turf");
@@ -611,7 +620,7 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
       <DialogTrigger asChild>
         <Button><Plus className="h-4 w-4 mr-2" />Add Turf</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Add New Turf</DialogTitle>
         </DialogHeader>
@@ -638,6 +647,16 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
             <div className="space-y-2">
               <Label>Sport</Label>
               <Input value={form.sport_type} onChange={(e) => setForm({ ...form, sport_type: e.target.value })} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Owner Email</Label>
+              <Input type="email" placeholder="owner@example.com" value={form.owner_email} onChange={(e) => setForm({ ...form, owner_email: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Owner Contact</Label>
+              <Input type="tel" placeholder="+91 9876543210" value={form.owner_contact} onChange={(e) => setForm({ ...form, owner_contact: e.target.value })} />
             </div>
           </div>
           <div className="space-y-2">

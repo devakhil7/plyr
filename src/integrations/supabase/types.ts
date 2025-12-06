@@ -432,6 +432,7 @@ export type Database = {
           location: string
           name: string
           owner_contact: string | null
+          owner_email: string | null
           photos: string[] | null
           price_per_hour: number | null
           sport_type: string | null
@@ -447,6 +448,7 @@ export type Database = {
           location: string
           name: string
           owner_contact?: string | null
+          owner_email?: string | null
           photos?: string[] | null
           price_per_hour?: number | null
           sport_type?: string | null
@@ -462,6 +464,7 @@ export type Database = {
           location?: string
           name?: string
           owner_contact?: string | null
+          owner_email?: string | null
           photos?: string[] | null
           price_per_hour?: number | null
           sport_type?: string | null
