@@ -15,7 +15,8 @@ import Turfs from "./pages/Turfs";
 import TurfDetails from "./pages/TurfDetails";
 import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
-import Admin from "./pages/Admin";
+import AdminDashboard from "./pages/AdminDashboard";
+import TurfDashboard from "./pages/TurfDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,7 +40,8 @@ const App = () => (
             <Route path="/turfs/:id" element={<TurfDetails />} />
             <Route path="/feed" element={<Feed />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/turf-dashboard" element={<TurfDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
