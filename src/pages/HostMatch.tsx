@@ -31,7 +31,6 @@ export default function HostMatch() {
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [duration, setDuration] = useState<number>(60);
   const [formData, setFormData] = useState({
-    match_name: "",
     sport: "Football",
     turf_id: searchParams.get("turf") || "",
     visibility: "public",
@@ -41,6 +40,27 @@ export default function HostMatch() {
     team_assignment_mode: "auto",
     notes: "",
   });
+
+  // Generate match name automatically
+  const generateMatchName = () => {
+    const dayName = format(selectedDate, "EEEE"); // e.g., "Saturday"
+    const timeOfDay = selectedTime ? (() => {
+      const hour = parseInt(selectedTime.split(":")[0]);
+      if (hour < 12) return "Morning";
+      if (hour < 17) return "Afternoon";
+      return "Evening";
+    })() : "";
+    
+    const selectedTurf = turfs?.find((t: any) => t.id === formData.turf_id);
+    const turfName = selectedTurf?.name || "";
+    
+    if (turfName && timeOfDay) {
+      return `${dayName} ${timeOfDay} ${formData.sport} @ ${turfName}`;
+    } else if (timeOfDay) {
+      return `${dayName} ${timeOfDay} ${formData.sport}`;
+    }
+    return `${dayName} ${formData.sport} Match`;
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -69,11 +89,14 @@ export default function HostMatch() {
 
     setSubmitting(true);
     try {
+      // Generate match name automatically
+      const matchName = generateMatchName();
+      
       // Create match
       const { data: match, error: matchError } = await supabase
         .from("matches")
         .insert({
-          match_name: formData.match_name,
+          match_name: matchName,
           sport: formData.sport,
           turf_id: formData.turf_id || null,
           match_date: format(selectedDate, "yyyy-MM-dd"),
@@ -138,17 +161,6 @@ export default function HostMatch() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="match_name">Match Name *</Label>
-                  <Input
-                    id="match_name"
-                    value={formData.match_name}
-                    onChange={(e) => setFormData({ ...formData, match_name: e.target.value })}
-                    placeholder="e.g., Saturday Evening Football"
-                    required
-                  />
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="sport">Sport</Label>
