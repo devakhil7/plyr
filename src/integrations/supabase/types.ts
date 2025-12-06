@@ -70,6 +70,59 @@ export type Database = {
           },
         ]
       }
+      discount_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          turf_id: string
+          used_count: number | null
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          turf_id: string
+          used_count?: number | null
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          turf_id?: string
+          used_count?: number | null
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_codes_turf_id_fkey"
+            columns: ["turf_id"]
+            isOneToOne: false
+            referencedRelation: "turfs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_posts: {
         Row: {
           caption: string | null
@@ -173,10 +226,13 @@ export type Database = {
           host_id: string
           id: string
           is_featured: boolean | null
+          is_offline_booking: boolean | null
           match_date: string
           match_name: string
           match_time: string
           notes: string | null
+          offline_contact_name: string | null
+          offline_contact_phone: string | null
           required_skill_max: Database["public"]["Enums"]["skill_level"] | null
           required_skill_min: Database["public"]["Enums"]["skill_level"] | null
           sport: string | null
@@ -201,10 +257,13 @@ export type Database = {
           host_id: string
           id?: string
           is_featured?: boolean | null
+          is_offline_booking?: boolean | null
           match_date: string
           match_name: string
           match_time: string
           notes?: string | null
+          offline_contact_name?: string | null
+          offline_contact_phone?: string | null
           required_skill_max?: Database["public"]["Enums"]["skill_level"] | null
           required_skill_min?: Database["public"]["Enums"]["skill_level"] | null
           sport?: string | null
@@ -229,10 +288,13 @@ export type Database = {
           host_id?: string
           id?: string
           is_featured?: boolean | null
+          is_offline_booking?: boolean | null
           match_date?: string
           match_name?: string
           match_time?: string
           notes?: string | null
+          offline_contact_name?: string | null
+          offline_contact_phone?: string | null
           required_skill_max?: Database["public"]["Enums"]["skill_level"] | null
           required_skill_min?: Database["public"]["Enums"]["skill_level"] | null
           sport?: string | null
@@ -258,6 +320,119 @@ export type Database = {
           },
           {
             foreignKeyName: "matches_turf_id_fkey"
+            columns: ["turf_id"]
+            isOneToOne: false
+            referencedRelation: "turfs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount_total: number
+          created_at: string | null
+          currency: string
+          id: string
+          match_id: string | null
+          paid_at: string | null
+          payer_id: string | null
+          payment_method: string
+          payment_reference: string | null
+          platform_fee: number
+          status: string
+          turf_amount: number
+          turf_id: string
+        }
+        Insert: {
+          amount_total?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          match_id?: string | null
+          paid_at?: string | null
+          payer_id?: string | null
+          payment_method?: string
+          payment_reference?: string | null
+          platform_fee?: number
+          status?: string
+          turf_amount?: number
+          turf_id: string
+        }
+        Update: {
+          amount_total?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          match_id?: string | null
+          paid_at?: string | null
+          payer_id?: string | null
+          payment_method?: string
+          payment_reference?: string | null
+          platform_fee?: number
+          status?: string
+          turf_amount?: number
+          turf_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_turf_id_fkey"
+            columns: ["turf_id"]
+            isOneToOne: false
+            referencedRelation: "turfs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payouts: {
+        Row: {
+          amount_fees: number
+          amount_gross: number
+          amount_net: number
+          created_at: string | null
+          id: string
+          payout_date: string | null
+          payout_reference: string | null
+          period_end: string
+          period_start: string
+          status: string
+          turf_id: string
+        }
+        Insert: {
+          amount_fees?: number
+          amount_gross?: number
+          amount_net?: number
+          created_at?: string | null
+          id?: string
+          payout_date?: string | null
+          payout_reference?: string | null
+          period_end: string
+          period_start: string
+          status?: string
+          turf_id: string
+        }
+        Update: {
+          amount_fees?: number
+          amount_gross?: number
+          amount_net?: number
+          created_at?: string | null
+          id?: string
+          payout_date?: string | null
+          payout_reference?: string | null
+          period_end?: string
+          period_start?: string
+          status?: string
+          turf_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_turf_id_fkey"
             columns: ["turf_id"]
             isOneToOne: false
             referencedRelation: "turfs"
@@ -421,58 +596,129 @@ export type Database = {
           },
         ]
       }
+      turf_payout_details: {
+        Row: {
+          account_name: string | null
+          account_number: string | null
+          bank_name: string | null
+          created_at: string | null
+          id: string
+          ifsc_code: string | null
+          turf_id: string
+          updated_at: string | null
+          upi_id: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string | null
+          id?: string
+          ifsc_code?: string | null
+          turf_id: string
+          updated_at?: string | null
+          upi_id?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string | null
+          id?: string
+          ifsc_code?: string | null
+          turf_id?: string
+          updated_at?: string | null
+          upi_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turf_payout_details_turf_id_fkey"
+            columns: ["turf_id"]
+            isOneToOne: true
+            referencedRelation: "turfs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       turfs: {
         Row: {
           active: boolean | null
+          amenities: string[] | null
+          blocked_slots: Json | null
+          cancellation_policy: string | null
           city: string
           created_at: string | null
           description: string | null
+          google_maps_link: string | null
           id: string
           is_featured: boolean | null
           latitude: number | null
           location: string
           longitude: number | null
           name: string
+          opening_hours: Json | null
           owner_contact: string | null
           owner_email: string | null
           photos: string[] | null
           price_per_hour: number | null
+          pricing_rules: Json | null
+          refund_policy: string | null
+          rules: string | null
+          slot_duration_minutes: number | null
           sport_type: string | null
           updated_at: string | null
         }
         Insert: {
           active?: boolean | null
+          amenities?: string[] | null
+          blocked_slots?: Json | null
+          cancellation_policy?: string | null
           city: string
           created_at?: string | null
           description?: string | null
+          google_maps_link?: string | null
           id?: string
           is_featured?: boolean | null
           latitude?: number | null
           location: string
           longitude?: number | null
           name: string
+          opening_hours?: Json | null
           owner_contact?: string | null
           owner_email?: string | null
           photos?: string[] | null
           price_per_hour?: number | null
+          pricing_rules?: Json | null
+          refund_policy?: string | null
+          rules?: string | null
+          slot_duration_minutes?: number | null
           sport_type?: string | null
           updated_at?: string | null
         }
         Update: {
           active?: boolean | null
+          amenities?: string[] | null
+          blocked_slots?: Json | null
+          cancellation_policy?: string | null
           city?: string
           created_at?: string | null
           description?: string | null
+          google_maps_link?: string | null
           id?: string
           is_featured?: boolean | null
           latitude?: number | null
           location?: string
           longitude?: number | null
           name?: string
+          opening_hours?: Json | null
           owner_contact?: string | null
           owner_email?: string | null
           photos?: string[] | null
           price_per_hour?: number | null
+          pricing_rules?: Json | null
+          refund_policy?: string | null
+          rules?: string | null
+          slot_duration_minutes?: number | null
           sport_type?: string | null
           updated_at?: string | null
         }
