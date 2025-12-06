@@ -6,11 +6,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
-import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowLeft, FileText } from "lucide-react";
-import { format } from "date-fns";
+import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowLeft, FileText, CreditCard } from "lucide-react";
+import { format, isPast } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
+import { TournamentRegistrationDialog } from "@/components/tournaments/TournamentRegistrationDialog";
+import { PayBalanceDialog } from "@/components/tournaments/PayBalanceDialog";
 
 export default function TournamentDetails() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
 
   const { data: tournament, isLoading } = useQuery({
     queryKey: ["tournament", id],
@@ -122,9 +126,25 @@ export default function TournamentDetails() {
                 <p className="font-medium">
                   {tournament.entry_fee > 0 ? `₹${tournament.entry_fee.toLocaleString()}` : "Free"}
                 </p>
+                {tournament.allow_part_payment && (
+                  <p className="text-xs text-muted-foreground">
+                    Part payment: {tournament.advance_type === "percentage" 
+                      ? `${tournament.advance_value}%` 
+                      : `₹${tournament.advance_value}`} advance
+                  </p>
+                )}
               </div>
             </div>
           </div>
+
+          {/* Registration Button */}
+          {tournament.registration_open && 
+           (!tournament.registration_deadline || !isPast(new Date(tournament.registration_deadline))) && 
+           user && (
+            <div className="mt-6">
+              <TournamentRegistrationDialog tournament={tournament as any} />
+            </div>
+          )}
         </div>
 
         {/* Tabs */}

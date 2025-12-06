@@ -21,6 +21,7 @@ import PlayerProfile from "./pages/PlayerProfile";
 import Messages from "./pages/Messages";
 import Tournaments from "./pages/Tournaments";
 import TournamentDetails from "./pages/TournamentDetails";
+import AdminTournaments from "./pages/AdminTournaments";
 import AdminDashboard from "./pages/AdminDashboard";
 import TurfDashboard from "./pages/TurfDashboard";
 import NotFound from "./pages/NotFound";
@@ -53,6 +54,7 @@ const App = () => (
             <Route path="/tournaments" element={<Tournaments />} />
             <Route path="/tournaments/:id" element={<TournamentDetails />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/tournaments" element={<AdminTournaments />} />
             <Route path="/turf-dashboard" element={<TurfDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

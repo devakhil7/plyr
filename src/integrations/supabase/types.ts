@@ -758,14 +758,18 @@ export type Database = {
           created_at: string | null
           currency: string
           id: string
+          is_advance: boolean | null
           match_id: string | null
           paid_at: string | null
           payer_id: string | null
           payment_method: string
+          payment_purpose: string | null
           payment_reference: string | null
           payout_id: string | null
           platform_fee: number
           status: string
+          tournament_id: string | null
+          tournament_team_id: string | null
           turf_amount: number
           turf_id: string
         }
@@ -776,14 +780,18 @@ export type Database = {
           created_at?: string | null
           currency?: string
           id?: string
+          is_advance?: boolean | null
           match_id?: string | null
           paid_at?: string | null
           payer_id?: string | null
           payment_method?: string
+          payment_purpose?: string | null
           payment_reference?: string | null
           payout_id?: string | null
           platform_fee?: number
           status?: string
+          tournament_id?: string | null
+          tournament_team_id?: string | null
           turf_amount?: number
           turf_id: string
         }
@@ -794,14 +802,18 @@ export type Database = {
           created_at?: string | null
           currency?: string
           id?: string
+          is_advance?: boolean | null
           match_id?: string | null
           paid_at?: string | null
           payer_id?: string | null
           payment_method?: string
+          payment_purpose?: string | null
           payment_reference?: string | null
           payout_id?: string | null
           platform_fee?: number
           status?: string
+          tournament_id?: string | null
+          tournament_team_id?: string | null
           turf_amount?: number
           turf_id?: string
         }
@@ -818,6 +830,20 @@ export type Database = {
             columns: ["payout_id"]
             isOneToOne: false
             referencedRelation: "payouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_tournament_team_id_fkey"
+            columns: ["tournament_team_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
             referencedColumns: ["id"]
           },
           {
@@ -1051,26 +1077,70 @@ export type Database = {
           },
         ]
       }
+      tournament_team_players: {
+        Row: {
+          created_at: string | null
+          id: string
+          player_contact: string | null
+          player_name: string
+          tournament_team_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          player_contact?: string | null
+          player_name: string
+          tournament_team_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          player_contact?: string | null
+          player_name?: string
+          tournament_team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_team_players_tournament_team_id_fkey"
+            columns: ["tournament_team_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_teams: {
         Row: {
           captain_user_id: string
           created_at: string | null
           id: string
+          payment_status: string | null
+          registration_status: string | null
           team_name: string
+          total_fee: number | null
+          total_paid: number | null
           tournament_id: string
         }
         Insert: {
           captain_user_id: string
           created_at?: string | null
           id?: string
+          payment_status?: string | null
+          registration_status?: string | null
           team_name: string
+          total_fee?: number | null
+          total_paid?: number | null
           tournament_id: string
         }
         Update: {
           captain_user_id?: string
           created_at?: string | null
           id?: string
+          payment_status?: string | null
+          registration_status?: string | null
           team_name?: string
+          total_fee?: number | null
+          total_paid?: number | null
           tournament_id?: string
         }
         Relationships: [
@@ -1092,6 +1162,9 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          advance_type: string | null
+          advance_value: number | null
+          allow_part_payment: boolean | null
           city: string
           cover_image_url: string | null
           created_at: string | null
@@ -1100,8 +1173,12 @@ export type Database = {
           end_datetime: string
           entry_fee: number | null
           id: string
+          max_players_per_team: number | null
+          min_players_per_team: number | null
           name: string
           prize_details: string | null
+          registration_deadline: string | null
+          registration_open: boolean | null
           rules: string | null
           sport: string | null
           start_datetime: string
@@ -1109,6 +1186,9 @@ export type Database = {
           turf_id: string | null
         }
         Insert: {
+          advance_type?: string | null
+          advance_value?: number | null
+          allow_part_payment?: boolean | null
           city: string
           cover_image_url?: string | null
           created_at?: string | null
@@ -1117,8 +1197,12 @@ export type Database = {
           end_datetime: string
           entry_fee?: number | null
           id?: string
+          max_players_per_team?: number | null
+          min_players_per_team?: number | null
           name: string
           prize_details?: string | null
+          registration_deadline?: string | null
+          registration_open?: boolean | null
           rules?: string | null
           sport?: string | null
           start_datetime: string
@@ -1126,6 +1210,9 @@ export type Database = {
           turf_id?: string | null
         }
         Update: {
+          advance_type?: string | null
+          advance_value?: number | null
+          allow_part_payment?: boolean | null
           city?: string
           cover_image_url?: string | null
           created_at?: string | null
@@ -1134,8 +1221,12 @@ export type Database = {
           end_datetime?: string
           entry_fee?: number | null
           id?: string
+          max_players_per_team?: number | null
+          min_players_per_team?: number | null
           name?: string
           prize_details?: string | null
+          registration_deadline?: string | null
+          registration_open?: boolean | null
           rules?: string | null
           sport?: string | null
           start_datetime?: string
