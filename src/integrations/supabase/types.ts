@@ -992,7 +992,11 @@ export type Database = {
           bio: string | null
           city: string | null
           created_at: string | null
+          date_of_birth: string | null
           email: string | null
+          favourite_club: string | null
+          favourite_player: string | null
+          height_cm: number | null
           id: string
           is_admin: boolean | null
           location: string | null
@@ -1003,12 +1007,17 @@ export type Database = {
           skill_level: Database["public"]["Enums"]["skill_level"] | null
           sport_preference: string | null
           updated_at: string | null
+          weight_kg: number | null
         }
         Insert: {
           bio?: string | null
           city?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string | null
+          favourite_club?: string | null
+          favourite_player?: string | null
+          height_cm?: number | null
           id: string
           is_admin?: boolean | null
           location?: string | null
@@ -1019,12 +1028,17 @@ export type Database = {
           skill_level?: Database["public"]["Enums"]["skill_level"] | null
           sport_preference?: string | null
           updated_at?: string | null
+          weight_kg?: number | null
         }
         Update: {
           bio?: string | null
           city?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           email?: string | null
+          favourite_club?: string | null
+          favourite_player?: string | null
+          height_cm?: number | null
           id?: string
           is_admin?: boolean | null
           location?: string | null
@@ -1035,6 +1049,7 @@ export type Database = {
           skill_level?: Database["public"]["Enums"]["skill_level"] | null
           sport_preference?: string | null
           updated_at?: string | null
+          weight_kg?: number | null
         }
         Relationships: []
       }

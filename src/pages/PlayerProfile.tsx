@@ -13,8 +13,20 @@ import { Layout } from "@/components/layout/Layout";
 import { toast } from "sonner";
 import { 
   ArrowLeft, User, MapPin, Trophy, Star, MessageSquare, 
-  UserPlus, UserMinus, Camera, Video, Edit 
+  UserPlus, UserMinus, Camera, Video, Edit, Target, 
+  Handshake, Calendar, Ruler, Scale, Heart
 } from "lucide-react";
+
+function calculateAge(dateOfBirth: string): number {
+  const today = new Date();
+  const birthDate = new Date(dateOfBirth);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
 
 export default function PlayerProfile() {
   const { id } = useParams<{ id: string }>();
@@ -68,7 +80,7 @@ export default function PlayerProfile() {
         .select("*", { count: "exact", head: true })
         .eq("user_id", id);
 
-      // Get average rating
+      // Get ratings
       const { data: ratings } = await supabase
         .from("player_ratings")
         .select("rating")
@@ -79,11 +91,55 @@ export default function PlayerProfile() {
         ? (ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1)
         : null;
 
+      // Get total goals
+      const { count: goalsCount } = await supabase
+        .from("match_events")
+        .select("*", { count: "exact", head: true })
+        .eq("scorer_user_id", id);
+
+      // Get total assists
+      const { count: assistsCount } = await supabase
+        .from("match_events")
+        .select("*", { count: "exact", head: true })
+        .eq("assist_user_id", id);
+
+      // Get wins - matches where user's team won
+      const { data: playerMatches } = await supabase
+        .from("match_players")
+        .select("match_id, team")
+        .eq("user_id", id);
+
+      let winsCount = 0;
+      if (playerMatches && playerMatches.length > 0) {
+        const matchIds = playerMatches.map(pm => pm.match_id);
+        const { data: completedMatches } = await supabase
+          .from("matches")
+          .select("id, team_a_score, team_b_score, status")
+          .in("id", matchIds)
+          .eq("status", "completed");
+
+        if (completedMatches) {
+          for (const match of completedMatches) {
+            const playerTeam = playerMatches.find(pm => pm.match_id === match.id)?.team;
+            if (match.team_a_score !== null && match.team_b_score !== null) {
+              if (playerTeam === "A" && match.team_a_score > match.team_b_score) {
+                winsCount++;
+              } else if (playerTeam === "B" && match.team_b_score > match.team_a_score) {
+                winsCount++;
+              }
+            }
+          }
+        }
+      }
+
       return {
         followers: followersCount || 0,
         matches: matchesCount || 0,
         avgRating,
         ratingsCount: ratings?.length || 0,
+        goals: goalsCount || 0,
+        assists: assistsCount || 0,
+        wins: winsCount,
       };
     },
     enabled: !!id,
@@ -130,6 +186,27 @@ export default function PlayerProfile() {
         .eq("moderation_status", "approved")
         .order("created_at", { ascending: false })
         .limit(10);
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  const { data: topComments = [] } = useQuery({
+    queryKey: ["player-top-comments", id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("player_ratings")
+        .select(`
+          id,
+          comment,
+          rating,
+          rater:rater_user_id (id, name, profile_photo_url)
+        `)
+        .eq("rated_user_id", id)
+        .eq("moderation_status", "approved")
+        .not("comment", "is", null)
+        .order("rating", { ascending: false })
+        .limit(3);
       return data || [];
     },
     enabled: !!id,
@@ -218,7 +295,7 @@ export default function PlayerProfile() {
                   {player.position && <Badge variant="secondary">{player.position}</Badge>}
                 </div>
 
-                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
                   {player.city && (
                     <span className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
@@ -228,31 +305,98 @@ export default function PlayerProfile() {
                   {player.skill_level && (
                     <Badge variant="outline" className="capitalize">{player.skill_level}</Badge>
                   )}
+                  {player.date_of_birth && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {calculateAge(player.date_of_birth)} years old
+                    </span>
+                  )}
                 </div>
+
+                {/* Physical stats */}
+                {(player.height_cm || player.weight_kg) && (
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                    {player.height_cm && (
+                      <span className="flex items-center gap-1">
+                        <Ruler className="h-4 w-4" />
+                        {player.height_cm} cm
+                      </span>
+                    )}
+                    {player.weight_kg && (
+                      <span className="flex items-center gap-1">
+                        <Scale className="h-4 w-4" />
+                        {player.weight_kg} kg
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Favourites */}
+                {(player.favourite_club || player.favourite_player) && (
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
+                    {player.favourite_club && (
+                      <span className="flex items-center gap-1">
+                        <Heart className="h-4 w-4 text-red-500" />
+                        Supports {player.favourite_club}
+                      </span>
+                    )}
+                    {player.favourite_player && (
+                      <span className="flex items-center gap-1">
+                        <Star className="h-4 w-4 text-yellow-500" />
+                        Idol: {player.favourite_player}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {player.bio && (
                   <p className="text-muted-foreground mb-4">{player.bio}</p>
                 )}
 
-                {/* Stats */}
-                <div className="flex gap-6 mb-4">
-                  <div className="text-center">
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 mb-4">
+                  <div className="text-center p-3 bg-muted/50 rounded-lg">
                     <p className="text-2xl font-bold">{stats?.matches || 0}</p>
                     <p className="text-xs text-muted-foreground">Matches</p>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center p-3 bg-muted/50 rounded-lg">
+                    <p className="text-2xl font-bold text-green-600">{stats?.wins || 0}</p>
+                    <p className="text-xs text-muted-foreground">Wins</p>
+                  </div>
+                  <div className="text-center p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-center gap-1">
+                      <Target className="h-4 w-4 text-primary" />
+                      <p className="text-2xl font-bold">{stats?.goals || 0}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Goals</p>
+                  </div>
+                  <div className="text-center p-3 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-center gap-1">
+                      <Handshake className="h-4 w-4 text-blue-500" />
+                      <p className="text-2xl font-bold">{stats?.assists || 0}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Assists</p>
+                  </div>
+                  <div className="text-center p-3 bg-muted/50 rounded-lg">
                     <p className="text-2xl font-bold">{stats?.followers || 0}</p>
                     <p className="text-xs text-muted-foreground">Followers</p>
                   </div>
-                  {stats?.avgRating && (
-                    <div className="text-center">
-                      <p className="text-2xl font-bold flex items-center gap-1">
-                        <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                        {stats.avgRating}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{stats.ratingsCount} ratings</p>
-                    </div>
-                  )}
+                  <div className="text-center p-3 bg-muted/50 rounded-lg">
+                    {stats?.avgRating ? (
+                      <>
+                        <p className="text-2xl font-bold flex items-center justify-center gap-1">
+                          <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                          {stats.avgRating}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{stats.ratingsCount} ratings</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-2xl font-bold text-muted-foreground">-</p>
+                        <p className="text-xs text-muted-foreground">No ratings</p>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 {/* Actions */}
@@ -295,11 +439,55 @@ export default function PlayerProfile() {
           </CardContent>
         </Card>
 
+        {/* Top Comments Section */}
+        {topComments.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Top Comments from Peers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {topComments.map((comment: any) => (
+                  <div key={comment.id} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={comment.rater?.profile_photo_url || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                        {comment.rater?.name?.charAt(0) || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-sm">{comment.rater?.name || "User"}</span>
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`h-3 w-3 ${
+                                star <= comment.rating
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{comment.comment}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Tabs */}
         <Tabs defaultValue="gallery">
           <TabsList>
             <TabsTrigger value="gallery">Gallery</TabsTrigger>
-            <TabsTrigger value="reviews">Reviews ({reviews.length})</TabsTrigger>
+            <TabsTrigger value="reviews">All Reviews ({reviews.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="gallery" className="mt-6">
