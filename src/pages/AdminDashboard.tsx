@@ -20,7 +20,6 @@ import {
   Calendar, ChevronLeft, ChevronRight, Building, Eye, Power
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { GooglePlacesAutocomplete } from "@/components/GooglePlacesAutocomplete";
 
 const TABS = ["overview", "turfs", "users", "matches"] as const;
 type TabType = typeof TABS[number];
@@ -618,17 +617,6 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
     }
   };
 
-  const handlePlaceSelect = (place: { name: string; address: string; city: string; latitude: number; longitude: number }) => {
-    setForm({
-      ...form,
-      name: form.name || place.name,
-      location: place.address,
-      city: place.city || form.city,
-      latitude: place.latitude,
-      longitude: place.longitude,
-    });
-  };
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -639,20 +627,6 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
           <DialogTitle>Add New Turf</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Location *</Label>
-            <GooglePlacesAutocomplete
-              value={form.location}
-              onChange={handlePlaceSelect}
-              onManualChange={(val) => setForm({ ...form, location: val })}
-              placeholder="Search for turf location..."
-            />
-            {form.latitude && form.longitude && (
-              <p className="text-xs text-muted-foreground">
-                📍 Coordinates: {form.latitude.toFixed(6)}, {form.longitude.toFixed(6)}
-              </p>
-            )}
-          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Turf Name *</Label>
@@ -660,8 +634,12 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
             </div>
             <div className="space-y-2">
               <Label>City *</Label>
-              <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required placeholder="Auto-filled from map" />
+              <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required placeholder="e.g., Mumbai" />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Full Address / Location *</Label>
+            <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} required placeholder="e.g., Near XYZ Mall, Andheri West" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
