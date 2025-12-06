@@ -55,7 +55,7 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
         .order("match_date", { ascending: true });
       
       if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
+        query = query.eq("status", statusFilter as "open" | "full" | "in_progress" | "completed" | "cancelled");
       }
       
       const { data } = await query;
