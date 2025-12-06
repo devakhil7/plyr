@@ -1,0 +1,477 @@
+import { useEffect, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Layout } from "@/components/layout/Layout";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { MapPin, Calendar, Clock, Users, ArrowLeft, Play, Upload, Trophy, Target, Percent } from "lucide-react";
+
+const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
+  open: "open",
+  full: "full",
+  in_progress: "progress",
+  completed: "completed",
+  cancelled: "cancelled",
+};
+
+export default function MatchDetails() {
+  const { id } = useParams<{ id: string }>();
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [uploading, setUploading] = useState(false);
+
+  const { data: match, isLoading, refetch } = useQuery({
+    queryKey: ["match", id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("matches")
+        .select(`
+          *,
+          turfs(*),
+          profiles!matches_host_id_fkey(id, name, profile_photo_url),
+          match_players(*, profiles(*)),
+          analytics(*)
+        `)
+        .eq("id", id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const isHost = user && match?.host_id === user.id;
+  const confirmedPlayers = match?.match_players?.filter((p: any) => p.join_status === "confirmed") || [];
+  const isJoined = confirmedPlayers.some((p: any) => p.user_id === user?.id);
+  const slotsLeft = (match?.total_slots || 0) - confirmedPlayers.length;
+  const analytics = match?.analytics?.[0];
+
+  const joinMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || !match) throw new Error("Not authenticated");
+      const { error } = await supabase.from("match_players").insert({
+        match_id: match.id,
+        user_id: user.id,
+        role: "player",
+        join_status: "confirmed",
+        team: "unassigned",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("You've joined the match!");
+      refetch();
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to join match");
+    },
+  });
+
+  const leaveMutation = useMutation({
+    mutationFn: async () => {
+      if (!user || !match) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("match_players")
+        .delete()
+        .eq("match_id", match.id)
+        .eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("You've left the match");
+      refetch();
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to leave match");
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async (newStatus: "open" | "full" | "in_progress" | "completed" | "cancelled") => {
+      if (!match) throw new Error("No match");
+      const { error } = await supabase
+        .from("matches")
+        .update({ status: newStatus })
+        .eq("id", match.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Match status updated");
+      refetch();
+    },
+  });
+
+  const generateAnalytics = async () => {
+    if (!match) return;
+
+    // Generate dummy analytics
+    const teamAScore = Math.floor(Math.random() * 5);
+    const teamBScore = Math.floor(Math.random() * 5);
+    const possessionA = Math.floor(Math.random() * 40) + 30;
+
+    const { error: analyticsError } = await supabase.from("analytics").insert({
+      match_id: match.id,
+      goals_team_a: teamAScore,
+      goals_team_b: teamBScore,
+      assists_team_a: Math.floor(Math.random() * teamAScore + 1),
+      assists_team_b: Math.floor(Math.random() * teamBScore + 1),
+      shots_on_target_a: teamAScore + Math.floor(Math.random() * 5),
+      shots_on_target_b: teamBScore + Math.floor(Math.random() * 5),
+      possession_team_a: possessionA,
+      possession_team_b: 100 - possessionA,
+      heatmap_url: "/placeholder.svg",
+      highlights_url: "/placeholder.svg",
+    });
+
+    if (analyticsError) throw analyticsError;
+
+    // Update match with score
+    await supabase.from("matches").update({
+      team_a_score: teamAScore,
+      team_b_score: teamBScore,
+      analytics_status: "completed",
+    }).eq("id", match.id);
+
+    // Create feed post
+    await supabase.from("feed_posts").insert({
+      match_id: match.id,
+      user_id: match.host_id,
+      post_type: "highlight",
+      caption: `Match completed: ${match.match_name} at ${match.turfs?.name}. Final Score: ${teamAScore} - ${teamBScore}`,
+      media_url: "/placeholder.svg",
+    });
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !match) return;
+
+    setUploading(true);
+    try {
+      // Update analytics status to processing
+      await supabase.from("matches").update({ analytics_status: "processing" }).eq("id", match.id);
+      refetch();
+
+      // Simulate video processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Generate dummy analytics
+      await generateAnalytics();
+
+      toast.success("Video processed! Analytics generated.");
+      refetch();
+    } catch (err: any) {
+      toast.error("Failed to process video");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container-app py-12 flex items-center justify-center min-h-[60vh]">
+          <div className="animate-pulse text-muted-foreground">Loading match...</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!match) {
+    return (
+      <Layout>
+        <div className="container-app py-12 text-center">
+          <h2 className="text-2xl font-bold mb-4">Match not found</h2>
+          <Link to="/matches">
+            <Button>Browse Matches</Button>
+          </Link>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="container-app py-8">
+        {/* Back Button */}
+        <Link to="/matches" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to matches
+        </Link>
+
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row gap-8 mb-8">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <Badge variant="sport">{match.sport}</Badge>
+              <Badge variant={statusVariants[match.status] || "secondary"}>
+                {match.status === "in_progress" ? "In Progress" : match.status.charAt(0).toUpperCase() + match.status.slice(1)}
+              </Badge>
+            </div>
+            <h1 className="text-3xl font-bold mb-4">{match.match_name}</h1>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-muted-foreground">
+              <div className="flex items-center">
+                <MapPin className="h-5 w-5 mr-3 text-primary" />
+                <div>
+                  <p className="font-medium text-foreground">{match.turfs?.name}</p>
+                  <p className="text-sm">{match.turfs?.location}, {match.turfs?.city}</p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <Calendar className="h-5 w-5 mr-3 text-primary" />
+                <div>
+                  <p className="font-medium text-foreground">
+                    {new Date(match.match_date).toLocaleDateString("en-IN", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                  <p className="text-sm">{match.match_time?.slice(0, 5)} • {match.duration_minutes} min</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Card */}
+          <Card className="lg:w-80">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-muted-foreground">Players</span>
+                <span className="font-semibold">{confirmedPlayers.length}/{match.total_slots}</span>
+              </div>
+              <Progress value={(confirmedPlayers.length / match.total_slots) * 100} className="mb-4" />
+              
+              {user ? (
+                isHost ? (
+                  <div className="space-y-2">
+                    {match.status === "open" && (
+                      <Button className="w-full" onClick={() => updateStatusMutation.mutate("in_progress")}>
+                        <Play className="h-4 w-4 mr-2" />
+                        Start Match
+                      </Button>
+                    )}
+                    {match.status === "in_progress" && (
+                      <Button className="w-full" onClick={() => updateStatusMutation.mutate("completed")}>
+                        Complete Match
+                      </Button>
+                    )}
+                    <p className="text-xs text-center text-muted-foreground">You're hosting this match</p>
+                  </div>
+                ) : isJoined ? (
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => leaveMutation.mutate()}
+                      disabled={leaveMutation.isPending || match.status !== "open"}
+                    >
+                      {leaveMutation.isPending ? "Leaving..." : "Leave Match"}
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">You're in this match!</p>
+                  </div>
+                ) : (
+                  <Button
+                    className="w-full"
+                    onClick={() => joinMutation.mutate()}
+                    disabled={joinMutation.isPending || slotsLeft === 0 || match.status !== "open"}
+                  >
+                    {joinMutation.isPending ? "Joining..." : slotsLeft === 0 ? "Match Full" : "Join Match"}
+                  </Button>
+                )
+              ) : (
+                <Link to="/auth">
+                  <Button className="w-full">Sign in to Join</Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabs */}
+        <Tabs defaultValue="overview">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="players">Players ({confirmedPlayers.length})</TabsTrigger>
+            <TabsTrigger value="analytics">Video & Analytics</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Match Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Skill Level</span>
+                    <span className="capitalize">{match.required_skill_min} - {match.required_skill_max}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Team Mode</span>
+                    <span className="capitalize">{match.team_assignment_mode}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Visibility</span>
+                    <span className="capitalize">{match.visibility}</span>
+                  </div>
+                  {match.notes && (
+                    <div className="pt-3 border-t">
+                      <p className="text-muted-foreground text-sm mb-1">Notes</p>
+                      <p className="text-sm">{match.notes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Host</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                      {match.profiles?.name?.charAt(0) || "H"}
+                    </div>
+                    <div>
+                      <p className="font-medium">{match.profiles?.name || "Host"}</p>
+                      <p className="text-sm text-muted-foreground">Match Organizer</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="players" className="mt-6">
+            <Card>
+              <CardContent className="p-6">
+                {confirmedPlayers.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {confirmedPlayers.map((mp: any) => (
+                      <div key={mp.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+                          {mp.profiles?.name?.charAt(0) || "P"}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{mp.profiles?.name || "Player"}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{mp.role} • Team {mp.team}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No players have joined yet</p>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-6">
+            {match.status === "completed" ? (
+              <div className="space-y-6">
+                {/* Score */}
+                {match.team_a_score !== null && (
+                  <Card className="bg-gradient-to-r from-primary/5 to-secondary/5">
+                    <CardContent className="p-8 text-center">
+                      <p className="text-sm text-muted-foreground mb-2">Final Score</p>
+                      <div className="flex items-center justify-center gap-8">
+                        <div>
+                          <p className="text-4xl font-bold">{match.team_a_score}</p>
+                          <p className="text-sm text-muted-foreground">Team A</p>
+                        </div>
+                        <span className="text-2xl text-muted-foreground">-</span>
+                        <div>
+                          <p className="text-4xl font-bold">{match.team_b_score}</p>
+                          <p className="text-sm text-muted-foreground">Team B</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Analytics */}
+                {analytics ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card>
+                      <CardContent className="p-6 text-center">
+                        <Trophy className="h-8 w-8 mx-auto mb-2 text-primary" />
+                        <p className="text-2xl font-bold">{analytics.goals_team_a} - {analytics.goals_team_b}</p>
+                        <p className="text-sm text-muted-foreground">Goals</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-6 text-center">
+                        <Target className="h-8 w-8 mx-auto mb-2 text-accent" />
+                        <p className="text-2xl font-bold">{analytics.shots_on_target_a} - {analytics.shots_on_target_b}</p>
+                        <p className="text-sm text-muted-foreground">Shots on Target</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-6 text-center">
+                        <Percent className="h-8 w-8 mx-auto mb-2 text-secondary" />
+                        <p className="text-2xl font-bold">{analytics.possession_team_a}% - {analytics.possession_team_b}%</p>
+                        <p className="text-sm text-muted-foreground">Possession</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : isHost ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      {match.analytics_status === "processing" ? (
+                        <div>
+                          <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+                          <p className="font-medium">Processing video...</p>
+                          <p className="text-sm text-muted-foreground">AI analytics will be ready shortly</p>
+                        </div>
+                      ) : (
+                        <div>
+                          <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+                          <p className="font-medium mb-2">Upload match video for AI analytics</p>
+                          <p className="text-sm text-muted-foreground mb-4">Get insights on goals, assists, possession and more</p>
+                          <label>
+                            <input
+                              type="file"
+                              accept="video/*"
+                              className="hidden"
+                              onChange={handleVideoUpload}
+                              disabled={uploading}
+                            />
+                            <Button asChild disabled={uploading}>
+                              <span>{uploading ? "Uploading..." : "Upload Video"}</span>
+                            </Button>
+                          </label>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <p className="text-muted-foreground">Analytics not yet available for this match</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Clock className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+                  <p className="font-medium">Match not completed yet</p>
+                  <p className="text-sm text-muted-foreground">Analytics will be available after the match ends</p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Layout>
+  );
+}
