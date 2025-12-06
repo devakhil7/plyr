@@ -10,9 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X, User, LogOut, LayoutDashboard, Shield, Building, MessageSquare, Trophy } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard, Shield, Building, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { NotificationsDropdown } from "./NotificationsDropdown";
+import { useUnreadMessageCount } from "@/hooks/useNotifications";
+import { Badge } from "@/components/ui/badge";
 
 const navigation = [
   { name: "Feed", href: "/feed" },
@@ -28,6 +31,7 @@ export function Navbar() {
   const { isAdmin, isTurfOwner } = useUserRoles();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { unreadCount } = useUnreadMessageCount(user?.id || null);
 
   const isActive = (href: string) => {
     if (href === "/") return location.pathname === "/";
@@ -65,13 +69,24 @@ export function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          {user ? (
+        {user ? (
             <>
               <Link to="/messages" className="hidden md:block">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="relative">
                   <MessageSquare className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                    >
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </Badge>
+                  )}
                 </Button>
               </Link>
+              <div className="hidden md:block">
+                <NotificationsDropdown />
+              </div>
               <Link to="/dashboard" className="hidden md:block">
                 <Button variant="outline" size="sm">
                   <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -182,6 +197,19 @@ export function Navbar() {
             ))}
             {user && (
               <>
+                <Link
+                  to="/messages"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Messages
+                  {unreadCount > 0 && (
+                    <Badge variant="destructive" className="h-5 text-xs">
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </Link>
                 <Link
                   to="/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
