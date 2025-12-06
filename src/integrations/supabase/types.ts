@@ -451,6 +451,60 @@ export type Database = {
           },
         ]
       }
+      highlight_clips: {
+        Row: {
+          caption: string | null
+          clip_video_url: string | null
+          created_at: string
+          end_time_seconds: number
+          goal_timestamp_seconds: number
+          id: string
+          is_selected: boolean
+          match_id: string | null
+          start_time_seconds: number
+          video_analysis_job_id: string
+        }
+        Insert: {
+          caption?: string | null
+          clip_video_url?: string | null
+          created_at?: string
+          end_time_seconds: number
+          goal_timestamp_seconds: number
+          id?: string
+          is_selected?: boolean
+          match_id?: string | null
+          start_time_seconds: number
+          video_analysis_job_id: string
+        }
+        Update: {
+          caption?: string | null
+          clip_video_url?: string | null
+          created_at?: string
+          end_time_seconds?: number
+          goal_timestamp_seconds?: number
+          id?: string
+          is_selected?: boolean
+          match_id?: string | null
+          start_time_seconds?: number
+          video_analysis_job_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "highlight_clips_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "highlight_clips_video_analysis_job_id_fkey"
+            columns: ["video_analysis_job_id"]
+            isOneToOne: false
+            referencedRelation: "video_analysis_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       likes: {
         Row: {
           created_at: string | null
@@ -1579,6 +1633,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "user_videos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_analysis_jobs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          match_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          match_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          match_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_analysis_jobs_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_analysis_jobs_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
