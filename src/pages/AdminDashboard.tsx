@@ -17,11 +17,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { 
   Users, MapPin, Trophy, Shield, Plus, Trash2, Star, Search, 
-  Calendar, ChevronLeft, ChevronRight, Building, Eye, Power, Edit
+  Calendar, ChevronLeft, ChevronRight, Building, Eye, Power, Edit,
+  CreditCard, Wallet, BarChart3, Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TABS = ["overview", "turfs", "users", "matches"] as const;
+import { AdminPaymentsTab } from "@/components/admin/AdminPaymentsTab";
+import { AdminPayoutsTab } from "@/components/admin/AdminPayoutsTab";
+import { AdminReportsTab } from "@/components/admin/AdminReportsTab";
+import { AdminSettingsTab } from "@/components/admin/AdminSettingsTab";
+import { AdminCommissionsTab } from "@/components/admin/AdminCommissionsTab";
+
+const TABS = ["overview", "turfs", "commissions", "users", "matches", "payments", "payouts", "reports", "settings"] as const;
 type TabType = typeof TABS[number];
 
 export default function AdminDashboard() {
@@ -266,7 +273,17 @@ export default function AdminDashboard() {
         </div>
         <nav className="p-2 space-y-1">
           {TABS.map((tab) => {
-            const icons = { overview: Trophy, turfs: MapPin, users: Users, matches: Calendar };
+            const icons: Record<string, any> = { 
+              overview: Trophy, 
+              turfs: MapPin, 
+              commissions: Wallet,
+              users: Users, 
+              matches: Calendar,
+              payments: CreditCard,
+              payouts: Wallet,
+              reports: BarChart3,
+              settings: Settings,
+            };
             const Icon = icons[tab];
             return (
               <button
@@ -597,6 +614,15 @@ export default function AdminDashboard() {
             </Card>
           </div>
         )}
+        {activeTab === "commissions" && <AdminCommissionsTab />}
+
+        {activeTab === "payments" && <AdminPaymentsTab />}
+
+        {activeTab === "payouts" && <AdminPayoutsTab />}
+
+        {activeTab === "reports" && <AdminReportsTab />}
+
+        {activeTab === "settings" && <AdminSettingsTab />}
       </main>
     </div>
   );
