@@ -126,6 +126,8 @@ export function PlayerHighlightCard({
         )}
 
         <FeedPostActions 
+          postId={post.id}
+          caption={post.caption || undefined}
           likes={post.likes || 0}
           comments={post.comments_count || 0}
           shares={post.shares || 0}
