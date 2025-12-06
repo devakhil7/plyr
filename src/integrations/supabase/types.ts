@@ -70,6 +70,91 @@ export type Database = {
           },
         ]
       }
+      bookmarks: {
+        Row: {
+          created_at: string | null
+          event_id: string | null
+          feed_post_id: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_id?: string | null
+          feed_post_id?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_id?: string | null
+          feed_post_id?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookmarks_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookmarks_feed_post_id_fkey"
+            columns: ["feed_post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookmarks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comments: {
+        Row: {
+          created_at: string | null
+          feed_post_id: string
+          id: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          feed_post_id: string
+          id?: string
+          text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          feed_post_id?: string
+          id?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_feed_post_id_fkey"
+            columns: ["feed_post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       discount_codes: {
         Row: {
           code: string
@@ -123,38 +208,129 @@ export type Database = {
           },
         ]
       }
+      events: {
+        Row: {
+          city: string
+          cover_image_url: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_datetime: string
+          id: string
+          name: string
+          sport: string | null
+          start_datetime: string
+          status: string
+          turf_id: string | null
+        }
+        Insert: {
+          city: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_datetime: string
+          id?: string
+          name: string
+          sport?: string | null
+          start_datetime: string
+          status?: string
+          turf_id?: string | null
+        }
+        Update: {
+          city?: string
+          cover_image_url?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_datetime?: string
+          id?: string
+          name?: string
+          sport?: string | null
+          start_datetime?: string
+          status?: string
+          turf_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_turf_id_fkey"
+            columns: ["turf_id"]
+            isOneToOne: false
+            referencedRelation: "turfs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feed_posts: {
         Row: {
           caption: string | null
+          comments_count: number | null
           created_at: string | null
+          event_id: string | null
+          highlight_type: string | null
           id: string
+          is_trending: boolean | null
           likes: number | null
           match_id: string | null
           media_url: string | null
+          player_id: string | null
           post_type: Database["public"]["Enums"]["post_type"] | null
+          shares: number | null
+          trending_score: number | null
           user_id: string | null
+          views: number | null
         }
         Insert: {
           caption?: string | null
+          comments_count?: number | null
           created_at?: string | null
+          event_id?: string | null
+          highlight_type?: string | null
           id?: string
+          is_trending?: boolean | null
           likes?: number | null
           match_id?: string | null
           media_url?: string | null
+          player_id?: string | null
           post_type?: Database["public"]["Enums"]["post_type"] | null
+          shares?: number | null
+          trending_score?: number | null
           user_id?: string | null
+          views?: number | null
         }
         Update: {
           caption?: string | null
+          comments_count?: number | null
           created_at?: string | null
+          event_id?: string | null
+          highlight_type?: string | null
           id?: string
+          is_trending?: boolean | null
           likes?: number | null
           match_id?: string | null
           media_url?: string | null
+          player_id?: string | null
           post_type?: Database["public"]["Enums"]["post_type"] | null
+          shares?: number | null
+          trending_score?: number | null
           user_id?: string | null
+          views?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "feed_posts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "feed_posts_match_id_fkey"
             columns: ["match_id"]
@@ -163,7 +339,96 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "feed_posts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "feed_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follows: {
+        Row: {
+          created_at: string | null
+          followed_player_id: string | null
+          followed_turf_id: string | null
+          follower_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          followed_player_id?: string | null
+          followed_turf_id?: string | null
+          follower_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          followed_player_id?: string | null
+          followed_turf_id?: string | null
+          follower_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_followed_player_id_fkey"
+            columns: ["followed_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_followed_turf_id_fkey"
+            columns: ["followed_turf_id"]
+            isOneToOne: false
+            referencedRelation: "turfs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      likes: {
+        Row: {
+          created_at: string | null
+          feed_post_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          feed_post_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          feed_post_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_feed_post_id_fkey"
+            columns: ["feed_post_id"]
+            isOneToOne: false
+            referencedRelation: "feed_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "likes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
