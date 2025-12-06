@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
-import { TimeSlotPicker } from "@/components/TimeSlotPicker";
+import { CalendarSlotPicker } from "@/components/CalendarSlotPicker";
 
 const skillLevels = [
   { value: "beginner", label: "Beginner" },
@@ -26,13 +27,13 @@ export default function HostMatch() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [submitting, setSubmitting] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedTime, setSelectedTime] = useState<string>("");
+  const [duration, setDuration] = useState<number>(60);
   const [formData, setFormData] = useState({
     match_name: "",
     sport: "Football",
     turf_id: searchParams.get("turf") || "",
-    match_date: "",
-    match_time: "",
-    duration_minutes: 60,
     visibility: "public",
     required_skill_min: "beginner",
     required_skill_max: "advanced",
@@ -61,6 +62,11 @@ export default function HostMatch() {
     e.preventDefault();
     if (!user) return;
 
+    if (!selectedTime) {
+      toast.error("Please select a time slot");
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Create match
@@ -70,9 +76,9 @@ export default function HostMatch() {
           match_name: formData.match_name,
           sport: formData.sport,
           turf_id: formData.turf_id || null,
-          match_date: formData.match_date,
-          match_time: formData.match_time,
-          duration_minutes: formData.duration_minutes,
+          match_date: format(selectedDate, "yyyy-MM-dd"),
+          match_time: selectedTime,
+          duration_minutes: duration,
           visibility: formData.visibility as "public" | "private",
           required_skill_min: formData.required_skill_min as "beginner" | "intermediate" | "advanced",
           required_skill_max: formData.required_skill_max as "beginner" | "intermediate" | "advanced",
@@ -182,16 +188,17 @@ export default function HostMatch() {
                   </div>
                 </div>
 
-                {/* Time Slot Picker */}
-                <div className="border rounded-lg p-4 bg-muted/30">
-                  <TimeSlotPicker
-                    turfId={formData.turf_id}
-                    selectedDate={formData.match_date}
-                    selectedTime={formData.match_time}
-                    duration={formData.duration_minutes}
-                    onDateChange={(date) => setFormData({ ...formData, match_date: date })}
-                    onTimeChange={(time) => setFormData({ ...formData, match_time: time })}
-                    onDurationChange={(duration) => setFormData({ ...formData, duration_minutes: duration })}
+                {/* Calendar Slot Picker */}
+                <div className="space-y-2">
+                  <Label>Select Date & Time Slot *</Label>
+                  <CalendarSlotPicker
+                    turfId={formData.turf_id || null}
+                    selectedDate={selectedDate}
+                    selectedTime={selectedTime}
+                    duration={duration}
+                    onDateChange={setSelectedDate}
+                    onTimeChange={setSelectedTime}
+                    onDurationChange={setDuration}
                   />
                 </div>
 

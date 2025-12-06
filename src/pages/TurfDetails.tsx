@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,12 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { MapPin, IndianRupee, ArrowLeft, Calendar, Users, Clock, Phone, Star } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { MapPin, IndianRupee, ArrowLeft, Calendar, Users, Clock, Phone, Star, CreditCard } from "lucide-react";
+import { TurfBookingDialog } from "@/components/TurfBookingDialog";
 
 export default function TurfDetails() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   const { data: turf, isLoading } = useQuery({
     queryKey: ["turf", id],
@@ -163,6 +167,32 @@ export default function TurfDetails() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Book Turf Card */}
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-6">
+                <h3 className="font-semibold mb-2 flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  Book This Turf
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Reserve your slot and pay securely online.
+                </p>
+                <div className="flex items-center justify-between mb-4 p-3 bg-background rounded-lg">
+                  <span className="text-sm text-muted-foreground">Starting at</span>
+                  <span className="text-xl font-bold text-primary">₹{turf.price_per_hour}/hr</span>
+                </div>
+                {user ? (
+                  <Button className="w-full" size="lg" onClick={() => setBookingOpen(true)}>
+                    Book Now
+                  </Button>
+                ) : (
+                  <Link to="/auth">
+                    <Button className="w-full" size="lg">Sign In to Book</Button>
+                  </Link>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-4">Host a Match Here</h3>
@@ -171,11 +201,11 @@ export default function TurfDetails() {
                 </p>
                 {user ? (
                   <Link to={`/host-match?turf=${turf.id}`}>
-                    <Button className="w-full">Host a Match</Button>
+                    <Button className="w-full" variant="outline">Host a Match</Button>
                   </Link>
                 ) : (
                   <Link to="/auth">
-                    <Button className="w-full">Sign In to Host</Button>
+                    <Button className="w-full" variant="outline">Sign In to Host</Button>
                   </Link>
                 )}
               </CardContent>
@@ -203,6 +233,16 @@ export default function TurfDetails() {
           </div>
         </div>
       </div>
+
+      {/* Booking Dialog */}
+      <TurfBookingDialog
+        open={bookingOpen}
+        onOpenChange={setBookingOpen}
+        turf={turf}
+        onBookingComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ["turf-bookings"] });
+        }}
+      />
     </Layout>
   );
 }

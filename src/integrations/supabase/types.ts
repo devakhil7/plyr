@@ -316,6 +316,79 @@ export type Database = {
         }
         Relationships: []
       }
+      turf_bookings: {
+        Row: {
+          amount_paid: number
+          booking_date: string
+          created_at: string
+          duration_minutes: number
+          end_time: string
+          id: string
+          match_id: string | null
+          payment_id: string | null
+          payment_status: string
+          razorpay_order_id: string | null
+          start_time: string
+          turf_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number
+          booking_date: string
+          created_at?: string
+          duration_minutes?: number
+          end_time: string
+          id?: string
+          match_id?: string | null
+          payment_id?: string | null
+          payment_status?: string
+          razorpay_order_id?: string | null
+          start_time: string
+          turf_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          booking_date?: string
+          created_at?: string
+          duration_minutes?: number
+          end_time?: string
+          id?: string
+          match_id?: string | null
+          payment_id?: string | null
+          payment_status?: string
+          razorpay_order_id?: string | null
+          start_time?: string
+          turf_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "turf_bookings_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turf_bookings_turf_id_fkey"
+            columns: ["turf_id"]
+            isOneToOne: false
+            referencedRelation: "turfs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turf_bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       turfs: {
         Row: {
           city: string
