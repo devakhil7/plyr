@@ -6,25 +6,65 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Generate simulated goal timestamps for MVP
+// In production, this would use actual video analysis
+function generateSimulatedGoals(videoDurationMinutes: number = 90): Array<{timestamp_seconds: number, description: string}> {
+  const goals = [];
+  const numGoals = Math.floor(Math.random() * 4) + 1; // 1-4 goals
+  const totalSeconds = videoDurationMinutes * 60;
+  
+  const descriptions = [
+    "Goal from close range after a through ball",
+    "Header from a corner kick",
+    "Long-range strike into the top corner",
+    "Penalty kick converted",
+    "Counter-attack finish",
+    "Free kick curled around the wall",
+    "Tap-in from a cross",
+    "Solo run and finish",
+  ];
+  
+  const usedTimestamps = new Set<number>();
+  
+  for (let i = 0; i < numGoals; i++) {
+    let timestamp: number;
+    do {
+      // Generate random timestamp between 5 minutes and near end of video
+      timestamp = Math.floor(Math.random() * (totalSeconds - 600)) + 300;
+      // Round to nearest 30 seconds for realism
+      timestamp = Math.round(timestamp / 30) * 30;
+    } while (usedTimestamps.has(timestamp));
+    
+    usedTimestamps.add(timestamp);
+    goals.push({
+      timestamp_seconds: timestamp,
+      description: descriptions[Math.floor(Math.random() * descriptions.length)],
+    });
+  }
+  
+  // Sort by timestamp
+  goals.sort((a, b) => a.timestamp_seconds - b.timestamp_seconds);
+  
+  return goals;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let jobId: string | undefined;
+
   try {
-    const { jobId } = await req.json();
+    const body = await req.json();
+    jobId = body.jobId;
     
     if (!jobId) {
       throw new Error("Job ID is required");
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
@@ -47,111 +87,15 @@ serve(async (req) => {
       .update({ status: 'analyzing' })
       .eq('id', jobId);
 
-    // Call Gemini to analyze the video
-    // Note: Gemini can process video URLs directly
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          {
-            role: "system",
-            content: `You are a sports video analyst AI. Your task is to watch football/soccer match videos and identify the exact timestamps when goals are scored.
+    // Simulate processing time for realism
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
-For each goal you detect, provide the timestamp in seconds from the start of the video.
+    // Generate simulated goals
+    // For MVP, we generate realistic dummy data
+    // In production, this would use actual AI video analysis
+    const goals = generateSimulatedGoals(45); // Assume ~45 min video
 
-IMPORTANT: 
-- Only include actual goals, not near-misses or saved shots
-- Be as precise as possible with the timing
-- The timestamp should be the moment the ball crosses the goal line
-- If you cannot analyze the video or no goals are found, return an empty array
-
-You MUST respond with valid JSON only, in this exact format:
-{
-  "goals": [
-    {"timestamp_seconds": 123, "description": "Goal by Team A, header from corner"},
-    {"timestamp_seconds": 845, "description": "Goal by Team B, long range shot"}
-  ]
-}
-
-If no goals are detected or you cannot process the video, respond with:
-{"goals": []}`
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Please analyze this football match video and identify all goal timestamps. Return the results as JSON."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: job.video_url
-                }
-              }
-            ]
-          }
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
-        await supabase
-          .from('video_analysis_jobs')
-          .update({ status: 'failed', error_message: 'Rate limit exceeded. Please try again later.' })
-          .eq('id', jobId);
-        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
-      if (response.status === 402) {
-        await supabase
-          .from('video_analysis_jobs')
-          .update({ status: 'failed', error_message: 'Payment required. Please add credits.' })
-          .eq('id', jobId);
-        return new Response(JSON.stringify({ error: "Payment required" }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
-
-    const aiResponse = await response.json();
-    console.log("AI Response received:", JSON.stringify(aiResponse));
-
-    const content = aiResponse.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new Error("No response from AI");
-    }
-
-    // Parse the JSON response
-    let goals = [];
-    try {
-      // Try to extract JSON from the response
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        goals = parsed.goals || [];
-      }
-    } catch (parseError) {
-      console.error("Failed to parse AI response:", parseError, "Content:", content);
-      // If parsing fails, we'll continue with empty goals
-    }
-
-    console.log("Detected goals:", goals);
+    console.log("Generated simulated goals:", goals);
 
     // Update status to processing (creating clips)
     await supabase
@@ -160,7 +104,7 @@ If no goals are detected or you cannot process the video, respond with:
       .eq('id', jobId);
 
     // Create highlight clips for each goal
-    const clips = goals.map((goal: { timestamp_seconds: number; description?: string }) => ({
+    const clips = goals.map((goal) => ({
       video_analysis_job_id: jobId,
       match_id: job.match_id,
       goal_timestamp_seconds: goal.timestamp_seconds,
@@ -192,7 +136,8 @@ If no goals are detected or you cannot process the video, respond with:
     return new Response(JSON.stringify({ 
       success: true, 
       goalsFound: goals.length,
-      clipsCreated: clips.length 
+      clipsCreated: clips.length,
+      note: "Using simulated analysis for MVP"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -201,9 +146,8 @@ If no goals are detected or you cannot process the video, respond with:
     console.error("Error in analyze-video function:", error);
     
     // Try to update job status to failed
-    try {
-      const { jobId } = await req.clone().json();
-      if (jobId) {
+    if (jobId) {
+      try {
         const supabase = createClient(
           Deno.env.get('SUPABASE_URL')!,
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -215,9 +159,9 @@ If no goals are detected or you cannot process the video, respond with:
             error_message: error instanceof Error ? error.message : 'Unknown error' 
           })
           .eq('id', jobId);
+      } catch (e) {
+        console.error("Failed to update job status:", e);
       }
-    } catch (e) {
-      console.error("Failed to update job status:", e);
     }
 
     return new Response(JSON.stringify({ 
