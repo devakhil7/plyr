@@ -20,6 +20,7 @@ import {
   Calendar, ChevronLeft, ChevronRight, Building, Eye, Power
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GooglePlacesAutocomplete } from "@/components/GooglePlacesAutocomplete";
 
 const TABS = ["overview", "turfs", "users", "matches"] as const;
 type TabType = typeof TABS[number];
@@ -591,6 +592,8 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
     name: "",
     location: "",
     city: "",
+    latitude: null as number | null,
+    longitude: null as number | null,
     price_per_hour: 1000,
     sport_type: "Football",
     description: "",
@@ -606,13 +609,24 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
       if (error) throw error;
       toast.success("Turf added!");
       setOpen(false);
-      setForm({ name: "", location: "", city: "", price_per_hour: 1000, sport_type: "Football", description: "", owner_contact: "", owner_email: "" });
+      setForm({ name: "", location: "", city: "", latitude: null, longitude: null, price_per_hour: 1000, sport_type: "Football", description: "", owner_contact: "", owner_email: "" });
       onSuccess();
     } catch (err: any) {
       toast.error(err.message || "Failed to add turf");
     } finally {
       setSaving(false);
     }
+  };
+
+  const handlePlaceSelect = (place: { name: string; address: string; city: string; latitude: number; longitude: number }) => {
+    setForm({
+      ...form,
+      name: form.name || place.name,
+      location: place.address,
+      city: place.city || form.city,
+      latitude: place.latitude,
+      longitude: place.longitude,
+    });
   };
 
   return (
@@ -625,19 +639,28 @@ function AddTurfDialog({ users, onSuccess }: { users: any[]; onSuccess: () => vo
           <DialogTitle>Add New Turf</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Search Location (Google Maps) *</Label>
+            <GooglePlacesAutocomplete
+              value={form.location}
+              onChange={handlePlaceSelect}
+              placeholder="Search for turf location..."
+            />
+            {form.latitude && form.longitude && (
+              <p className="text-xs text-muted-foreground">
+                📍 Coordinates: {form.latitude.toFixed(6)}, {form.longitude.toFixed(6)}
+              </p>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Name *</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <Label>Turf Name *</Label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder="e.g., LaunchPad Sports Arena" />
             </div>
             <div className="space-y-2">
               <Label>City *</Label>
-              <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required />
+              <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required placeholder="Auto-filled from map" />
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Location *</Label>
-            <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} required />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
