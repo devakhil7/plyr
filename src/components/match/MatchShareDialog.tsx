@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Share2, Copy, Check, MessageCircle } from "lucide-react";
+import { Share2, Copy, Check, MessageCircle, Twitter, Send, Share } from "lucide-react";
 
 interface MatchShareDialogProps {
   matchId: string;
@@ -25,6 +25,7 @@ export function MatchShareDialog({
 
   const matchUrl = `${window.location.origin}/matches/${matchId}`;
   const shareText = `🎮 Join my match: ${matchName}\n📅 ${matchDate} at ${matchTime}\n📍 ${turfName}\n\nJoin here: ${matchUrl}`;
+  const shortShareText = `Join my match "${matchName}" on ${matchDate} at ${matchTime} - ${turfName}`;
 
   const handleCopy = async () => {
     try {
@@ -42,22 +43,48 @@ export function MatchShareDialog({
     window.open(whatsappUrl, '_blank');
   };
 
+  const handleTwitterShare = () => {
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shortShareText)}&url=${encodeURIComponent(matchUrl)}`;
+    window.open(twitterUrl, '_blank');
+  };
+
+  const handleTelegramShare = () => {
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(matchUrl)}&text=${encodeURIComponent(shortShareText)}`;
+    window.open(telegramUrl, '_blank');
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: matchName,
+          text: shortShareText,
+          url: matchUrl,
+        });
+      } catch (err) {
+        // User cancelled or error
+      }
+    } else {
+      handleCopy();
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Share2 className="h-4 w-4 mr-2" />
-          Share Match
+          Share
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Share Match</DialogTitle>
+          <DialogTitle>Share Match Link</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
-            <p className="text-sm font-medium mb-2">{matchName}</p>
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <p className="text-sm font-medium mb-1">{matchName}</p>
             <p className="text-xs text-muted-foreground">
               {matchDate} at {matchTime} • {turfName}
             </p>
@@ -65,19 +92,35 @@ export function MatchShareDialog({
 
           {/* Copy Link */}
           <div className="flex gap-2">
-            <Input value={matchUrl} readOnly className="flex-1 text-sm" />
+            <Input value={matchUrl} readOnly className="flex-1 text-sm bg-background" />
             <Button variant="outline" size="icon" onClick={handleCopy}>
               {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
 
           {/* Share Buttons */}
-          <div className="flex gap-2">
-            <Button onClick={handleWhatsAppShare} className="flex-1 bg-green-600 hover:bg-green-700">
+          <div className="grid grid-cols-2 gap-2">
+            <Button onClick={handleWhatsAppShare} className="bg-green-600 hover:bg-green-700">
               <MessageCircle className="h-4 w-4 mr-2" />
-              Share on WhatsApp
+              WhatsApp
+            </Button>
+            <Button onClick={handleTelegramShare} className="bg-blue-500 hover:bg-blue-600">
+              <Send className="h-4 w-4 mr-2" />
+              Telegram
+            </Button>
+            <Button onClick={handleTwitterShare} variant="outline">
+              <Twitter className="h-4 w-4 mr-2" />
+              Twitter
+            </Button>
+            <Button onClick={handleNativeShare} variant="outline">
+              <Share className="h-4 w-4 mr-2" />
+              More
             </Button>
           </div>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Anyone with the link can view and join this match
+          </p>
         </div>
       </DialogContent>
     </Dialog>
