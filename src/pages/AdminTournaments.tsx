@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -20,7 +19,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Trophy, Plus, Edit, Users, Calendar, MapPin, IndianRupee, ArrowLeft } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Trophy, Plus, Edit, Users, Trash2, IndianRupee, ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { AdminTournamentForm } from "@/components/tournaments/AdminTournamentForm";
@@ -31,7 +41,26 @@ export default function AdminTournaments() {
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingTeamsFor, setViewingTeamsFor] = useState<any>(null);
+  const [deletingTournament, setDeletingTournament] = useState<any>(null);
   const { isAdmin } = useUserRoles();
+  const queryClient = useQueryClient();
+
+  const handleDelete = async () => {
+    if (!deletingTournament) return;
+    
+    const { error } = await supabase
+      .from("tournaments")
+      .delete()
+      .eq("id", deletingTournament.id);
+
+    if (error) {
+      toast.error("Failed to delete tournament: " + error.message);
+    } else {
+      toast.success("Tournament deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["admin-tournaments"] });
+    }
+    setDeletingTournament(null);
+  };
 
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ["admin-tournaments"],
@@ -225,13 +254,23 @@ export default function AdminTournaments() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingId(tournament.id)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingId(tournament.id)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeletingTournament(tournament)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -241,6 +280,24 @@ export default function AdminTournaments() {
             )}
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deletingTournament} onOpenChange={() => setDeletingTournament(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Tournament</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{deletingTournament?.name}"? This action cannot be undone and will remove all associated teams and registrations.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
