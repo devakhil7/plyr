@@ -14,10 +14,9 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Home", href: "/" },
+  { name: "Feed", href: "/feed" },
   { name: "Matches", href: "/matches" },
   { name: "Turfs", href: "/turfs" },
-  { name: "Feed", href: "/feed" },
 ];
 
 export function Navbar() {
