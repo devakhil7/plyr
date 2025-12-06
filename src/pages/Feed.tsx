@@ -4,176 +4,234 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Heart, MessageCircle, Play, Trophy } from "lucide-react";
-import { toast } from "sonner";
+import { useFeed, useEventBookmark } from "@/hooks/useFeed";
+import { FeedTabs } from "@/components/feed/FeedTabs";
+import { FeedFilters } from "@/components/feed/FeedFilters";
+import { PlayerHighlightCard } from "@/components/feed/PlayerHighlightCard";
+import { MatchHighlightCard } from "@/components/feed/MatchHighlightCard";
+import { EventCard } from "@/components/feed/EventCard";
+import { CommentsDialog } from "@/components/feed/CommentsDialog";
+import { Trophy, Sparkles, Users, Calendar } from "lucide-react";
+
+type FeedTab = "for-you" | "following" | "nearby" | "events";
+type FilterChip = "all" | "player" | "match" | "events" | "trending";
 
 export default function Feed() {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const { user, profile } = useAuth();
+  const [activeTab, setActiveTab] = useState<FeedTab>("for-you");
+  const [activeFilter, setActiveFilter] = useState<FilterChip>("all");
+  const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
 
-  const { data: posts, isLoading } = useQuery({
-    queryKey: ["feed-posts"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("feed_posts")
-        .select(`
-          *,
-          profiles(name, profile_photo_url),
-          matches(match_name, team_a_score, team_b_score, turfs(name))
-        `)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      return data || [];
-    },
+  const userCity = profile?.city || null;
+
+  const { 
+    posts, 
+    events, 
+    isLoading, 
+    userLikes, 
+    likeMutation, 
+    shareMutation 
+  } = useFeed({
+    tab: activeTab,
+    filter: activeFilter,
+    userId: user?.id || null,
+    userCity,
   });
 
-  const likeMutation = useMutation({
-    mutationFn: async (postId: string) => {
-      const post = posts?.find((p: any) => p.id === postId);
-      if (!post) return;
-      
-      const { error } = await supabase
-        .from("feed_posts")
-        .update({ likes: (post.likes || 0) + 1 })
-        .eq("id", postId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
-    },
-    onError: () => {
-      toast.error("Failed to like post");
-    },
-  });
+  const { bookmarks, toggleBookmark } = useEventBookmark(user?.id || null);
+
+  const handleTabChange = (tab: FeedTab) => {
+    setActiveTab(tab);
+    // Reset filter when switching tabs
+    if (tab === "events") {
+      setActiveFilter("events");
+    } else if (activeFilter === "events") {
+      setActiveFilter("all");
+    }
+  };
+
+  const renderEmptyState = () => {
+    const emptyStates = {
+      "for-you": {
+        icon: Sparkles,
+        title: "Your personalized feed is empty",
+        description: "Follow players and turfs to see highlights here, or explore trending content.",
+      },
+      following: {
+        icon: Users,
+        title: "Not following anyone yet",
+        description: "Follow players and turfs to see their highlights in your feed.",
+      },
+      nearby: {
+        icon: Trophy,
+        title: "No nearby highlights",
+        description: "There are no recent highlights from your area. Update your city in your profile.",
+      },
+      events: {
+        icon: Calendar,
+        title: "No upcoming events",
+        description: "Check back later for sports events in your area.",
+      },
+    };
+
+    const state = emptyStates[activeTab];
+    const Icon = state.icon;
+
+    return (
+      <Card>
+        <CardContent className="p-12 text-center">
+          <Icon className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+          <h3 className="text-lg font-semibold mb-2">{state.title}</h3>
+          <p className="text-muted-foreground mb-6">{state.description}</p>
+          <Link to="/matches">
+            <Button>Browse Matches</Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderPosts = () => {
+    if (!posts || posts.length === 0) {
+      if (activeTab !== "events" && activeFilter !== "events") {
+        return renderEmptyState();
+      }
+      return null;
+    }
+
+    return posts.map((post: any) => {
+      const isLiked = userLikes.includes(post.id);
+      const highlightType = post.highlight_type || "other";
+
+      if (highlightType === "player") {
+        return (
+          <PlayerHighlightCard
+            key={post.id}
+            post={{
+              ...post,
+              profiles: post.player || post.profiles,
+            }}
+            isLiked={isLiked}
+            onLike={() => likeMutation.mutate(post.id)}
+            onComment={() => setCommentsPostId(post.id)}
+            onShare={() => shareMutation.mutate(post.id)}
+            userId={user?.id || null}
+          />
+        );
+      }
+
+      if (highlightType === "match") {
+        return (
+          <MatchHighlightCard
+            key={post.id}
+            post={post}
+            isLiked={isLiked}
+            onLike={() => likeMutation.mutate(post.id)}
+            onComment={() => setCommentsPostId(post.id)}
+            onShare={() => shareMutation.mutate(post.id)}
+            userId={user?.id || null}
+          />
+        );
+      }
+
+      // Default card for "other" types
+      return (
+        <MatchHighlightCard
+          key={post.id}
+          post={post}
+          isLiked={isLiked}
+          onLike={() => likeMutation.mutate(post.id)}
+          onComment={() => setCommentsPostId(post.id)}
+          onShare={() => shareMutation.mutate(post.id)}
+          userId={user?.id || null}
+        />
+      );
+    });
+  };
+
+  const renderEvents = () => {
+    if (!events || events.length === 0) {
+      if (activeTab === "events" || activeFilter === "events") {
+        return renderEmptyState();
+      }
+      return null;
+    }
+
+    return events.map((event: any) => (
+      <EventCard
+        key={event.id}
+        event={event}
+        isBookmarked={bookmarks.includes(event.id)}
+        onBookmark={() => toggleBookmark.mutate(event.id)}
+        userId={user?.id || null}
+      />
+    ));
+  };
+
+  const showEvents = activeTab === "events" || activeFilter === "events";
+  const showPosts = !showEvents;
 
   return (
     <Layout>
-      <div className="container-app py-8">
+      <div className="container-app py-6">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6">
             <h1 className="text-3xl font-bold mb-2">Community Feed</h1>
-            <p className="text-muted-foreground">Match highlights and updates from the SPORTIQ community</p>
+            <p className="text-muted-foreground">
+              Highlights, matches, and events from the SPORTIQ community
+            </p>
           </div>
 
-          {/* Posts */}
+          {/* Tabs */}
+          <div className="mb-4">
+            <FeedTabs activeTab={activeTab} onTabChange={handleTabChange} />
+          </div>
+
+          {/* Filters */}
+          {activeTab !== "events" && (
+            <div className="mb-6">
+              <FeedFilters activeFilter={activeFilter} onFilterChange={setActiveFilter} />
+            </div>
+          )}
+
+          {/* Content */}
           {isLoading ? (
             <div className="space-y-6">
-              {[...Array(3)].map((_, i) => (
+              {[1, 2, 3].map((i) => (
                 <Card key={i} className="animate-pulse">
                   <CardContent className="p-6">
-                    <div className="h-6 bg-muted rounded w-3/4 mb-4" />
-                    <div className="h-40 bg-muted rounded mb-4" />
-                    <div className="h-4 bg-muted rounded w-1/2" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : posts && posts.length > 0 ? (
-            <div className="space-y-6">
-              {posts.map((post: any) => (
-                <Card key={post.id} className="overflow-hidden">
-                  {/* Post Header */}
-                  <div className="flex items-center gap-3 p-4 border-b border-border">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                      {post.profiles?.name?.charAt(0) || "S"}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{post.profiles?.name || "SPORTIQ"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(post.created_at).toLocaleDateString("en-IN", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                    {post.post_type === "highlight" && (
-                      <div className="flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-1 rounded-full">
-                        <Trophy className="h-3 w-3" />
-                        Highlight
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-full bg-muted" />
+                      <div className="flex-1">
+                        <div className="h-4 bg-muted rounded w-1/3 mb-2" />
+                        <div className="h-3 bg-muted rounded w-1/4" />
                       </div>
-                    )}
-                  </div>
-
-                  {/* Media Preview */}
-                  <div className="aspect-video bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center relative">
-                    {post.matches && post.matches.team_a_score !== null && (
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground mb-2">Final Score</p>
-                        <div className="flex items-center gap-4 text-4xl font-bold">
-                          <span>{post.matches.team_a_score}</span>
-                          <span className="text-muted-foreground text-2xl">-</span>
-                          <span>{post.matches.team_b_score}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {post.matches.match_name}
-                        </p>
-                      </div>
-                    )}
-                    <Button
-                      variant="glass"
-                      size="icon"
-                      className="absolute bottom-4 right-4 rounded-full"
-                    >
-                      <Play className="h-5 w-5" />
-                    </Button>
-                  </div>
-
-                  {/* Caption */}
-                  <CardContent className="p-4">
-                    <p className="text-sm mb-3">{post.caption}</p>
-                    
-                    {post.matches?.turfs?.name && (
-                      <p className="text-xs text-muted-foreground mb-3">
-                        📍 {post.matches.turfs.name}
-                      </p>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-4 pt-3 border-t border-border">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => user && likeMutation.mutate(post.id)}
-                        disabled={!user || likeMutation.isPending}
-                      >
-                        <Heart className={`h-4 w-4 ${post.likes > 0 ? "fill-destructive text-destructive" : ""}`} />
-                        <span>{post.likes || 0}</span>
-                      </Button>
-                      {post.match_id && (
-                        <Link to={`/matches/${post.match_id}`}>
-                          <Button variant="ghost" size="sm" className="gap-2">
-                            <MessageCircle className="h-4 w-4" />
-                            View Match
-                          </Button>
-                        </Link>
-                      )}
                     </div>
+                    <div className="h-48 bg-muted rounded mb-4" />
+                    <div className="h-4 bg-muted rounded w-2/3" />
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-                <h3 className="text-lg font-semibold mb-2">No posts yet</h3>
-                <p className="text-muted-foreground mb-6">
-                  Match highlights will appear here when games are completed with analytics
-                </p>
-                <Link to="/matches">
-                  <Button>Browse Matches</Button>
-                </Link>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              {showPosts && renderPosts()}
+              {showEvents && renderEvents()}
+            </div>
           )}
         </div>
       </div>
+
+      {/* Comments Dialog */}
+      {commentsPostId && (
+        <CommentsDialog
+          postId={commentsPostId}
+          isOpen={!!commentsPostId}
+          onClose={() => setCommentsPostId(null)}
+          userId={user?.id || null}
+        />
+      )}
     </Layout>
   );
 }
