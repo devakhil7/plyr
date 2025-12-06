@@ -72,11 +72,13 @@ serve(async (req) => {
       throw new Error("This slot is already booked");
     }
 
-    // Create Razorpay order
+    // Create Razorpay order - receipt must be <= 40 chars
+    const shortId = body.turf_id.slice(0, 8);
+    const timestamp = Date.now().toString().slice(-10);
     const orderData = {
       amount: Math.round(body.amount * 100), // Razorpay expects amount in paise
       currency: "INR",
-      receipt: `turf_${body.turf_id}_${Date.now()}`,
+      receipt: `t_${shortId}_${timestamp}`, // Max 40 chars
       notes: {
         turf_id: body.turf_id,
         user_id: user.id,
