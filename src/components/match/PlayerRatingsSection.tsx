@@ -10,6 +10,31 @@ import { Star, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { containsProfanity } from "@/lib/profanityFilter";
 
+const RATING_ATTRIBUTES = [
+  { key: "rating", label: "Overall" },
+  { key: "passing", label: "Passing" },
+  { key: "shooting", label: "Shooting" },
+  { key: "dribbling", label: "Dribbling" },
+  { key: "ball_control", label: "Ball Control" },
+  { key: "finishing", label: "Finishing" },
+  { key: "defending", label: "Defending" },
+  { key: "pace", label: "Pace" },
+] as const;
+
+type RatingAttribute = typeof RATING_ATTRIBUTES[number]["key"];
+
+interface PlayerRatings {
+  rating: number;
+  passing: number;
+  shooting: number;
+  dribbling: number;
+  ball_control: number;
+  finishing: number;
+  defending: number;
+  pace: number;
+  comment: string;
+}
+
 interface PlayerRatingsSectionProps {
   matchId: string;
   userId: string | null;
@@ -23,9 +48,59 @@ interface PlayerRatingsSectionProps {
   }>;
 }
 
+const defaultRatings: PlayerRatings = {
+  rating: 0,
+  passing: 0,
+  shooting: 0,
+  dribbling: 0,
+  ball_control: 0,
+  finishing: 0,
+  defending: 0,
+  pace: 0,
+  comment: "",
+};
+
+function AttributeRating({
+  label,
+  value,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 py-1">
+      <span className="text-sm text-muted-foreground w-24">{label}</span>
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star)}
+            className="p-0.5 hover:scale-110 transition-transform disabled:cursor-not-allowed"
+            disabled={disabled}
+          >
+            <Star
+              className={cn(
+                "h-4 w-4 transition-colors",
+                star <= value
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-muted-foreground/40"
+              )}
+            />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function PlayerRatingsSection({ matchId, userId, players }: PlayerRatingsSectionProps) {
   const queryClient = useQueryClient();
-  const [ratings, setRatings] = useState<Record<string, { rating: number; comment: string }>>({});
+  const [ratings, setRatings] = useState<Record<string, PlayerRatings>>({});
 
   const { data: existingRatings = [] } = useQuery({
     queryKey: ["player-ratings", matchId, userId],
@@ -42,18 +117,24 @@ export function PlayerRatingsSection({ matchId, userId, players }: PlayerRatings
   });
 
   const submitRating = useMutation({
-    mutationFn: async ({ playerId, rating, comment }: { playerId: string; rating: number; comment: string }) => {
+    mutationFn: async ({ playerId, playerRatings }: { playerId: string; playerRatings: PlayerRatings }) => {
       if (!userId) throw new Error("Not authenticated");
 
-      // Check for profanity
-      const isFlagged = containsProfanity(comment);
+      const isFlagged = containsProfanity(playerRatings.comment);
 
       const { error } = await supabase.from("player_ratings").upsert({
         match_id: matchId,
         rater_user_id: userId,
         rated_user_id: playerId,
-        rating,
-        comment: comment || null,
+        rating: playerRatings.rating,
+        passing: playerRatings.passing,
+        shooting: playerRatings.shooting,
+        dribbling: playerRatings.dribbling,
+        ball_control: playerRatings.ball_control,
+        finishing: playerRatings.finishing,
+        defending: playerRatings.defending,
+        pace: playerRatings.pace,
+        comment: playerRatings.comment || null,
         is_flagged: isFlagged,
         moderation_status: isFlagged ? 'pending' : 'approved',
       }, {
@@ -78,31 +159,60 @@ export function PlayerRatingsSection({ matchId, userId, players }: PlayerRatings
   const otherPlayers = players.filter(p => p.user_id !== userId);
   const ratedPlayerIds = existingRatings.map(r => r.rated_user_id);
 
-  const handleRatingChange = (playerId: string, rating: number) => {
+  const handleAttributeChange = (playerId: string, attribute: RatingAttribute, value: number) => {
     setRatings(prev => ({
       ...prev,
-      [playerId]: { ...prev[playerId], rating, comment: prev[playerId]?.comment || "" }
+      [playerId]: {
+        ...defaultRatings,
+        ...prev[playerId],
+        [attribute]: value,
+      }
     }));
   };
 
   const handleCommentChange = (playerId: string, comment: string) => {
     setRatings(prev => ({
       ...prev,
-      [playerId]: { ...prev[playerId], comment, rating: prev[playerId]?.rating || 0 }
+      [playerId]: {
+        ...defaultRatings,
+        ...prev[playerId],
+        comment,
+      }
     }));
   };
 
   const handleSubmit = (playerId: string) => {
-    const playerRating = ratings[playerId];
-    if (!playerRating?.rating) {
-      toast.error("Please select a rating");
+    const playerRatings = ratings[playerId];
+    if (!playerRatings?.rating) {
+      toast.error("Please provide at least an Overall rating");
       return;
     }
-    submitRating.mutate({
-      playerId,
-      rating: playerRating.rating,
-      comment: playerRating.comment
-    });
+    submitRating.mutate({ playerId, playerRatings });
+  };
+
+  const getPlayerRatings = (playerId: string): PlayerRatings => {
+    const existing = existingRatings.find(r => r.rated_user_id === playerId);
+    const current = ratings[playerId];
+    
+    if (current) {
+      return current;
+    }
+    
+    if (existing) {
+      return {
+        rating: existing.rating || 0,
+        passing: existing.passing || 0,
+        shooting: existing.shooting || 0,
+        dribbling: existing.dribbling || 0,
+        ball_control: existing.ball_control || 0,
+        finishing: existing.finishing || 0,
+        defending: existing.defending || 0,
+        pace: existing.pace || 0,
+        comment: existing.comment || "",
+      };
+    }
+    
+    return defaultRatings;
   };
 
   if (otherPlayers.length === 0) {
@@ -121,13 +231,11 @@ export function PlayerRatingsSection({ matchId, userId, players }: PlayerRatings
         <div className="space-y-6">
           {otherPlayers.map((player) => {
             const isRated = ratedPlayerIds.includes(player.user_id);
-            const existingRating = existingRatings.find(r => r.rated_user_id === player.user_id);
-            const currentRating = ratings[player.user_id]?.rating || existingRating?.rating || 0;
-            const currentComment = ratings[player.user_id]?.comment || existingRating?.comment || "";
+            const playerRatings = getPlayerRatings(player.user_id);
 
             return (
               <div key={player.user_id} className="p-4 border rounded-lg">
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-3 mb-4">
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={player.profiles?.profile_photo_url || undefined} />
                     <AvatarFallback className="bg-primary/10 text-primary">
@@ -142,31 +250,22 @@ export function PlayerRatingsSection({ matchId, userId, players }: PlayerRatings
                   </div>
                 </div>
 
-                {/* Star Rating */}
-                <div className="flex gap-1 mb-3">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => handleRatingChange(player.user_id, star)}
-                      className="p-1 hover:scale-110 transition-transform"
+                {/* Attribute Ratings */}
+                <div className="space-y-1 mb-4">
+                  {RATING_ATTRIBUTES.map((attr) => (
+                    <AttributeRating
+                      key={attr.key}
+                      label={attr.label}
+                      value={playerRatings[attr.key]}
+                      onChange={(value) => handleAttributeChange(player.user_id, attr.key, value)}
                       disabled={isRated}
-                    >
-                      <Star
-                        className={cn(
-                          "h-6 w-6 transition-colors",
-                          star <= currentRating
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-muted-foreground"
-                        )}
-                      />
-                    </button>
+                    />
                   ))}
                 </div>
 
                 {/* Comment */}
                 <Textarea
-                  value={currentComment}
+                  value={playerRatings.comment}
                   onChange={(e) => handleCommentChange(player.user_id, e.target.value)}
                   placeholder="Add a comment (optional)..."
                   className="mb-3"

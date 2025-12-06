@@ -988,37 +988,58 @@ export type Database = {
       }
       player_ratings: {
         Row: {
+          ball_control: number | null
           comment: string | null
           created_at: string | null
+          defending: number | null
+          dribbling: number | null
+          finishing: number | null
           id: string
           is_flagged: boolean | null
           match_id: string
           moderation_status: string | null
+          pace: number | null
+          passing: number | null
           rated_user_id: string
           rater_user_id: string
           rating: number
+          shooting: number | null
         }
         Insert: {
+          ball_control?: number | null
           comment?: string | null
           created_at?: string | null
+          defending?: number | null
+          dribbling?: number | null
+          finishing?: number | null
           id?: string
           is_flagged?: boolean | null
           match_id: string
           moderation_status?: string | null
+          pace?: number | null
+          passing?: number | null
           rated_user_id: string
           rater_user_id: string
           rating: number
+          shooting?: number | null
         }
         Update: {
+          ball_control?: number | null
           comment?: string | null
           created_at?: string | null
+          defending?: number | null
+          dribbling?: number | null
+          finishing?: number | null
           id?: string
           is_flagged?: boolean | null
           match_id?: string
           moderation_status?: string | null
+          pace?: number | null
+          passing?: number | null
           rated_user_id?: string
           rater_user_id?: string
           rating?: number
+          shooting?: number | null
         }
         Relationships: [
           {
