@@ -1246,6 +1246,8 @@ export type Database = {
           entry_fee: number | null
           id: string
           max_players_per_team: number | null
+          max_playing_players: number | null
+          max_subs: number | null
           min_players_per_team: number | null
           name: string
           prize_details: string | null
@@ -1270,6 +1272,8 @@ export type Database = {
           entry_fee?: number | null
           id?: string
           max_players_per_team?: number | null
+          max_playing_players?: number | null
+          max_subs?: number | null
           min_players_per_team?: number | null
           name: string
           prize_details?: string | null
@@ -1294,6 +1298,8 @@ export type Database = {
           entry_fee?: number | null
           id?: string
           max_players_per_team?: number | null
+          max_playing_players?: number | null
+          max_subs?: number | null
           min_players_per_team?: number | null
           name?: string
           prize_details?: string | null
