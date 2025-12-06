@@ -56,7 +56,16 @@ export default function Tournaments() {
               Compete in organized sports events and win prizes
             </p>
           </div>
-          {isAdmin && <CreateTournamentDialog />}
+          {isAdmin && (
+            <div className="flex gap-2">
+              <CreateTournamentDialog />
+              <Link to="/admin/tournaments">
+                <Button variant="outline">
+                  Manage Tournaments
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
