@@ -30,10 +30,10 @@ serve(async (req) => {
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
-    if (!OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
@@ -87,16 +87,16 @@ Return your response as a JSON array with this exact format:
 Generate realistic timestamps between 5 minutes (300 seconds) and 85 minutes (5100 seconds).
 Only return the JSON array, no other text.`;
 
-    console.log("Calling OpenAI GPT-4 for analysis...");
+    console.log("Calling Gemini via Lovable AI for analysis...");
 
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const lovableResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'system',
@@ -107,21 +107,19 @@ Only return the JSON array, no other text.`;
             content: analysisPrompt
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.7,
       }),
     });
 
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text();
-      console.error("OpenAI API error:", openaiResponse.status, errorText);
-      throw new Error(`OpenAI API error: ${openaiResponse.status} - ${errorText}`);
+    if (!lovableResponse.ok) {
+      const errorText = await lovableResponse.text();
+      console.error("Lovable AI error:", lovableResponse.status, errorText);
+      throw new Error(`Lovable AI error: ${lovableResponse.status} - ${errorText}`);
     }
 
-    const openaiData = await openaiResponse.json();
-    console.log("OpenAI response received");
+    const aiData = await lovableResponse.json();
+    console.log("Gemini response received");
 
-    const responseContent = openaiData.choices[0]?.message?.content;
+    const responseContent = aiData.choices[0]?.message?.content;
     if (!responseContent) {
       throw new Error("No response content from OpenAI");
     }
@@ -189,7 +187,7 @@ Only return the JSON array, no other text.`;
       goalsFound: goals.length,
       clipsCreated: clips.length,
       goals: goals,
-      note: "Analysis powered by OpenAI GPT-4"
+      note: "Analysis powered by Gemini via Lovable AI"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
