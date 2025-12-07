@@ -26,22 +26,22 @@ async function analyzeWithAI(videoDuration: number): Promise<GoalDetection[]> {
 
   const analysisPrompt = `You are simulating a football/soccer video analysis system for a ${durationMinutes} minute (${Math.round(videoDuration)} second) match video.
 
-Based on typical football match patterns, generate realistic goal timestamps for this video. Consider:
-- This is a ${durationMinutes}-minute video, so it's likely a highlight reel or short match segment
-- Goals typically happen at varied intervals
-- For a video this length, there might be 2-5 goals
-- Space goals at least 30-60 seconds apart
+Based on typical football match patterns, generate realistic highlight timestamps for this video. Consider:
+- This is a ${durationMinutes}-minute video
+- Highlights include goals, near-misses, great saves, skillful plays, and exciting moments
+- For a video this length, generate 5-7 highlights
+- Space highlights at least 20-40 seconds apart
 
 RULES:
 - All timestamps MUST be between ${minTimestamp} and ${maxTimestamp} seconds
-- Generate 2-5 goal timestamps that feel natural for a ${durationMinutes}-minute football video
-- Each goal needs a unique description (left-foot shot, header, penalty, free-kick, volley, tap-in, long-range strike, etc.)
+- Generate exactly 5-7 highlight timestamps
+- Each highlight needs a unique description (e.g., "Powerful strike from distance", "Skillful dribble past defenders", "Diving save by goalkeeper", "Close-range header", "Through ball creates chance")
 
 Return ONLY a valid JSON array:
 [
   {
     "timestamp_seconds": <number between ${minTimestamp} and ${maxTimestamp}>,
-    "description": "Brief description of the goal type",
+    "description": "Brief description of the highlight",
     "confidence": "high"
   }
 ]`;
@@ -59,7 +59,7 @@ Return ONLY a valid JSON array:
       messages: [
         {
           role: 'system',
-          content: 'You are a football video analysis simulator. Generate realistic goal timestamps. Always respond with valid JSON only.'
+          content: 'You are a football video analysis simulator. Generate realistic highlight timestamps. Always respond with valid JSON only.'
         },
         {
           role: 'user',
@@ -166,21 +166,21 @@ serve(async (req) => {
       .eq('id', jobId);
 
     // Use AI-based analysis
-    const goals = await analyzeWithAI(videoDuration);
-    console.log(`Generated ${goals.length} goals:`, goals);
+    const highlights = await analyzeWithAI(videoDuration);
+    console.log(`Generated ${highlights.length} highlights:`, highlights);
 
     await supabase
       .from('video_analysis_jobs')
       .update({ status: 'processing', updated_at: new Date().toISOString() })
       .eq('id', jobId);
 
-    const clips = goals.map((goal, index) => ({
+    const clips = highlights.map((highlight, index) => ({
       video_analysis_job_id: jobId,
       match_id: job.match_id,
-      goal_timestamp_seconds: goal.timestamp_seconds,
-      start_time_seconds: Math.max(0, goal.timestamp_seconds - 10),
-      end_time_seconds: Math.min(videoDuration, goal.timestamp_seconds + 5),
-      caption: goal.description || `Goal at ${Math.floor(goal.timestamp_seconds / 60)}:${String(Math.round(goal.timestamp_seconds) % 60).padStart(2, '0')}`,
+      goal_timestamp_seconds: highlight.timestamp_seconds,
+      start_time_seconds: Math.max(0, highlight.timestamp_seconds - 10),
+      end_time_seconds: Math.min(videoDuration, highlight.timestamp_seconds + 5),
+      caption: `Highlight ${index + 1}: ${highlight.description}`,
       is_selected: true,
       clip_video_url: job.video_url,
     }));
@@ -206,9 +206,9 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        goals: goals,
+        highlights: highlights,
         clipsCreated: clips.length,
-        message: `Generated ${clips.length} highlight clips based on video duration analysis`
+        message: `Generated ${clips.length} highlight clips`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
