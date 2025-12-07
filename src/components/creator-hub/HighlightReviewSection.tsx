@@ -185,22 +185,17 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Use media fragment to specify clip portion
+  const clipUrl = `${videoUrl}#t=${clip.start_time_seconds},${clip.end_time_seconds}`;
+
   const handlePlayClip = async () => {
     if (videoRef.current) {
       try {
-        videoRef.current.currentTime = clip.start_time_seconds;
         await videoRef.current.play();
         setIsPlaying(true);
       } catch (error) {
         console.error("Error playing video:", error);
       }
-    }
-  };
-
-  const handleTimeUpdate = () => {
-    if (videoRef.current && videoRef.current.currentTime >= clip.end_time_seconds) {
-      videoRef.current.pause();
-      setIsPlaying(false);
     }
   };
 
@@ -216,10 +211,6 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
 
   const handleLoadedMetadata = () => {
     setIsLoaded(true);
-    // Set initial position to start of clip
-    if (videoRef.current) {
-      videoRef.current.currentTime = clip.start_time_seconds;
-    }
   };
 
   return (
@@ -252,11 +243,10 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
       <div className="relative aspect-video bg-black rounded overflow-hidden">
         <video
           ref={videoRef}
-          src={videoUrl}
+          src={clipUrl}
           className="w-full h-full object-contain cursor-pointer"
           preload="metadata"
           onLoadedMetadata={handleLoadedMetadata}
-          onTimeUpdate={handleTimeUpdate}
           onPause={() => setIsPlaying(false)}
           onEnded={() => setIsPlaying(false)}
           onClick={handleVideoClick}
