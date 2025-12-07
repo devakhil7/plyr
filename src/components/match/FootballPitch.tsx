@@ -3,16 +3,25 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shuffle, Users, User, GripVertical } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Shuffle, Users, User, Plus, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface Player {
   id: string;
-  user_id: string;
+  user_id: string | null;
   team: "A" | "B" | "unassigned";
   role: string;
+  offline_player_name?: string | null;
   profiles: {
     id: string;
     name: string | null;
@@ -35,12 +44,14 @@ function PlayerChip({
   player, 
   team, 
   isHost, 
-  onMoveToTeam 
+  onMoveToTeam,
+  onRemove
 }: { 
   player: Player; 
   team: "A" | "B" | "unassigned";
   isHost: boolean;
   onMoveToTeam?: (playerId: string, team: "A" | "B" | "unassigned") => void;
+  onRemove?: (playerId: string) => void;
 }) {
   const teamColors = {
     A: "from-blue-500/20 to-blue-600/20 border-blue-500/50",
@@ -54,40 +65,57 @@ function PlayerChip({
     unassigned: "text-gray-400",
   };
 
+  const isOfflinePlayer = !player.user_id && player.offline_player_name;
+  const displayName = isOfflinePlayer ? player.offline_player_name : player.profiles?.name;
+
+  const content = (
+    <div
+      className={`
+        flex flex-col items-center p-2 rounded-lg 
+        bg-gradient-to-b ${teamColors[team]} 
+        border backdrop-blur-sm
+        hover:scale-105 transition-transform duration-200
+        min-w-[70px]
+      `}
+    >
+      <Avatar className="h-10 w-10 border-2 border-background shadow-lg">
+        <AvatarImage src={player.profiles?.profile_photo_url || undefined} />
+        <AvatarFallback className={`${teamTextColors[team]} bg-background/80 text-xs font-bold`}>
+          {displayName?.charAt(0) || "P"}
+        </AvatarFallback>
+      </Avatar>
+      <span className="text-[10px] font-medium text-white mt-1 truncate max-w-[60px] text-center drop-shadow-lg">
+        {displayName?.split(' ')[0] || "Player"}
+      </span>
+      {isOfflinePlayer && (
+        <span className="text-[8px] text-yellow-300/80 uppercase tracking-wider">
+          Offline
+        </span>
+      )}
+      {!isOfflinePlayer && player.profiles?.position && (
+        <span className="text-[8px] text-white/70 uppercase tracking-wider">
+          {player.profiles.position.substring(0, 3)}
+        </span>
+      )}
+    </div>
+  );
+
   return (
     <div className="group relative">
-      <Link 
-        to={`/players/${player.user_id}`}
-        className={`
-          flex flex-col items-center p-2 rounded-lg 
-          bg-gradient-to-b ${teamColors[team]} 
-          border backdrop-blur-sm
-          hover:scale-105 transition-transform duration-200
-          min-w-[70px]
-        `}
-      >
-        <Avatar className="h-10 w-10 border-2 border-background shadow-lg">
-          <AvatarImage src={player.profiles?.profile_photo_url || undefined} />
-          <AvatarFallback className={`${teamTextColors[team]} bg-background/80 text-xs font-bold`}>
-            {player.profiles?.name?.charAt(0) || "P"}
-          </AvatarFallback>
-        </Avatar>
-        <span className="text-[10px] font-medium text-white mt-1 truncate max-w-[60px] text-center drop-shadow-lg">
-          {player.profiles?.name?.split(' ')[0] || "Player"}
-        </span>
-        {player.profiles?.position && (
-          <span className="text-[8px] text-white/70 uppercase tracking-wider">
-            {player.profiles.position.substring(0, 3)}
-          </span>
-        )}
-      </Link>
+      {isOfflinePlayer ? (
+        content
+      ) : (
+        <Link to={`/players/${player.user_id}`}>
+          {content}
+        </Link>
+      )}
 
       {/* Host controls for manual assignment */}
       {isHost && onMoveToTeam && (
         <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
           {team !== "A" && (
             <button
-              onClick={(e) => { e.preventDefault(); onMoveToTeam(player.id, "A"); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onMoveToTeam(player.id, "A"); }}
               className="w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] font-bold hover:bg-blue-600 shadow-lg"
               title="Move to Team A"
             >
@@ -96,11 +124,20 @@ function PlayerChip({
           )}
           {team !== "B" && (
             <button
-              onClick={(e) => { e.preventDefault(); onMoveToTeam(player.id, "B"); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onMoveToTeam(player.id, "B"); }}
               className="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold hover:bg-red-600 shadow-lg"
               title="Move to Team B"
             >
               B
+            </button>
+          )}
+          {isOfflinePlayer && onRemove && (
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(player.id); }}
+              className="w-5 h-5 rounded-full bg-destructive text-white text-[10px] font-bold hover:bg-destructive/80 shadow-lg flex items-center justify-center"
+              title="Remove offline player"
+            >
+              <X className="h-3 w-3" />
             </button>
           )}
         </div>
@@ -109,8 +146,16 @@ function PlayerChip({
   );
 }
 
-// Placeholder chip for empty slots
-function PlaceholderChip({ team }: { team: "A" | "B" }) {
+// Placeholder chip for empty slots - now clickable for hosts
+function PlaceholderChip({ 
+  team, 
+  isHost, 
+  onAddOfflinePlayer 
+}: { 
+  team: "A" | "B"; 
+  isHost: boolean;
+  onAddOfflinePlayer?: (team: "A" | "B") => void;
+}) {
   const teamColors = {
     A: "from-blue-500/10 to-blue-600/10 border-blue-500/30",
     B: "from-red-500/10 to-red-600/10 border-red-500/30",
@@ -118,18 +163,26 @@ function PlaceholderChip({ team }: { team: "A" | "B" }) {
 
   return (
     <div
+      onClick={() => isHost && onAddOfflinePlayer?.(team)}
       className={`
         flex flex-col items-center justify-center p-2 rounded-lg 
         bg-gradient-to-b ${teamColors[team]} 
         border border-dashed backdrop-blur-sm
         min-w-[70px] min-h-[70px]
         opacity-50
+        ${isHost ? 'cursor-pointer hover:opacity-80 hover:scale-105 transition-all' : ''}
       `}
     >
       <div className="h-10 w-10 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center">
-        <User className="h-5 w-5 text-white/40" />
+        {isHost ? (
+          <Plus className="h-5 w-5 text-white/60" />
+        ) : (
+          <User className="h-5 w-5 text-white/40" />
+        )}
       </div>
-      <span className="text-[10px] font-medium text-white/40 mt-1">Empty</span>
+      <span className="text-[10px] font-medium text-white/40 mt-1">
+        {isHost ? "Add" : "Empty"}
+      </span>
     </div>
   );
 }
@@ -137,6 +190,10 @@ function PlaceholderChip({ team }: { team: "A" | "B" }) {
 export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, totalSlots, onRefetch }: FootballPitchProps) {
   const [isAssigning, setIsAssigning] = useState(false);
   const [autoAssignAttempted, setAutoAssignAttempted] = useState(false);
+  const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
+  const [addPlayerTeam, setAddPlayerTeam] = useState<"A" | "B">("A");
+  const [offlinePlayerName, setOfflinePlayerName] = useState("");
+  const [isAddingPlayer, setIsAddingPlayer] = useState(false);
 
   const teamA = players.filter(p => p.team === "A");
   const teamB = players.filter(p => p.team === "B");
@@ -268,6 +325,59 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
     }
   };
 
+  // Handle adding offline player
+  const handleAddOfflinePlayer = (team: "A" | "B") => {
+    setAddPlayerTeam(team);
+    setOfflinePlayerName("");
+    setShowAddPlayerDialog(true);
+  };
+
+  const handleConfirmAddPlayer = async () => {
+    if (!offlinePlayerName.trim()) {
+      toast.error("Please enter a player name");
+      return;
+    }
+
+    setIsAddingPlayer(true);
+    try {
+      const { error } = await supabase
+        .from("match_players")
+        .insert({
+          match_id: matchId,
+          team: addPlayerTeam,
+          offline_player_name: offlinePlayerName.trim(),
+          role: "player",
+          join_status: "confirmed",
+        });
+
+      if (error) throw error;
+      
+      toast.success(`Added ${offlinePlayerName.trim()} to Team ${addPlayerTeam}`);
+      setShowAddPlayerDialog(false);
+      setOfflinePlayerName("");
+      onRefetch();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add player");
+    } finally {
+      setIsAddingPlayer(false);
+    }
+  };
+
+  const handleRemoveOfflinePlayer = async (playerId: string) => {
+    try {
+      const { error } = await supabase
+        .from("match_players")
+        .delete()
+        .eq("id", playerId);
+      
+      if (error) throw error;
+      toast.success("Player removed");
+      onRefetch();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to remove player");
+    }
+  };
+
   // Dynamic formation positions based on team size
   const getFormationPositions = (playerCount: number, isTeamB: boolean) => {
     // Define positions from GK -> DEF -> MID -> FWD (bottom to top for Team A)
@@ -393,6 +503,7 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
                     team="B" 
                     isHost={isHost}
                     onMoveToTeam={isHost ? handleMoveToTeam : undefined}
+                    onRemove={isHost && !player.user_id ? handleRemoveOfflinePlayer : undefined}
                   />
                 </div>
               );
@@ -407,7 +518,7 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
                   style={{ top: pos?.top, left: pos?.left }}
                 >
-                  <PlaceholderChip team="B" />
+                  <PlaceholderChip team="B" isHost={isHost} onAddOfflinePlayer={handleAddOfflinePlayer} />
                 </div>
               );
             })}
@@ -432,6 +543,7 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
                     team="A" 
                     isHost={isHost}
                     onMoveToTeam={isHost ? handleMoveToTeam : undefined}
+                    onRemove={isHost && !player.user_id ? handleRemoveOfflinePlayer : undefined}
                   />
                 </div>
               );
@@ -446,7 +558,7 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
                   style={{ top: pos?.top, left: pos?.left }}
                 >
-                  <PlaceholderChip team="A" />
+                  <PlaceholderChip team="A" isHost={isHost} onAddOfflinePlayer={handleAddOfflinePlayer} />
                 </div>
               );
             })}
@@ -472,6 +584,7 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
                   team="unassigned"
                   isHost={isHost}
                   onMoveToTeam={isHost ? handleMoveToTeam : undefined}
+                  onRemove={isHost && !player.user_id ? handleRemoveOfflinePlayer : undefined}
                 />
               ))}
             </div>
@@ -486,6 +599,37 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
           <p>No players have joined yet</p>
         </div>
       )}
+
+      {/* Add Offline Player Dialog */}
+      <Dialog open={showAddPlayerDialog} onOpenChange={setShowAddPlayerDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Offline Player to Team {addPlayerTeam}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Player Name</label>
+              <Input
+                placeholder="Enter player name"
+                value={offlinePlayerName}
+                onChange={(e) => setOfflinePlayerName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleConfirmAddPlayer()}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddPlayerDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleConfirmAddPlayer}
+              disabled={isAddingPlayer || !offlinePlayerName.trim()}
+            >
+              {isAddingPlayer ? "Adding..." : "Add Player"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
