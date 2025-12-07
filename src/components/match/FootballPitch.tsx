@@ -423,8 +423,8 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
-      {isHost && (
+      {/* Controls - shown to host */}
+      {isHost ? (
         <div className="flex flex-wrap items-center gap-3">
           <Button
             variant="outline"
@@ -444,6 +444,14 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
             <span className="text-xs text-muted-foreground">
               {unassigned.length} unassigned player{unassigned.length !== 1 ? "s" : ""}
             </span>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Users className="h-4 w-4" />
+          <span>Team A: {teamA.length} | Team B: {teamB.length}</span>
+          {unassigned.length > 0 && (
+            <span className="text-yellow-600">• {unassigned.length} unassigned</span>
           )}
         </div>
       )}
