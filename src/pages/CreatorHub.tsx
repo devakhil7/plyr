@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +42,8 @@ const CreatorHub = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [videoDuration, setVideoDuration] = useState<number | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -193,9 +195,12 @@ const CreatorHub = () => {
 
       setActiveJob({ ...activeJob, status: 'uploading' });
 
-      // Call the edge function
+      // Call the edge function with video duration
       const { error } = await supabase.functions.invoke('analyze-video', {
-        body: { jobId: activeJob.id },
+        body: { 
+          jobId: activeJob.id,
+          videoDuration: videoDuration || 600 // Pass actual duration or default to 10 min
+        },
       });
 
       if (error) throw error;
@@ -208,6 +213,13 @@ const CreatorHub = () => {
         description: error instanceof Error ? error.message : "Failed to start analysis",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleVideoLoaded = () => {
+    if (videoRef.current) {
+      setVideoDuration(videoRef.current.duration);
+      console.log("Video duration:", videoRef.current.duration);
     }
   };
 
@@ -461,9 +473,11 @@ const CreatorHub = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <video 
+                ref={videoRef}
                 src={activeJob.video_url} 
                 controls 
                 className="w-full rounded-lg max-h-[300px] bg-black"
+                onLoadedMetadata={handleVideoLoaded}
               />
               <div className="flex gap-3">
                 <Button 
