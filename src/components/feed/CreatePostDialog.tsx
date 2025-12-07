@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, Image, Video, AtSign, MapPin, Trophy } from "lucide-react";
+import { Plus, X, Image, Video, AtSign, MapPin, Trophy, Upload, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +26,62 @@ export function CreatePostDialog() {
   const [showPlayerSearch, setShowPlayerSearch] = useState(false);
   const [showTurfSearch, setShowTurfSearch] = useState(false);
   const [showMatchSearch, setShowMatchSearch] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; url: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+    if (!isImage && !isVideo) {
+      toast.error("Please upload an image or video file");
+      return;
+    }
+
+    // Validate file size (50MB max)
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("File size must be less than 50MB");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const bucket = isImage ? "post-images" : "post-videos";
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(fileName);
+
+      setUploadedFile({ name: file.name, url: publicUrl });
+      setMediaUrl(publicUrl);
+      toast.success("File uploaded successfully!");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload file");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeUploadedFile = () => {
+    setUploadedFile(null);
+    setMediaUrl("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const { data: players } = useQuery({
     queryKey: ["players-search", playerSearch],
@@ -118,6 +174,10 @@ export function CreatePostDialog() {
     setSelectedTurf(null);
     setSelectedMatch(null);
     setPlayerSearch("");
+    setUploadedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const addPlayer = (player: { id: string; name: string }) => {
@@ -178,17 +238,82 @@ export function CreatePostDialog() {
             />
           </div>
 
-          {/* Media URL */}
+          {/* Media Upload/URL */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
-              <Video className="h-4 w-4" />
-              Media URL (optional)
+              <Upload className="h-4 w-4" />
+              Photo/Video
             </Label>
-            <Input
-              placeholder="https://youtube.com/... or image URL"
-              value={mediaUrl}
-              onChange={(e) => setMediaUrl(e.target.value)}
-            />
+            
+            {/* Upload Button */}
+            <div className="flex gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,video/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading || !!uploadedFile}
+                className="gap-2"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Image className="h-4 w-4" />
+                    Upload Photo
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading || !!uploadedFile}
+                className="gap-2"
+              >
+                <Video className="h-4 w-4" />
+                Upload Video
+              </Button>
+            </div>
+
+            {/* Uploaded File Preview */}
+            {uploadedFile && (
+              <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                <span className="text-sm truncate flex-1">{uploadedFile.name}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeUploadedFile}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Or use URL */}
+            {!uploadedFile && (
+              <div className="space-y-1">
+                <span className="text-xs text-muted-foreground">Or paste a URL</span>
+                <Input
+                  placeholder="https://youtube.com/... or image URL"
+                  value={mediaUrl}
+                  onChange={(e) => setMediaUrl(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
           {/* Tag Players */}
