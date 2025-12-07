@@ -28,6 +28,7 @@ import TurfDashboard from "./pages/TurfDashboard";
 import CreatorHub from "./pages/CreatorHub";
 import Leaderboards from "./pages/Leaderboards";
 import PartnerWithUs from "./pages/PartnerWithUs";
+import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/creator-hub" element={<CreatorHub />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/partner" element={<PartnerWithUs />} />
+            <Route path="/install" element={<Install />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
