@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -136,6 +136,7 @@ function PlaceholderChip({ team }: { team: "A" | "B" }) {
 
 export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, totalSlots, onRefetch }: FootballPitchProps) {
   const [isAssigning, setIsAssigning] = useState(false);
+  const [hasAutoAssigned, setHasAutoAssigned] = useState(false);
 
   const teamA = players.filter(p => p.team === "A");
   const teamB = players.filter(p => p.team === "B");
@@ -145,6 +146,79 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
   const slotsPerTeam = Math.ceil(totalSlots / 2);
   const teamAEmpty = Math.max(0, slotsPerTeam - teamA.length);
   const teamBEmpty = Math.max(0, slotsPerTeam - teamB.length);
+
+  // Position mapping for sorting players by role
+  const positionPriority: Record<string, number> = {
+    "goalkeeper": 0, "gk": 0,
+    "defender": 1, "cb": 1, "lb": 2, "rb": 3, "def": 1,
+    "midfielder": 4, "cm": 5, "cdm": 4, "cam": 6, "lm": 4, "rm": 4, "mid": 5,
+    "forward": 7, "striker": 8, "st": 8, "lw": 7, "rw": 7, "cf": 8, "att": 8,
+  };
+
+  const getPositionPriority = (position: string | null | undefined): number => {
+    if (!position) return 99; // No position = fill remaining spots
+    const lower = position.toLowerCase();
+    for (const [key, priority] of Object.entries(positionPriority)) {
+      if (lower.includes(key)) return priority;
+    }
+    return 99;
+  };
+
+  // Sort players by position priority for proper formation placement
+  const sortPlayersByPosition = (teamPlayers: Player[]): Player[] => {
+    return [...teamPlayers].sort((a, b) => {
+      const priorityA = getPositionPriority(a.profiles?.position);
+      const priorityB = getPositionPriority(b.profiles?.position);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      // Random tiebreaker for same position
+      return Math.random() - 0.5;
+    });
+  };
+
+  // Auto-assign unassigned players to teams on mount
+  const autoAssignUnassigned = async () => {
+    if (unassigned.length === 0 || hasAutoAssigned) return;
+    
+    setHasAutoAssigned(true);
+    setIsAssigning(true);
+    
+    try {
+      // Shuffle unassigned players
+      const shuffled = [...unassigned].sort(() => Math.random() - 0.5);
+      
+      // Distribute evenly between teams, considering current team sizes
+      let teamACount = teamA.length;
+      let teamBCount = teamB.length;
+      
+      for (const player of shuffled) {
+        // Assign to the team with fewer players
+        const team = teamACount <= teamBCount ? "A" : "B";
+        
+        const { error } = await supabase
+          .from("match_players")
+          .update({ team })
+          .eq("id", player.id);
+        
+        if (error) throw error;
+        
+        if (team === "A") teamACount++;
+        else teamBCount++;
+      }
+
+      onRefetch();
+    } catch (error: any) {
+      console.error("Auto-assign failed:", error);
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  // Auto-assign on mount if there are unassigned players
+  useEffect(() => {
+    if (unassigned.length > 0 && !hasAutoAssigned) {
+      autoAssignUnassigned();
+    }
+  }, [unassigned.length, hasAutoAssigned]);
 
   const handleAutoSplit = async () => {
     setIsAssigning(true);
@@ -187,31 +261,39 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
     }
   };
 
-  // Formation positions (4-3-3 style layout)
-  const getFormationPositions = (teamPlayers: Player[], isTeamB: boolean) => {
-    const positions = [
-      { top: "85%", left: "50%" }, // GK
-      { top: "65%", left: "20%" }, // LB
-      { top: "65%", left: "40%" }, // CB1
-      { top: "65%", left: "60%" }, // CB2
-      { top: "65%", left: "80%" }, // RB
-      { top: "45%", left: "30%" }, // LM
-      { top: "45%", left: "50%" }, // CM
-      { top: "45%", left: "70%" }, // RM
-      { top: "25%", left: "25%" }, // LW
-      { top: "25%", left: "50%" }, // ST
-      { top: "25%", left: "75%" }, // RW
+  // Dynamic formation positions based on team size
+  const getFormationPositions = (playerCount: number, isTeamB: boolean) => {
+    // Define positions from GK -> DEF -> MID -> FWD (bottom to top for Team A)
+    const allPositions = [
+      { top: "88%", left: "50%", role: "GK" },
+      { top: "70%", left: "20%", role: "LB" },
+      { top: "70%", left: "40%", role: "CB" },
+      { top: "70%", left: "60%", role: "CB" },
+      { top: "70%", left: "80%", role: "RB" },
+      { top: "50%", left: "25%", role: "LM" },
+      { top: "50%", left: "50%", role: "CM" },
+      { top: "50%", left: "75%", role: "RM" },
+      { top: "30%", left: "20%", role: "LW" },
+      { top: "30%", left: "50%", role: "ST" },
+      { top: "30%", left: "80%", role: "RW" },
     ];
 
-    // Flip positions for Team B (they play on top half)
+    // Select positions based on player count
+    const selectedPositions = allPositions.slice(0, Math.min(playerCount, allPositions.length));
+
+    // Flip for Team B
     if (isTeamB) {
-      return positions.map(p => ({
+      return selectedPositions.map(p => ({
+        ...p,
         top: `${100 - parseFloat(p.top)}%`,
-        left: p.left,
       }));
     }
-    return positions;
+    return selectedPositions;
   };
+
+  // Get sorted players for display
+  const sortedTeamA = sortPlayersByPosition(teamA);
+  const sortedTeamB = sortPlayersByPosition(teamB);
 
   return (
     <div className="space-y-4">
@@ -290,14 +372,14 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
         <div className="absolute inset-0 top-0 h-1/2">
           <div className="relative w-full h-full">
             {/* Active players */}
-            {teamB.map((player, index) => {
-              const positions = getFormationPositions([...teamB, ...Array(teamBEmpty).fill(null)], true);
+            {sortedTeamB.map((player, index) => {
+              const positions = getFormationPositions(slotsPerTeam, true);
               const pos = positions[index % positions.length];
               return (
                 <div
                   key={player.id}
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
-                  style={{ top: pos.top, left: pos.left }}
+                  style={{ top: pos?.top, left: pos?.left }}
                 >
                   <PlayerChip 
                     player={player} 
@@ -310,13 +392,13 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
             })}
             {/* Empty placeholders */}
             {Array.from({ length: teamBEmpty }).map((_, index) => {
-              const positions = getFormationPositions([...teamB, ...Array(teamBEmpty).fill(null)], true);
-              const pos = positions[(teamB.length + index) % positions.length];
+              const positions = getFormationPositions(slotsPerTeam, true);
+              const pos = positions[(sortedTeamB.length + index) % positions.length];
               return (
                 <div
                   key={`empty-b-${index}`}
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
-                  style={{ top: pos.top, left: pos.left }}
+                  style={{ top: pos?.top, left: pos?.left }}
                 >
                   <PlaceholderChip team="B" />
                 </div>
@@ -329,14 +411,14 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
         <div className="absolute inset-0 top-1/2 h-1/2">
           <div className="relative w-full h-full">
             {/* Active players */}
-            {teamA.map((player, index) => {
-              const positions = getFormationPositions([...teamA, ...Array(teamAEmpty).fill(null)], false);
+            {sortedTeamA.map((player, index) => {
+              const positions = getFormationPositions(slotsPerTeam, false);
               const pos = positions[index % positions.length];
               return (
                 <div
                   key={player.id}
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
-                  style={{ top: pos.top, left: pos.left }}
+                  style={{ top: pos?.top, left: pos?.left }}
                 >
                   <PlayerChip 
                     player={player} 
@@ -349,13 +431,13 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
             })}
             {/* Empty placeholders */}
             {Array.from({ length: teamAEmpty }).map((_, index) => {
-              const positions = getFormationPositions([...teamA, ...Array(teamAEmpty).fill(null)], false);
-              const pos = positions[(teamA.length + index) % positions.length];
+              const positions = getFormationPositions(slotsPerTeam, false);
+              const pos = positions[(sortedTeamA.length + index) % positions.length];
               return (
                 <div
                   key={`empty-a-${index}`}
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
-                  style={{ top: pos.top, left: pos.left }}
+                  style={{ top: pos?.top, left: pos?.left }}
                 >
                   <PlaceholderChip team="A" />
                 </div>
