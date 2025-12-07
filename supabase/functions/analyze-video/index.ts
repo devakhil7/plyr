@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -61,40 +62,66 @@ serve(async (req) => {
     const duration = videoDurationSeconds || 600;
     const durationMinutes = Math.floor(duration / 60);
 
-    // Use Gemini's vision capabilities to analyze the actual video
-    const analysisPrompt = `You are an expert sports video analyst. I'm providing you with a football/soccer match video to analyze.
+    // Download the video file
+    console.log("Downloading video from:", job.video_url);
+    const videoResponse = await fetch(job.video_url);
+    if (!videoResponse.ok) {
+      throw new Error(`Failed to download video: ${videoResponse.status}`);
+    }
+    
+    const videoBuffer = await videoResponse.arrayBuffer();
+    // Convert to base64 using btoa
+    const bytes = new Uint8Array(videoBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const videoBase64 = btoa(binary);
+    
+    // Get the content type
+    const contentType = videoResponse.headers.get('content-type') || 'video/mp4';
+    const videoSizeBytes = videoBuffer.byteLength;
+    console.log("Video downloaded, size:", videoSizeBytes, "bytes, type:", contentType);
 
-VIDEO URL: ${job.video_url}
+    // Check if video is too large (Gemini has limits)
+    const maxSizeMB = 20; // 20MB limit for inline data
+    const videoSizeMB = videoSizeBytes / (1024 * 1024);
+    
+    if (videoSizeMB > maxSizeMB) {
+      console.log(`Video too large (${videoSizeMB.toFixed(2)}MB), using text-based analysis`);
+      throw new Error(`Video file too large for analysis (${videoSizeMB.toFixed(1)}MB). Please upload a shorter video under 20MB.`);
+    }
+
+    const analysisPrompt = `You are an expert sports video analyst. Analyze this football/soccer video carefully.
+
 VIDEO DURATION: ${durationMinutes} minutes (${Math.round(duration)} seconds)
 
-TASK: Watch and analyze this video carefully. Identify all moments where a GOAL is scored. For each goal, provide:
-1. The exact timestamp (in seconds from the start of the video)
-2. A description of how the goal was scored
-3. Your confidence level
+TASK: Watch this video frame by frame and identify all moments where a GOAL is scored. For each goal:
+1. Provide the exact timestamp in seconds from the start
+2. Describe how the goal was scored
+3. Rate your confidence
 
-IMPORTANT RULES:
-- Only report ACTUAL goals you can see in the video
+IMPORTANT:
+- Only report ACTUAL goals visible in the video
 - Timestamps must be between 0 and ${Math.round(duration)} seconds
-- If you cannot access or view the video, return an empty array []
-- A goal is when the ball clearly crosses the goal line into the net
-- Include near-misses or saves only if the ball actually goes in
-- Look for celebrations, scoreboard changes, or replays as confirmation
+- A goal = ball clearly crossing the goal line into the net
+- Look for: ball hitting net, celebrations, scoreboard changes, replays
+- If no clear goals are found, return an empty array []
 
-Return your response as a JSON array with this exact format:
+Return ONLY a JSON array:
 [
   {
-    "timestamp_seconds": <exact second when goal occurs>,
-    "description": "Description of the goal (e.g., 'Left-footed shot from outside the box into the top corner')",
+    "timestamp_seconds": <exact second>,
+    "description": "How the goal was scored",
     "confidence": "high" | "medium" | "low"
   }
 ]
 
-If no goals are found in the video, return an empty array: []
-Only return the JSON array, no other text.`;
+If no goals found, return: []`;
 
-    console.log("Calling Gemini Vision via Lovable AI for REAL video analysis...");
+    console.log("Calling Gemini Vision with video data...");
 
-    // Use Gemini 2.5 Pro for better video understanding
+    // Use Gemini with inline video data
     const lovableResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -102,12 +129,8 @@ Only return the JSON array, no other text.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-pro',
+        model: 'google/gemini-2.5-flash',
         messages: [
-          {
-            role: 'system',
-            content: 'You are an expert sports video analyst AI. You can view and analyze video content. Always respond with valid JSON only. Be precise about timestamps.'
-          },
           {
             role: 'user',
             content: [
@@ -116,9 +139,9 @@ Only return the JSON array, no other text.`;
                 text: analysisPrompt
               },
               {
-                type: 'video_url',
-                video_url: {
-                  url: job.video_url
+                type: 'image_url',
+                image_url: {
+                  url: `data:${contentType};base64,${videoBase64}`
                 }
               }
             ]
@@ -138,23 +161,22 @@ Only return the JSON array, no other text.`;
         throw new Error("AI credits exhausted. Please add credits to continue.");
       }
       
-      // If video analysis fails, try with just text prompt as fallback
-      console.log("Video analysis failed, trying text-based fallback...");
-      throw new Error(`Video analysis error: ${lovableResponse.status} - ${errorText}`);
+      throw new Error(`Video analysis error: ${lovableResponse.status}`);
     }
 
     const aiData = await lovableResponse.json();
-    console.log("Gemini response received:", JSON.stringify(aiData).substring(0, 500));
+    console.log("Gemini response received");
 
     const responseContent = aiData.choices[0]?.message?.content;
     if (!responseContent) {
       throw new Error("No response content from AI");
     }
 
+    console.log("AI Response:", responseContent.substring(0, 500));
+
     // Parse the JSON response
     let goals: GoalDetection[];
     try {
-      // Clean the response - remove markdown code blocks if present
       let cleanedContent = responseContent.trim();
       if (cleanedContent.startsWith('```json')) {
         cleanedContent = cleanedContent.slice(7);
@@ -178,7 +200,7 @@ Only return the JSON array, no other text.`;
 
     console.log("Detected goals from video analysis:", goals);
 
-    // Validate and clamp timestamps to video duration
+    // Validate and clamp timestamps
     goals = goals
       .filter(goal => goal.timestamp_seconds >= 0 && goal.timestamp_seconds <= duration)
       .map(goal => ({
@@ -186,13 +208,13 @@ Only return the JSON array, no other text.`;
         timestamp_seconds: Math.round(goal.timestamp_seconds)
       }));
 
-    // Update status to processing (creating clips)
+    // Update status to processing
     await supabase
       .from('video_analysis_jobs')
       .update({ status: 'processing' })
       .eq('id', jobId);
 
-    // Create highlight clips for each goal
+    // Create highlight clips
     const clips = goals.map((goal) => ({
       video_analysis_job_id: jobId,
       match_id: job.match_id,
@@ -220,7 +242,7 @@ Only return the JSON array, no other text.`;
       .update({ status: 'completed' })
       .eq('id', jobId);
 
-    console.log("REAL video analysis completed. Found", goals.length, "actual goals");
+    console.log("Video analysis completed. Found", goals.length, "goals");
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -228,8 +250,8 @@ Only return the JSON array, no other text.`;
       clipsCreated: clips.length,
       goals: goals,
       videoDuration: duration,
-      analysisType: "real_video_analysis",
-      note: "Actual video analyzed using Gemini Vision"
+      videoSizeMB: videoSizeMB.toFixed(2),
+      analysisType: "real_video_analysis"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -237,7 +259,6 @@ Only return the JSON array, no other text.`;
   } catch (error) {
     console.error("Error in analyze-video function:", error);
     
-    // Try to update job status to failed
     if (jobId) {
       try {
         const supabase = createClient(
