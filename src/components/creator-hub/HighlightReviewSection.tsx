@@ -185,16 +185,26 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Use media fragment to specify clip portion
-  const clipUrl = `${videoUrl}#t=${clip.start_time_seconds},${clip.end_time_seconds}`;
-
   const handlePlayClip = async () => {
     if (videoRef.current) {
       try {
+        // Always seek to start of clip before playing
+        videoRef.current.currentTime = clip.start_time_seconds;
         await videoRef.current.play();
         setIsPlaying(true);
       } catch (error) {
         console.error("Error playing video:", error);
+      }
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      // Stop playback when we reach the end of the clip
+      if (videoRef.current.currentTime >= clip.end_time_seconds) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = clip.start_time_seconds;
+        setIsPlaying(false);
       }
     }
   };
@@ -211,6 +221,17 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
 
   const handleLoadedMetadata = () => {
     setIsLoaded(true);
+    // Set initial position to start of clip when video metadata loads
+    if (videoRef.current) {
+      videoRef.current.currentTime = clip.start_time_seconds;
+    }
+  };
+
+  const handleSeeked = () => {
+    // Ensure we're at the right position after seeking
+    if (videoRef.current && videoRef.current.currentTime < clip.start_time_seconds) {
+      videoRef.current.currentTime = clip.start_time_seconds;
+    }
   };
 
   return (
@@ -243,10 +264,12 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
       <div className="relative aspect-video bg-black rounded overflow-hidden">
         <video
           ref={videoRef}
-          src={clipUrl}
+          src={videoUrl}
           className="w-full h-full object-contain cursor-pointer"
-          preload="metadata"
+          preload="auto"
           onLoadedMetadata={handleLoadedMetadata}
+          onTimeUpdate={handleTimeUpdate}
+          onSeeked={handleSeeked}
           onPause={() => setIsPlaying(false)}
           onEnded={() => setIsPlaying(false)}
           onClick={handleVideoClick}
