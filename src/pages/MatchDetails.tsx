@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
+import { useOwnedTurfs } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -14,7 +15,7 @@ import { MapPin, Calendar, Clock, Users, ArrowLeft, Play, Upload, Trophy, Target
 import { MatchInviteDialog } from "@/components/match/MatchInviteDialog";
 import { MatchShareDialog } from "@/components/match/MatchShareDialog";
 import { FootballPitch } from "@/components/match/FootballPitch";
-
+import { MatchStatsInput } from "@/components/match/MatchStatsInput";
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
   open: "open",
   full: "full",
@@ -50,11 +51,34 @@ export default function MatchDetails() {
     enabled: !!id,
   });
 
+  // Check if user owns the turf for this match
+  const { data: ownedTurfs = [] } = useOwnedTurfs();
+  const isTurfOwner = match?.turf_id && ownedTurfs.some((ot: any) => ot.turfs?.id === match.turf_id);
+
   const isHost = user && match?.host_id === user.id;
+  const canEditStats = isHost || isTurfOwner; // Both host and turf owner can edit stats
   const confirmedPlayers = match?.match_players?.filter((p: any) => p.join_status === "confirmed") || [];
   const isJoined = confirmedPlayers.some((p: any) => p.user_id === user?.id);
   const slotsLeft = (match?.total_slots || 0) - confirmedPlayers.length;
   const analytics = match?.analytics?.[0];
+
+  // Fetch match events (goals/assists)
+  const { data: matchEvents = [] } = useQuery({
+    queryKey: ["match-events", id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("match_events")
+        .select(`
+          *,
+          scorer:profiles!match_events_scorer_user_id_fkey(id, name),
+          assist:profiles!match_events_assist_user_id_fkey(id, name)
+        `)
+        .eq("match_id", id)
+        .order("minute", { ascending: true });
+      return data || [];
+    },
+    enabled: !!id,
+  });
 
   // Check if turf is booked for this match
   const { data: turfBooking } = useQuery({
@@ -584,7 +608,7 @@ export default function MatchDetails() {
           <TabsContent value="analytics" className="mt-6">
             {match.status === "completed" ? (
               <div className="space-y-6">
-                {/* Score */}
+                {/* Score Display */}
                 {match.team_a_score !== null && (
                   <Card className="bg-gradient-to-r from-primary/5 to-secondary/5">
                     <CardContent className="p-8 text-center">
@@ -604,8 +628,47 @@ export default function MatchDetails() {
                   </Card>
                 )}
 
+                {/* Goal Scorers & Assists Display */}
+                {matchEvents.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Trophy className="h-5 w-5 text-primary" />
+                        Goal Scorers & Assists
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {matchEvents.map((event: any) => (
+                          <div
+                            key={event.id}
+                            className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                          >
+                            <Badge variant={event.team === "A" ? "default" : "secondary"}>
+                              Team {event.team}
+                            </Badge>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">⚽ {event.scorer?.name || "Unknown"}</span>
+                                {event.minute && (
+                                  <span className="text-xs text-muted-foreground">({event.minute}')</span>
+                                )}
+                              </div>
+                              {event.assist?.name && (
+                                <p className="text-sm text-muted-foreground">
+                                  Assist: {event.assist.name}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Analytics */}
-                {analytics ? (
+                {analytics && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card>
                       <CardContent className="p-6 text-center">
@@ -629,40 +692,35 @@ export default function MatchDetails() {
                       </CardContent>
                     </Card>
                   </div>
-                ) : isHost ? (
+                )}
+
+                {/* Manual Stats Input for Host/Turf Owner */}
+                {canEditStats && (
+                  <MatchStatsInput
+                    matchId={match.id}
+                    players={confirmedPlayers.map((mp: any) => ({
+                      user_id: mp.user_id,
+                      team: mp.team,
+                      profiles: mp.profiles,
+                    }))}
+                    existingScore={{
+                      teamA: match.team_a_score,
+                      teamB: match.team_b_score,
+                    }}
+                    videoUrl={match.video_url}
+                    existingEvents={matchEvents}
+                    onUpdate={() => {
+                      refetch();
+                      queryClient.invalidateQueries({ queryKey: ["match-events", id] });
+                    }}
+                  />
+                )}
+
+                {/* Show message if not host/turf owner and no analytics */}
+                {!canEditStats && !analytics && matchEvents.length === 0 && (
                   <Card>
                     <CardContent className="p-8 text-center">
-                      {match.analytics_status === "processing" ? (
-                        <div>
-                          <div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
-                          <p className="font-medium">Processing video...</p>
-                          <p className="text-sm text-muted-foreground">AI analytics will be ready shortly</p>
-                        </div>
-                      ) : (
-                        <div>
-                          <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
-                          <p className="font-medium mb-2">Upload match video for AI analytics</p>
-                          <p className="text-sm text-muted-foreground mb-4">Get insights on goals, assists, possession and more</p>
-                          <label>
-                            <input
-                              type="file"
-                              accept="video/*"
-                              className="hidden"
-                              onChange={handleVideoUpload}
-                              disabled={uploading}
-                            />
-                            <Button asChild disabled={uploading}>
-                              <span>{uploading ? "Uploading..." : "Upload Video"}</span>
-                            </Button>
-                          </label>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card>
-                    <CardContent className="p-8 text-center">
-                      <p className="text-muted-foreground">Analytics not yet available for this match</p>
+                      <p className="text-muted-foreground">Match stats not yet available</p>
                     </CardContent>
                   </Card>
                 )}
