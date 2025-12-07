@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +48,11 @@ function PlayerChip({
   onRemove,
   isDragging,
   onDragStart,
-  onDragEnd
+  onDragEnd,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
+  positionIndex,
 }: { 
   player: Player; 
   team: "A" | "B" | "unassigned";
@@ -56,8 +60,12 @@ function PlayerChip({
   onMoveToTeam?: (playerId: string, team: "A" | "B" | "unassigned") => void;
   onRemove?: (playerId: string) => void;
   isDragging?: boolean;
-  onDragStart?: (e: React.DragEvent, playerId: string) => void;
+  onDragStart?: (e: React.DragEvent, playerId: string, positionIndex?: number) => void;
   onDragEnd?: () => void;
+  onTouchStart?: (playerId: string, team: "A" | "B" | "unassigned", positionIndex?: number) => void;
+  onTouchMove?: (e: React.TouchEvent) => void;
+  onTouchEnd?: (e: React.TouchEvent) => void;
+  positionIndex?: number;
 }) {
   const teamColors = {
     A: "from-blue-500/20 to-blue-600/20 border-blue-500/50",
@@ -77,7 +85,14 @@ function PlayerChip({
   const handleDragStart = (e: React.DragEvent) => {
     if (isHost && onDragStart) {
       e.dataTransfer.effectAllowed = 'move';
-      onDragStart(e, player.id);
+      onDragStart(e, player.id, positionIndex);
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (isHost && onTouchStart) {
+      e.preventDefault();
+      onTouchStart(player.id, team, positionIndex);
     }
   };
 
@@ -86,13 +101,16 @@ function PlayerChip({
       draggable={isHost}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
+      onTouchStart={handleTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
       className={`
         flex flex-col items-center p-2 rounded-lg 
         bg-gradient-to-b ${teamColors[team]} 
         border backdrop-blur-sm
         hover:scale-105 transition-transform duration-200
         min-w-[70px]
-        ${isHost ? 'cursor-grab active:cursor-grabbing' : ''}
+        ${isHost ? 'cursor-grab active:cursor-grabbing touch-none' : ''}
         ${isDragging ? 'opacity-50 scale-95' : ''}
       `}
     >
@@ -354,15 +372,35 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
     }
   };
 
+  // Track dragging player's source position for swapping
+  const [draggingSourceTeam, setDraggingSourceTeam] = useState<"A" | "B" | "unassigned" | null>(null);
+  const [draggingSourceIndex, setDraggingSourceIndex] = useState<number | null>(null);
+  const [dragOverPositionIndex, setDragOverPositionIndex] = useState<number | null>(null);
+  
+  // Touch drag state
+  const touchDragRef = useRef<{
+    playerId: string;
+    sourceTeam: "A" | "B" | "unassigned";
+    sourceIndex?: number;
+    ghostEl?: HTMLDivElement;
+  } | null>(null);
+  const pitchRef = useRef<HTMLDivElement>(null);
+
   // Drag and drop handlers
-  const handleDragStart = (e: React.DragEvent, playerId: string) => {
+  const handleDragStart = (e: React.DragEvent, playerId: string, positionIndex?: number) => {
+    const player = players.find(p => p.id === playerId);
     setDraggingPlayerId(playerId);
+    setDraggingSourceTeam(player?.team || null);
+    setDraggingSourceIndex(positionIndex ?? null);
     e.dataTransfer.setData('text/plain', playerId);
   };
 
   const handleDragEnd = () => {
     setDraggingPlayerId(null);
     setDragOverTeam(null);
+    setDraggingSourceTeam(null);
+    setDraggingSourceIndex(null);
+    setDragOverPositionIndex(null);
   };
 
   const handleDragOver = (e: React.DragEvent, team: "A" | "B") => {
@@ -373,6 +411,51 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
 
   const handleDragLeave = () => {
     setDragOverTeam(null);
+    setDragOverPositionIndex(null);
+  };
+
+  const handlePositionDragOver = (e: React.DragEvent, team: "A" | "B", posIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverTeam(team);
+    setDragOverPositionIndex(posIndex);
+  };
+
+  const handlePositionDrop = async (e: React.DragEvent, targetTeam: "A" | "B", targetIndex: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const draggedPlayerId = e.dataTransfer.getData('text/plain');
+    
+    if (!draggedPlayerId) return;
+    
+    const draggedPlayer = players.find(p => p.id === draggedPlayerId);
+    if (!draggedPlayer) return;
+
+    // Find target player at this position
+    const targetTeamPlayers = targetTeam === "A" ? sortedTeamA : sortedTeamB;
+    const targetPlayer = targetTeamPlayers[targetIndex];
+
+    if (targetPlayer && targetPlayer.id !== draggedPlayerId) {
+      // Swap positions: move target player to dragged player's original team/position
+      try {
+        // Update dragged player to target position/team
+        await supabase.from("match_players").update({ team: targetTeam }).eq("id", draggedPlayerId);
+        // Update target player to dragged player's original team
+        if (draggingSourceTeam && draggingSourceTeam !== "unassigned") {
+          await supabase.from("match_players").update({ team: draggingSourceTeam }).eq("id", targetPlayer.id);
+        }
+        toast.success("Players swapped!");
+        onRefetch();
+      } catch (error: any) {
+        toast.error("Failed to swap players");
+      }
+    } else {
+      // Just move to new team
+      await handleMoveToTeam(draggedPlayerId, targetTeam);
+    }
+
+    handleDragEnd();
   };
 
   const handleDrop = async (e: React.DragEvent, team: "A" | "B") => {
@@ -381,8 +464,117 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
     if (playerId) {
       await handleMoveToTeam(playerId, team);
     }
-    setDraggingPlayerId(null);
-    setDragOverTeam(null);
+    handleDragEnd();
+  };
+
+  // Touch event handlers for mobile
+  const handleTouchStart = (playerId: string, team: "A" | "B" | "unassigned", positionIndex?: number) => {
+    const player = players.find(p => p.id === playerId);
+    if (!player) return;
+
+    setDraggingPlayerId(playerId);
+    setDraggingSourceTeam(team);
+    setDraggingSourceIndex(positionIndex ?? null);
+
+    // Create ghost element
+    const ghost = document.createElement('div');
+    ghost.className = 'fixed pointer-events-none z-50 opacity-80 scale-110';
+    ghost.innerHTML = `
+      <div class="flex flex-col items-center p-2 rounded-lg bg-gradient-to-b from-primary/30 to-primary/50 border border-primary/50 backdrop-blur-sm min-w-[70px]">
+        <div class="h-10 w-10 rounded-full bg-background/80 flex items-center justify-center text-xs font-bold">
+          ${(player.profiles?.name || player.offline_player_name || 'P').charAt(0)}
+        </div>
+        <span class="text-[10px] font-medium text-white mt-1">${(player.profiles?.name || player.offline_player_name || 'Player').split(' ')[0]}</span>
+      </div>
+    `;
+    document.body.appendChild(ghost);
+
+    touchDragRef.current = {
+      playerId,
+      sourceTeam: team,
+      sourceIndex: positionIndex,
+      ghostEl: ghost,
+    };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchDragRef.current?.ghostEl) return;
+    
+    const touch = e.touches[0];
+    touchDragRef.current.ghostEl.style.left = `${touch.clientX - 35}px`;
+    touchDragRef.current.ghostEl.style.top = `${touch.clientY - 35}px`;
+
+    // Detect which half of the pitch we're over
+    if (pitchRef.current) {
+      const pitchRect = pitchRef.current.getBoundingClientRect();
+      const relativeY = touch.clientY - pitchRect.top;
+      const halfHeight = pitchRect.height / 2;
+      
+      if (relativeY < halfHeight) {
+        setDragOverTeam("B");
+      } else if (relativeY > halfHeight && relativeY < pitchRect.height) {
+        setDragOverTeam("A");
+      } else {
+        setDragOverTeam(null);
+      }
+    }
+  };
+
+  const handleTouchEnd = async (e: React.TouchEvent) => {
+    if (!touchDragRef.current) return;
+
+    const { playerId, ghostEl } = touchDragRef.current;
+
+    // Remove ghost element
+    if (ghostEl) {
+      ghostEl.remove();
+    }
+
+    // Get final touch position
+    const touch = e.changedTouches[0];
+    
+    if (pitchRef.current) {
+      const pitchRect = pitchRef.current.getBoundingClientRect();
+      const relativeY = touch.clientY - pitchRect.top;
+      const halfHeight = pitchRect.height / 2;
+
+      // Determine target team
+      let targetTeam: "A" | "B" | null = null;
+      if (relativeY >= 0 && relativeY < halfHeight) {
+        targetTeam = "B";
+      } else if (relativeY >= halfHeight && relativeY < pitchRect.height) {
+        targetTeam = "A";
+      }
+
+      if (targetTeam) {
+        // Check for swap target - find element at touch point
+        const elementsAtPoint = document.elementsFromPoint(touch.clientX, touch.clientY);
+        const playerChipEl = elementsAtPoint.find(el => el.closest('[data-player-id]'));
+        const targetPlayerId = playerChipEl?.closest('[data-player-id]')?.getAttribute('data-player-id');
+
+        if (targetPlayerId && targetPlayerId !== playerId) {
+          // Swap players
+          const targetPlayer = players.find(p => p.id === targetPlayerId);
+          if (targetPlayer && touchDragRef.current.sourceTeam !== "unassigned") {
+            try {
+              await supabase.from("match_players").update({ team: targetTeam }).eq("id", playerId);
+              await supabase.from("match_players").update({ team: touchDragRef.current.sourceTeam }).eq("id", targetPlayerId);
+              toast.success("Players swapped!");
+              onRefetch();
+            } catch (error) {
+              toast.error("Failed to swap players");
+            }
+          } else {
+            await handleMoveToTeam(playerId, targetTeam);
+          }
+        } else {
+          await handleMoveToTeam(playerId, targetTeam);
+        }
+      }
+    }
+
+    touchDragRef.current = null;
+    handleDragEnd();
   };
 
   // Handle adding offline player
@@ -508,7 +700,10 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
       )}
 
       {/* Football Pitch */}
-      <div className="relative w-full aspect-[3/4] sm:aspect-[4/3] max-w-3xl mx-auto rounded-xl overflow-hidden shadow-2xl">
+      <div 
+        ref={pitchRef}
+        className="relative w-full aspect-[3/4] sm:aspect-[4/3] max-w-3xl mx-auto rounded-xl overflow-hidden shadow-2xl"
+      >
         {/* Pitch Background */}
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-600 to-emerald-700">
           {/* Pitch markings */}
@@ -567,11 +762,17 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
             {sortedTeamB.map((player, index) => {
               const positions = getFormationPositions(slotsPerTeam, true);
               const pos = positions[index % positions.length];
+              const isDropTarget = dragOverTeam === "B" && dragOverPositionIndex === index && draggingPlayerId !== player.id;
               return (
                 <div
                   key={player.id}
-                  className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
+                  data-player-id={player.id}
+                  className={`absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all ${
+                    isDropTarget ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-transparent scale-110' : ''
+                  }`}
                   style={{ top: pos?.top, left: pos?.left }}
+                  onDragOver={isHost ? (e) => handlePositionDragOver(e, "B", index) : undefined}
+                  onDrop={isHost ? (e) => handlePositionDrop(e, "B", index) : undefined}
                 >
                   <PlayerChip 
                     player={player} 
@@ -582,6 +783,10 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
                     isDragging={draggingPlayerId === player.id}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    positionIndex={index}
                   />
                 </div>
               );
@@ -617,11 +822,17 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
             {sortedTeamA.map((player, index) => {
               const positions = getFormationPositions(slotsPerTeam, false);
               const pos = positions[index % positions.length];
+              const isDropTarget = dragOverTeam === "A" && dragOverPositionIndex === index && draggingPlayerId !== player.id;
               return (
                 <div
                   key={player.id}
-                  className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
+                  data-player-id={player.id}
+                  className={`absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all ${
+                    isDropTarget ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-transparent scale-110' : ''
+                  }`}
                   style={{ top: pos?.top, left: pos?.left }}
+                  onDragOver={isHost ? (e) => handlePositionDragOver(e, "A", index) : undefined}
+                  onDrop={isHost ? (e) => handlePositionDrop(e, "A", index) : undefined}
                 >
                   <PlayerChip 
                     player={player} 
@@ -632,6 +843,10 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
                     isDragging={draggingPlayerId === player.id}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    positionIndex={index}
                   />
                 </div>
               );
@@ -666,17 +881,21 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
           <CardContent className="py-3">
             <div className="flex flex-wrap gap-3 justify-center">
               {unassigned.map((player) => (
-                <PlayerChip 
-                  key={player.id} 
-                  player={player} 
-                  team="unassigned"
-                  isHost={isHost}
-                  onMoveToTeam={isHost ? handleMoveToTeam : undefined}
-                  onRemove={isHost && !player.user_id ? handleRemoveOfflinePlayer : undefined}
-                  isDragging={draggingPlayerId === player.id}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                />
+                <div key={player.id} data-player-id={player.id}>
+                  <PlayerChip 
+                    player={player} 
+                    team="unassigned"
+                    isHost={isHost}
+                    onMoveToTeam={isHost ? handleMoveToTeam : undefined}
+                    onRemove={isHost && !player.user_id ? handleRemoveOfflinePlayer : undefined}
+                    isDragging={draggingPlayerId === player.id}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                  />
+                </div>
               ))}
             </div>
           </CardContent>
