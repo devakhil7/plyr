@@ -138,46 +138,29 @@ const CreatorHub = () => {
     setUploadProgress(0);
     
     try {
-      const fileName = `${user.id}/${Date.now()}_${file.name}`;
+      // Sanitize filename - remove special characters and emojis
+      const sanitizedName = file.name
+        .replace(/[^\w\s.-]/g, '')
+        .replace(/\s+/g, '_')
+        .replace(/_+/g, '_')
+        .trim() || 'video.mp4';
       
-      // Get the upload URL for tracking progress
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const fileName = `${user.id}/${Date.now()}_${sanitizedName}`;
       
-      // Get the user's session token for proper authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('Not authenticated');
+      // Use Supabase SDK for upload with proper auth handling
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('match-videos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+      
+      if (uploadError) {
+        throw uploadError;
       }
       
-      // Use XMLHttpRequest for progress tracking
-      const uploadUrl = `${supabaseUrl}/storage/v1/object/match-videos/${fileName}`;
-      
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        
-        xhr.upload.addEventListener('progress', (event) => {
-          if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 100);
-            setUploadProgress(percent);
-          }
-        });
-        
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
-          }
-        });
-        
-        xhr.addEventListener('error', () => reject(new Error('Upload failed')));
-        xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
-        
-        xhr.open('POST', uploadUrl);
-        xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
-        xhr.setRequestHeader('x-upsert', 'true');
-        xhr.send(file);
-      });
+      // Simulate progress since SDK doesn't support progress events
+      setUploadProgress(100);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
