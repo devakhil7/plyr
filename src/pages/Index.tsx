@@ -8,8 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { 
   MapPin, Users, Calendar, ArrowRight, Play, Trophy, Target, TrendingUp,
-  Zap, Video, BarChart3, Star, CircleDot, Sparkles
+  Zap, Video, BarChart3, Star, Sparkles
 } from "lucide-react";
+import { HeroSplashDecoration } from "@/components/decorative/SportsSplashBackground";
 
 export default function Index() {
   const { user } = useAuth();
@@ -38,10 +39,10 @@ export default function Index() {
   });
 
   const steps = [
-    { icon: Play, title: "Host", description: "Create a match at your favorite turf", color: "from-emerald-500 to-teal-500" },
-    { icon: Users, title: "Join", description: "Find and join open matches near you", color: "from-blue-500 to-cyan-500" },
-    { icon: Target, title: "Play", description: "Show up and compete with local players", color: "from-orange-500 to-amber-500" },
-    { icon: TrendingUp, title: "Improve", description: "Upload videos and track your stats", color: "from-purple-500 to-pink-500" },
+    { icon: Play, title: "Host", description: "Create a match at your favorite turf", color: "from-primary to-accent" },
+    { icon: Users, title: "Join", description: "Find and join open matches near you", color: "from-accent to-primary" },
+    { icon: Target, title: "Play", description: "Show up and compete with local players", color: "from-primary/80 to-accent/80" },
+    { icon: TrendingUp, title: "Improve", description: "Upload videos and track your stats", color: "from-accent/80 to-primary" },
   ];
 
   const features = [
@@ -54,32 +55,18 @@ export default function Index() {
     <Layout>
       {/* Hero Section */}
       <section className="relative overflow-hidden hero-gradient min-h-[90vh] flex items-center">
+        {/* Sports-themed splash background with athlete silhouettes */}
+        <HeroSplashDecoration />
+        
         {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Gradient orbs */}
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-float" />
           <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float delay-300" />
           <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-accent/10 rounded-full blur-3xl animate-float delay-500" />
           
-          {/* Floating sport icons */}
-          <div className="absolute top-20 left-[10%] opacity-20 animate-float delay-100">
-            <CircleDot className="h-12 w-12 text-white" />
-          </div>
-          <div className="absolute top-40 right-[15%] opacity-15 animate-float delay-200">
-            <Trophy className="h-16 w-16 text-white" />
-          </div>
-          <div className="absolute bottom-32 left-[20%] opacity-10 animate-float delay-400">
-            <Target className="h-14 w-14 text-white" />
-          </div>
-          <div className="absolute bottom-20 right-[25%] opacity-15 animate-float delay-300">
-            <Star className="h-10 w-10 text-white" />
-          </div>
-          <div className="absolute top-1/3 right-[8%] opacity-10 animate-float delay-500">
-            <Zap className="h-12 w-12 text-white" />
-          </div>
-          
           {/* Grid pattern overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:80px_80px]" />
         </div>
 
         <div className="container-app relative py-20 md:py-32">
@@ -176,8 +163,12 @@ export default function Index() {
       </section>
 
       {/* How it Works */}
-      <section className="section-spacing bg-background">
-        <div className="container-app">
+      <section className="section-spacing bg-background relative overflow-hidden">
+        {/* Decorative splash */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+        
+        <div className="container-app relative">
           <div className="text-center mb-12">
             <Badge variant="outline" className="mb-4">How It Works</Badge>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Your journey in four steps</h2>
@@ -216,8 +207,11 @@ export default function Index() {
 
       {/* Featured Turfs */}
       {featuredTurfs && featuredTurfs.length > 0 && (
-        <section className="section-spacing bg-muted/30">
-          <div className="container-app">
+        <section className="section-spacing bg-muted/20 relative overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute top-1/2 right-0 w-80 h-80 bg-primary/5 rounded-full blur-3xl translate-x-1/2" />
+          
+          <div className="container-app relative">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <Badge variant="outline" className="mb-3">Venues</Badge>
