@@ -186,11 +186,21 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
   const [isLoaded, setIsLoaded] = useState(false);
 
   const handlePlayClip = async () => {
+    console.log("handlePlayClip called", { 
+      start: clip.start_time_seconds, 
+      end: clip.end_time_seconds,
+      videoRef: !!videoRef.current 
+    });
+    
     if (videoRef.current) {
       try {
         // Always seek to start of clip before playing
+        console.log("Setting currentTime to:", clip.start_time_seconds);
         videoRef.current.currentTime = clip.start_time_seconds;
+        console.log("currentTime after set:", videoRef.current.currentTime);
+        
         await videoRef.current.play();
+        console.log("Video playing, currentTime:", videoRef.current.currentTime);
         setIsPlaying(true);
       } catch (error) {
         console.error("Error playing video:", error);
@@ -200,8 +210,10 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
+      const currentTime = videoRef.current.currentTime;
       // Stop playback when we reach the end of the clip
-      if (videoRef.current.currentTime >= clip.end_time_seconds) {
+      if (currentTime >= clip.end_time_seconds) {
+        console.log("Reached end of clip, stopping", { currentTime, endTime: clip.end_time_seconds });
         videoRef.current.pause();
         videoRef.current.currentTime = clip.start_time_seconds;
         setIsPlaying(false);
@@ -220,14 +232,25 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
   };
 
   const handleLoadedMetadata = () => {
+    console.log("Video metadata loaded", { 
+      duration: videoRef.current?.duration,
+      clipStart: clip.start_time_seconds,
+      clipEnd: clip.end_time_seconds
+    });
     setIsLoaded(true);
     // Set initial position to start of clip when video metadata loads
     if (videoRef.current) {
       videoRef.current.currentTime = clip.start_time_seconds;
+      console.log("Set initial currentTime to:", clip.start_time_seconds);
     }
   };
 
+  const handleCanPlay = () => {
+    console.log("Video can play, currentTime:", videoRef.current?.currentTime);
+  };
+
   const handleSeeked = () => {
+    console.log("Video seeked to:", videoRef.current?.currentTime);
     // Ensure we're at the right position after seeking
     if (videoRef.current && videoRef.current.currentTime < clip.start_time_seconds) {
       videoRef.current.currentTime = clip.start_time_seconds;
@@ -268,10 +291,12 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
           className="w-full h-full object-contain cursor-pointer"
           preload="auto"
           onLoadedMetadata={handleLoadedMetadata}
+          onCanPlay={handleCanPlay}
           onTimeUpdate={handleTimeUpdate}
           onSeeked={handleSeeked}
           onPause={() => setIsPlaying(false)}
           onEnded={() => setIsPlaying(false)}
+          onError={(e) => console.error("Video error:", e)}
           onClick={handleVideoClick}
         />
         {!isPlaying && (
