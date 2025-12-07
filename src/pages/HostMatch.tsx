@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MapPin, IndianRupee, Navigation } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CalendarSlotPicker } from "@/components/CalendarSlotPicker";
+import { useGeolocation, calculateDistance, formatDistance, getCityCoordinates } from "@/hooks/useGeolocation";
+import { Badge } from "@/components/ui/badge";
 
 const skillLevels = [
   { value: "beginner", label: "Beginner" },
@@ -30,6 +32,7 @@ export default function HostMatch() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [duration, setDuration] = useState<number>(60);
+  const geolocation = useGeolocation();
   const [formData, setFormData] = useState({
     sport: "Football",
     turf_id: searchParams.get("turf") || "",
@@ -41,6 +44,59 @@ export default function HostMatch() {
     notes: "",
   });
 
+  const { data: turfs } = useQuery({
+    queryKey: ["all-turfs"],
+    queryFn: async () => {
+      const { data } = await supabase.from("turfs").select("*").order("name");
+      return data || [];
+    },
+  });
+
+  // Calculate distances for turfs and sort by distance
+  const turfsWithDistance = useMemo(() => {
+    if (!turfs) return [];
+    
+    return turfs.map((turf: any) => {
+      let distance: number | null = null;
+      
+      // Try to calculate distance from user location
+      if (geolocation.latitude && geolocation.longitude) {
+        if (turf.latitude && turf.longitude) {
+          distance = calculateDistance(
+            geolocation.latitude,
+            geolocation.longitude,
+            Number(turf.latitude),
+            Number(turf.longitude)
+          );
+        } else {
+          // Fall back to city coordinates
+          const cityCoords = getCityCoordinates(turf.city);
+          if (cityCoords) {
+            distance = calculateDistance(
+              geolocation.latitude,
+              geolocation.longitude,
+              cityCoords.lat,
+              cityCoords.lng
+            );
+          }
+        }
+      }
+      
+      return { ...turf, distance };
+    }).sort((a: any, b: any) => {
+      // Sort by distance (nulls last)
+      if (a.distance === null && b.distance === null) return 0;
+      if (a.distance === null) return 1;
+      if (b.distance === null) return -1;
+      return a.distance - b.distance;
+    });
+  }, [turfs, geolocation.latitude, geolocation.longitude]);
+
+  // Get selected turf details
+  const selectedTurf = useMemo(() => {
+    return turfsWithDistance.find((t: any) => t.id === formData.turf_id);
+  }, [turfsWithDistance, formData.turf_id]);
+
   // Generate match name automatically
   const generateMatchName = () => {
     const dayName = format(selectedDate, "EEEE"); // e.g., "Saturday"
@@ -51,7 +107,6 @@ export default function HostMatch() {
       return "Evening";
     })() : "";
     
-    const selectedTurf = turfs?.find((t: any) => t.id === formData.turf_id);
     const turfName = selectedTurf?.name || "";
     
     if (turfName && timeOfDay) {
@@ -69,14 +124,6 @@ export default function HostMatch() {
       navigate("/complete-profile");
     }
   }, [user, profile, loading, navigate]);
-
-  const { data: turfs } = useQuery({
-    queryKey: ["all-turfs"],
-    queryFn: async () => {
-      const { data } = await supabase.from("turfs").select("*").order("name");
-      return data || [];
-    },
-  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,16 +236,92 @@ export default function HostMatch() {
                       <SelectTrigger>
                         <SelectValue placeholder="Select a turf" />
                       </SelectTrigger>
-                      <SelectContent>
-                        {turfs?.map((turf: any) => (
-                          <SelectItem key={turf.id} value={turf.id}>
-                            {turf.name} - {turf.city}
+                      <SelectContent className="max-h-80">
+                        {turfsWithDistance.map((turf: any) => (
+                          <SelectItem key={turf.id} value={turf.id} className="py-3">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{turf.name}</span>
+                                {turf.is_featured && (
+                                  <Badge variant="secondary" className="text-xs">Featured</Badge>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />
+                                  {turf.location}, {turf.city}
+                                </span>
+                                {turf.distance !== null && (
+                                  <span className="flex items-center gap-1 text-primary">
+                                    <Navigation className="h-3 w-3" />
+                                    {formatDistance(turf.distance)}
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1 font-medium text-foreground">
+                                  <IndianRupee className="h-3 w-3" />
+                                  {turf.price_per_hour}/hr
+                                </span>
+                              </div>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {/* Location status */}
+                    {geolocation.loading ? (
+                      <p className="text-xs text-muted-foreground">Detecting location...</p>
+                    ) : geolocation.error ? (
+                      <p className="text-xs text-muted-foreground">Enable location for distance sorting</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Navigation className="h-3 w-3 text-primary" />
+                        Sorted by distance from your location
+                      </p>
+                    )}
                   </div>
                 </div>
+
+                {/* Selected Turf Details Card */}
+                {selectedTurf && (
+                  <Card className="bg-muted/30 border-primary/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-2">
+                          <h4 className="font-semibold">{selectedTurf.name}</h4>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-4 w-4" />
+                              {selectedTurf.location}, {selectedTurf.city}
+                            </span>
+                            {selectedTurf.distance !== null && (
+                              <span className="flex items-center gap-1 text-primary">
+                                <Navigation className="h-4 w-4" />
+                                {formatDistance(selectedTurf.distance)} away
+                              </span>
+                            )}
+                          </div>
+                          {selectedTurf.sport_type && (
+                            <Badge variant="outline" className="text-xs">
+                              {selectedTurf.sport_type}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-primary flex items-center">
+                            <IndianRupee className="h-5 w-5" />
+                            {selectedTurf.price_per_hour}
+                          </div>
+                          <p className="text-xs text-muted-foreground">per hour</p>
+                          {duration && (
+                            <p className="text-sm font-medium mt-1">
+                              Est. ₹{Math.round((selectedTurf.price_per_hour || 0) * (duration / 60))} for {duration} mins
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Calendar Slot Picker */}
                 <div className="space-y-2">
