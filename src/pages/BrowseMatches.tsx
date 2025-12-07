@@ -2,22 +2,14 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Calendar, Users, Clock, Search, Plus, Filter } from "lucide-react";
-
-const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
-  open: "open",
-  full: "full",
-  in_progress: "progress",
-  completed: "completed",
-  cancelled: "cancelled",
-};
+import { Users, Search, Plus } from "lucide-react";
+import { MatchCard } from "@/components/match/MatchCard";
 
 export default function BrowseMatches() {
   const { user } = useAuth();
@@ -126,63 +118,9 @@ export default function BrowseMatches() {
           </div>
         ) : filteredMatches && filteredMatches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredMatches.map((match: any) => {
-              const confirmedPlayers = match.match_players?.filter((p: any) => p.join_status === "confirmed").length || 0;
-              const slotsLeft = match.total_slots - confirmedPlayers;
-
-              return (
-                <Link key={match.id} to={`/matches/${match.id}`}>
-                  <Card className="h-full card-hover">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <Badge variant="sport" className="mb-2">{match.sport}</Badge>
-                          <h3 className="font-semibold text-lg">{match.match_name}</h3>
-                        </div>
-                        <Badge variant={statusVariants[match.status] || "secondary"}>
-                          {match.status === "in_progress" ? "In Progress" : match.status.charAt(0).toUpperCase() + match.status.slice(1)}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-2 text-sm text-muted-foreground mb-4">
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                          <span className="truncate">{match.turfs?.name}, {match.turfs?.city}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
-                          {new Date(match.match_date).toLocaleDateString("en-IN", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-2 flex-shrink-0" />
-                          {match.match_time?.slice(0, 5)} • {match.duration_minutes} min
-                        </div>
-                        <div className="flex items-center">
-                          <Users className="h-4 w-4 mr-2 flex-shrink-0" />
-                          {confirmedPlayers}/{match.total_slots} players
-                          {slotsLeft > 0 && (
-                            <span className="ml-2 text-accent font-medium">({slotsLeft} left)</span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-3 border-t border-border">
-                        <span className="text-xs text-muted-foreground">
-                          Hosted by {match.profiles?.name || "Player"}
-                        </span>
-                        <Badge variant={match.required_skill_min as any} className="capitalize">
-                          {match.required_skill_min}+
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              );
-            })}
+            {filteredMatches.map((match: any) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
           </div>
         ) : (
           <div className="text-center py-16">
