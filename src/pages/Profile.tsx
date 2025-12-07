@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { calculatePlayerWins } from "@/lib/playerStats";
+import { PhotoCropDialog } from "@/components/profile/PhotoCropDialog";
 
 const positions = ["Striker", "Midfielder", "Defender", "Goalkeeper", "Winger", "Forward", "All-rounder"];
 const skillLevels = [
@@ -44,6 +45,8 @@ export default function Profile() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [showCustomClub, setShowCustomClub] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -87,7 +90,7 @@ export default function Profile() {
     }
   }, [user, profile, loading, navigate]);
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
@@ -103,15 +106,34 @@ export default function Profile() {
       return;
     }
 
+    // Create object URL and open crop dialog
+    const objectUrl = URL.createObjectURL(file);
+    setSelectedImageUrl(objectUrl);
+    setCropDialogOpen(true);
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!user) return;
+
+    // Clean up object URL
+    if (selectedImageUrl) {
+      URL.revokeObjectURL(selectedImageUrl);
+      setSelectedImageUrl(null);
+    }
+
     setUploadingPhoto(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/${Date.now()}.jpg`;
 
-      // Upload to storage
+      // Upload cropped image to storage
       const { error: uploadError } = await supabase.storage
         .from('profile-photos')
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, croppedBlob, { upsert: true, contentType: 'image/jpeg' });
 
       if (uploadError) throw uploadError;
 
@@ -136,10 +158,6 @@ export default function Profile() {
       toast.error(error.message || 'Failed to upload photo');
     } finally {
       setUploadingPhoto(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
   };
 
@@ -339,7 +357,7 @@ export default function Profile() {
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    onChange={handlePhotoUpload}
+                    onChange={handleFileSelect}
                     className="hidden"
                   />
                 </div>
@@ -526,6 +544,22 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* Photo crop dialog */}
+      {selectedImageUrl && (
+        <PhotoCropDialog
+          open={cropDialogOpen}
+          onOpenChange={(open) => {
+            setCropDialogOpen(open);
+            if (!open && selectedImageUrl) {
+              URL.revokeObjectURL(selectedImageUrl);
+              setSelectedImageUrl(null);
+            }
+          }}
+          imageUrl={selectedImageUrl}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </Layout>
   );
 }
