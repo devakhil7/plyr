@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
@@ -8,9 +8,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Trophy, Star, Target, Users, Award, Medal, Crown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Trophy, Star, Target, Users, Award, Medal, Crown, CalendarIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { didPlayerWin } from "@/lib/playerStats";
+import { format, subMonths, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
+import { cn } from "@/lib/utils";
+
+type TimePeriod = "month" | "3months" | "6months" | "year" | "custom" | "all";
+
+function getDateRangeForPeriod(period: TimePeriod, customStart?: Date, customEnd?: Date): { start: Date | null; end: Date | null } {
+  const now = new Date();
+  
+  switch (period) {
+    case "month":
+      return { start: startOfMonth(now), end: endOfMonth(now) };
+    case "3months":
+      return { start: startOfMonth(subMonths(now, 2)), end: endOfMonth(now) };
+    case "6months":
+      return { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(now) };
+    case "year":
+      return { start: startOfYear(now), end: endOfYear(now) };
+    case "custom":
+      return { start: customStart || null, end: customEnd || null };
+    case "all":
+    default:
+      return { start: null, end: null };
+  }
+}
 
 interface LeaderboardEntry {
   id: string;
@@ -133,7 +160,14 @@ function LeaderboardCard({
 export default function Leaderboards() {
   const [selectedCity, setSelectedCity] = useState<string>("all");
   const [selectedTurf, setSelectedTurf] = useState<string>("all");
+  const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("all");
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
 
+  // Calculate date range based on selected period
+  const dateRange = useMemo(() => {
+    return getDateRangeForPeriod(selectedPeriod, customStartDate, customEndDate);
+  }, [selectedPeriod, customStartDate, customEndDate]);
   // Fetch cities
   const { data: cities = [] } = useQuery({
     queryKey: ["leaderboard-cities"],
@@ -164,7 +198,7 @@ export default function Leaderboards() {
 
   // Rating leaderboard - weighted by count
   const { data: ratingLeaderboard = [], isLoading: loadingRatings } = useQuery({
-    queryKey: ["leaderboard-ratings", selectedCity, selectedTurf],
+    queryKey: ["leaderboard-ratings", selectedCity, selectedTurf, dateRange.start?.toISOString(), dateRange.end?.toISOString()],
     queryFn: async () => {
       // Get all approved ratings with profile and match info
       let query = supabase
@@ -173,9 +207,18 @@ export default function Leaderboards() {
           rated_user_id,
           rating,
           match_id,
-          matches!inner(turf_id, turfs(city))
+          created_at,
+          matches!inner(turf_id, match_date, turfs(city))
         `)
         .eq("moderation_status", "approved");
+
+      // Apply date filter
+      if (dateRange.start) {
+        query = query.gte("created_at", dateRange.start.toISOString());
+      }
+      if (dateRange.end) {
+        query = query.lte("created_at", dateRange.end.toISOString());
+      }
 
       const { data: ratings } = await query;
       if (!ratings) return [];
@@ -243,15 +286,24 @@ export default function Leaderboards() {
 
   // Goals leaderboard
   const { data: goalsLeaderboard = [], isLoading: loadingGoals } = useQuery({
-    queryKey: ["leaderboard-goals", selectedCity, selectedTurf],
+    queryKey: ["leaderboard-goals", selectedCity, selectedTurf, dateRange.start?.toISOString(), dateRange.end?.toISOString()],
     queryFn: async () => {
       let query = supabase
         .from("match_events")
         .select(`
           scorer_user_id,
           match_id,
-          matches!inner(turf_id, turfs(city))
+          created_at,
+          matches!inner(turf_id, match_date, turfs(city))
         `);
+
+      // Apply date filter
+      if (dateRange.start) {
+        query = query.gte("created_at", dateRange.start.toISOString());
+      }
+      if (dateRange.end) {
+        query = query.lte("created_at", dateRange.end.toISOString());
+      }
 
       const { data: events } = await query;
       if (!events) return [];
@@ -303,16 +355,25 @@ export default function Leaderboards() {
 
   // Assists leaderboard
   const { data: assistsLeaderboard = [], isLoading: loadingAssists } = useQuery({
-    queryKey: ["leaderboard-assists", selectedCity, selectedTurf],
+    queryKey: ["leaderboard-assists", selectedCity, selectedTurf, dateRange.start?.toISOString(), dateRange.end?.toISOString()],
     queryFn: async () => {
       let query = supabase
         .from("match_events")
         .select(`
           assist_user_id,
           match_id,
-          matches!inner(turf_id, turfs(city))
+          created_at,
+          matches!inner(turf_id, match_date, turfs(city))
         `)
         .not("assist_user_id", "is", null);
+
+      // Apply date filter
+      if (dateRange.start) {
+        query = query.gte("created_at", dateRange.start.toISOString());
+      }
+      if (dateRange.end) {
+        query = query.lte("created_at", dateRange.end.toISOString());
+      }
 
       const { data: events } = await query;
       if (!events) return [];
@@ -366,7 +427,7 @@ export default function Leaderboards() {
 
   // Wins leaderboard
   const { data: winsLeaderboard = [], isLoading: loadingWins } = useQuery({
-    queryKey: ["leaderboard-wins", selectedCity, selectedTurf],
+    queryKey: ["leaderboard-wins", selectedCity, selectedTurf, dateRange.start?.toISOString(), dateRange.end?.toISOString()],
     queryFn: async () => {
       // Get completed matches with scores
       let query = supabase
@@ -376,12 +437,21 @@ export default function Leaderboards() {
           team_a_score,
           team_b_score,
           turf_id,
+          match_date,
           turfs(city),
           match_players(user_id, team)
         `)
         .eq("status", "completed")
         .not("team_a_score", "is", null)
         .not("team_b_score", "is", null);
+
+      // Apply date filter
+      if (dateRange.start) {
+        query = query.gte("match_date", format(dateRange.start, "yyyy-MM-dd"));
+      }
+      if (dateRange.end) {
+        query = query.lte("match_date", format(dateRange.end, "yyyy-MM-dd"));
+      }
 
       const { data: matches } = await query;
       if (!matches) return [];
@@ -437,17 +507,25 @@ export default function Leaderboards() {
 
   // Most matches played leaderboard
   const { data: matchesLeaderboard = [], isLoading: loadingMatches } = useQuery({
-    queryKey: ["leaderboard-matches", selectedCity, selectedTurf],
+    queryKey: ["leaderboard-matches", selectedCity, selectedTurf, dateRange.start?.toISOString(), dateRange.end?.toISOString()],
     queryFn: async () => {
       let query = supabase
         .from("match_players")
         .select(`
           user_id,
           match_id,
-          matches!inner(turf_id, status, turfs(city))
+          matches!inner(turf_id, status, match_date, turfs(city))
         `)
         .eq("join_status", "confirmed")
         .eq("matches.status", "completed");
+
+      // Apply date filter via matches
+      if (dateRange.start) {
+        query = query.gte("matches.match_date", format(dateRange.start, "yyyy-MM-dd"));
+      }
+      if (dateRange.end) {
+        query = query.lte("matches.match_date", format(dateRange.end, "yyyy-MM-dd"));
+      }
 
       const { data: players } = await query;
       if (!players) return [];
@@ -515,6 +593,81 @@ export default function Leaderboards() {
 
         {/* Filters */}
         <div className="flex flex-wrap gap-4 mb-8">
+          {/* Time Period Filter */}
+          <Select value={selectedPeriod} onValueChange={(value: TimePeriod) => {
+            setSelectedPeriod(value);
+            if (value !== "custom") {
+              setCustomStartDate(undefined);
+              setCustomEndDate(undefined);
+            }
+          }}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Time" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="3months">Last 3 Months</SelectItem>
+              <SelectItem value="6months">Last 6 Months</SelectItem>
+              <SelectItem value="year">This Year</SelectItem>
+              <SelectItem value="custom">Custom Range</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Custom Date Range Pickers */}
+          {selectedPeriod === "custom" && (
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[160px] justify-start text-left font-normal",
+                      !customStartDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {customStartDate ? format(customStartDate, "PP") : <span>Start date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={customStartDate}
+                    onSelect={setCustomStartDate}
+                    disabled={(date) => date > new Date() || (customEndDate ? date > customEndDate : false)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[160px] justify-start text-left font-normal",
+                      !customEndDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {customEndDate ? format(customEndDate, "PP") : <span>End date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={customEndDate}
+                    onSelect={setCustomEndDate}
+                    disabled={(date) => date > new Date() || (customStartDate ? date < customStartDate : false)}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </>
+          )}
+
           <Select value={selectedCity} onValueChange={(value) => {
             setSelectedCity(value);
             setSelectedTurf("all");
@@ -544,6 +697,46 @@ export default function Leaderboards() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Active Filters Display */}
+        {(selectedPeriod !== "all" || selectedCity !== "all" || selectedTurf !== "all") && (
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            <span className="text-sm text-muted-foreground">Filters:</span>
+            {selectedPeriod !== "all" && (
+              <Badge variant="secondary" className="text-xs">
+                {selectedPeriod === "month" && "This Month"}
+                {selectedPeriod === "3months" && "Last 3 Months"}
+                {selectedPeriod === "6months" && "Last 6 Months"}
+                {selectedPeriod === "year" && "This Year"}
+                {selectedPeriod === "custom" && customStartDate && customEndDate && 
+                  `${format(customStartDate, "MMM d")} - ${format(customEndDate, "MMM d, yyyy")}`}
+                {selectedPeriod === "custom" && (!customStartDate || !customEndDate) && "Custom (incomplete)"}
+              </Badge>
+            )}
+            {selectedCity !== "all" && (
+              <Badge variant="secondary" className="text-xs">{selectedCity}</Badge>
+            )}
+            {selectedTurf !== "all" && (
+              <Badge variant="secondary" className="text-xs">
+                {turfs.find(t => t.id === selectedTurf)?.name || "Selected Turf"}
+              </Badge>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-xs h-6"
+              onClick={() => {
+                setSelectedPeriod("all");
+                setSelectedCity("all");
+                setSelectedTurf("all");
+                setCustomStartDate(undefined);
+                setCustomEndDate(undefined);
+              }}
+            >
+              Clear all
+            </Button>
+          </div>
+        )}
 
         {/* Leaderboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
