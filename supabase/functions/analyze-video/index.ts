@@ -253,7 +253,21 @@ serve(async (req) => {
       throw new Error('GOOGLE_VIDEO_INTELLIGENCE_KEY is not configured');
     }
 
-    const googleKey = JSON.parse(googleKeyJson);
+    // Handle potential double-escaping of JSON
+    let googleKey;
+    try {
+      googleKey = JSON.parse(googleKeyJson);
+    } catch {
+      // Try parsing again if it was double-escaped
+      try {
+        googleKey = JSON.parse(JSON.parse(googleKeyJson));
+      } catch {
+        // Try removing surrounding quotes if present
+        const cleaned = googleKeyJson.replace(/^["']|["']$/g, '');
+        googleKey = JSON.parse(cleaned);
+      }
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log(`Starting video analysis for job: ${jobId} duration: ${videoDuration} seconds`);
