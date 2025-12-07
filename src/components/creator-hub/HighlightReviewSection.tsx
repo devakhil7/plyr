@@ -197,26 +197,48 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
     };
   }, []);
 
-  const seekToStart = () => {
-    const video = videoRef.current;
-    if (!video) return;
+
+  // Calculate effective clip times (clamped to video duration)
+  const getEffectiveClipTimes = (duration: number) => {
+    // If timestamps are beyond video length, use relative positioning
+    // This handles cases where AI returned incorrect timestamps
+    const videoDuration = duration || 0;
     
-    setIsSeeking(true);
-    video.currentTime = clip.start_time_seconds;
+    if (clip.end_time_seconds <= videoDuration) {
+      // Timestamps are valid
+      return {
+        start: clip.start_time_seconds,
+        end: clip.end_time_seconds,
+        goal: clip.goal_timestamp_seconds
+      };
+    }
+    
+    // Timestamps exceed video duration - use last 15 seconds as fallback
+    // or proportionally map to video duration
+    const clipDuration = 15; // 15 second clips
+    const effectiveStart = Math.max(0, videoDuration - clipDuration);
+    const effectiveEnd = videoDuration;
+    const effectiveGoal = effectiveStart + 10; // Goal at 10s into clip
+    
+    return {
+      start: effectiveStart,
+      end: effectiveEnd,
+      goal: effectiveGoal
+    };
   };
 
   const handleLoadedMetadata = () => {
     const video = videoRef.current;
     if (!video) return;
     
-    // Check if video is long enough
-    if (video.duration < clip.end_time_seconds) {
-      setError(`Video too short (${Math.round(video.duration)}s)`);
-      return;
-    }
+    const effectiveTimes = getEffectiveClipTimes(video.duration);
     
-    // Seek to clip start position
-    seekToStart();
+    // Update the effective times in state for playback control
+    effectiveTimesRef.current = effectiveTimes;
+    
+    // Seek to effective start position
+    setIsSeeking(true);
+    video.currentTime = effectiveTimes.start;
   };
 
   const handleSeeked = () => {
@@ -230,15 +252,24 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
     setError("Failed to load video");
     setIsReady(false);
   };
+  
+  // Ref to store effective clip times after video loads
+  const effectiveTimesRef = useRef({
+    start: clip.start_time_seconds,
+    end: clip.end_time_seconds,
+    goal: clip.goal_timestamp_seconds
+  });
 
   const handlePlay = async () => {
     const video = videoRef.current;
     if (!video || !isReady) return;
+    
+    const times = effectiveTimesRef.current;
 
     try {
-      // Ensure we start from the clip start time
-      if (video.currentTime < clip.start_time_seconds || video.currentTime >= clip.end_time_seconds) {
-        video.currentTime = clip.start_time_seconds;
+      // Ensure we start from the effective clip start time
+      if (video.currentTime < times.start || video.currentTime >= times.end) {
+        video.currentTime = times.start;
       }
       
       await video.play();
@@ -250,10 +281,10 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
         
         setCurrentTime(video.currentTime);
         
-        if (video.currentTime >= clip.end_time_seconds) {
+        if (video.currentTime >= times.end) {
           video.pause();
-          video.currentTime = clip.start_time_seconds;
-          setCurrentTime(clip.start_time_seconds);
+          video.currentTime = times.start;
+          setCurrentTime(times.start);
           setIsPlaying(false);
           return;
         }
@@ -281,10 +312,11 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
 
   const handleReset = () => {
     const video = videoRef.current;
+    const times = effectiveTimesRef.current;
     if (video) {
       video.pause();
-      video.currentTime = clip.start_time_seconds;
-      setCurrentTime(clip.start_time_seconds);
+      video.currentTime = times.start;
+      setCurrentTime(times.start);
       setIsPlaying(false);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -293,10 +325,11 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
   };
 
   const handleVideoEnded = () => {
+    const times = effectiveTimesRef.current;
     setIsPlaying(false);
     if (videoRef.current) {
-      videoRef.current.currentTime = clip.start_time_seconds;
-      setCurrentTime(clip.start_time_seconds);
+      videoRef.current.currentTime = times.start;
+      setCurrentTime(times.start);
     }
   };
 
@@ -308,9 +341,10 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
     }
   };
 
-  // Calculate progress within the clip
-  const clipDuration = clip.end_time_seconds - clip.start_time_seconds;
-  const progress = Math.max(0, Math.min(100, ((currentTime - clip.start_time_seconds) / clipDuration) * 100));
+  // Calculate progress within the clip using effective times
+  const times = effectiveTimesRef.current;
+  const clipDuration = times.end - times.start;
+  const progress = Math.max(0, Math.min(100, ((currentTime - times.start) / clipDuration) * 100));
 
   return (
     <div 
