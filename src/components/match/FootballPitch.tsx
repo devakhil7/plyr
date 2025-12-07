@@ -247,6 +247,7 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
       // Distribute evenly between teams, considering current team sizes
       let teamACount = teamA.length;
       let teamBCount = teamB.length;
+      let successCount = 0;
       
       for (const player of sorted) {
         // Assign to the team with fewer players
@@ -262,12 +263,15 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
           continue;
         }
         
+        successCount++;
         if (team === "A") teamACount++;
         else teamBCount++;
       }
 
-      toast.success("Players auto-assigned to teams!");
-      onRefetch();
+      if (successCount > 0) {
+        toast.success(`${successCount} player${successCount > 1 ? 's' : ''} auto-assigned to teams!`);
+        onRefetch();
+      }
     } catch (error: any) {
       console.error("Auto-assign failed:", error);
       toast.error("Failed to auto-assign players");
@@ -278,11 +282,16 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
 
   // Auto-assign on mount if host and there are unassigned players
   useEffect(() => {
+    // Only attempt auto-assign if: host, has unassigned players, hasn't attempted yet, and players are loaded
     if (isHost && unassigned.length > 0 && !autoAssignAttempted && players.length > 0) {
       setAutoAssignAttempted(true);
-      autoAssignUnassigned();
+      // Small delay to ensure component is fully mounted
+      const timer = setTimeout(() => {
+        autoAssignUnassigned();
+      }, 500);
+      return () => clearTimeout(timer);
     }
-  }, [isHost, players.length, autoAssignAttempted]);
+  }, [isHost, unassigned.length, autoAssignAttempted, players.length]);
 
   const handleAutoSplit = async () => {
     setIsAssigning(true);
