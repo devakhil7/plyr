@@ -16,6 +16,7 @@ import {
   UserPlus, UserMinus, Camera, Video, Edit, Target, 
   Handshake, Calendar, Ruler, Scale, Heart
 } from "lucide-react";
+import { PlayerCard } from "@/components/player/PlayerCard";
 
 function calculateAge(dateOfBirth: string): number {
   const today = new Date();
@@ -80,16 +81,36 @@ export default function PlayerProfile() {
         .select("*", { count: "exact", head: true })
         .eq("user_id", id);
 
-      // Get ratings
+      // Get ratings with all attributes
       const { data: ratings } = await supabase
         .from("player_ratings")
-        .select("rating")
+        .select("rating, pace, shooting, passing, dribbling, defending, ball_control, finishing")
         .eq("rated_user_id", id)
         .eq("moderation_status", "approved");
 
       const avgRating = ratings?.length
         ? (ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1)
         : null;
+
+      // Calculate average attribute ratings
+      const calcAvg = (field: keyof typeof ratings[0]) => {
+        if (!ratings?.length) return null;
+        const validRatings = ratings.filter(r => r[field] !== null);
+        if (!validRatings.length) return null;
+        return validRatings.reduce((sum, r) => sum + (r[field] as number), 0) / validRatings.length;
+      };
+
+      const avgPace = calcAvg('pace');
+      const avgShooting = calcAvg('shooting');
+      const avgPassing = calcAvg('passing');
+      const avgDribbling = calcAvg('dribbling');
+      const avgDefending = calcAvg('defending');
+      // Physical = average of ball_control and finishing (as proxy)
+      const avgBallControl = calcAvg('ball_control');
+      const avgFinishing = calcAvg('finishing');
+      const avgPhysical = avgBallControl && avgFinishing 
+        ? (avgBallControl + avgFinishing) / 2 
+        : avgBallControl || avgFinishing || null;
 
       // Get total goals
       const { count: goalsCount } = await supabase
@@ -140,6 +161,14 @@ export default function PlayerProfile() {
         goals: goalsCount || 0,
         assists: assistsCount || 0,
         wins: winsCount,
+        // Attribute averages
+        pace: avgPace,
+        shooting: avgShooting,
+        passing: avgPassing,
+        dribbling: avgDribbling,
+        defending: avgDefending,
+        physical: avgPhysical,
+        overall: avgRating ? parseFloat(avgRating) : null,
       };
     },
     enabled: !!id,
@@ -278,24 +307,44 @@ export default function PlayerProfile() {
           Back
         </Link>
 
-        {/* Profile Header */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-6 items-start">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={player.profile_photo_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-                  {player.name?.charAt(0) || <User className="h-10 w-10" />}
-                </AvatarFallback>
-              </Avatar>
+        {/* Profile Header with FIFA Card */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* FIFA-style Player Card */}
+          <div className="lg:col-span-1 flex justify-center lg:justify-start">
+            <PlayerCard
+              player={{
+                name: player.name,
+                position: player.position,
+                city: player.city,
+                profile_photo_url: player.profile_photo_url,
+                favourite_club: player.favourite_club,
+              }}
+              stats={{
+                overall: stats?.overall || null,
+                pace: stats?.pace || null,
+                shooting: stats?.shooting || null,
+                passing: stats?.passing || null,
+                dribbling: stats?.dribbling || null,
+                defending: stats?.defending || null,
+                physical: stats?.physical || null,
+                matches: stats?.matches || 0,
+                goals: stats?.goals || 0,
+                assists: stats?.assists || 0,
+                wins: stats?.wins || 0,
+              }}
+            />
+          </div>
 
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
+          {/* Player Info Card */}
+          <Card className="lg:col-span-2">
+            <CardContent className="p-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold">{player.name || "Player"}</h1>
                   {player.position && <Badge variant="secondary">{player.position}</Badge>}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   {player.city && (
                     <span className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
@@ -315,7 +364,7 @@ export default function PlayerProfile() {
 
                 {/* Physical stats */}
                 {(player.height_cm || player.weight_kg) && (
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     {player.height_cm && (
                       <span className="flex items-center gap-1">
                         <Ruler className="h-4 w-4" />
@@ -333,10 +382,10 @@ export default function PlayerProfile() {
 
                 {/* Favourites */}
                 {(player.favourite_club || player.favourite_player) && (
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                     {player.favourite_club && (
                       <span className="flex items-center gap-1">
-                        <Heart className="h-4 w-4 text-red-500" />
+                        <Heart className="h-4 w-4 text-destructive" />
                         Supports {player.favourite_club}
                       </span>
                     )}
@@ -350,58 +399,27 @@ export default function PlayerProfile() {
                 )}
 
                 {player.bio && (
-                  <p className="text-muted-foreground mb-4">{player.bio}</p>
+                  <p className="text-muted-foreground">{player.bio}</p>
                 )}
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 mb-4">
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <p className="text-2xl font-bold">{stats?.matches || 0}</p>
-                    <p className="text-xs text-muted-foreground">Matches</p>
+                {/* Rating info */}
+                {stats?.avgRating && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                    <span className="font-semibold">{stats.avgRating}</span>
+                    <span className="text-muted-foreground">({stats.ratingsCount} ratings)</span>
                   </div>
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <p className="text-2xl font-bold text-green-600">{stats?.wins || 0}</p>
-                    <p className="text-xs text-muted-foreground">Wins</p>
-                  </div>
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center justify-center gap-1">
-                      <Target className="h-4 w-4 text-primary" />
-                      <p className="text-2xl font-bold">{stats?.goals || 0}</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Goals</p>
-                  </div>
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center justify-center gap-1">
-                      <Handshake className="h-4 w-4 text-blue-500" />
-                      <p className="text-2xl font-bold">{stats?.assists || 0}</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Assists</p>
-                  </div>
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <p className="text-2xl font-bold">{stats?.followers || 0}</p>
-                    <p className="text-xs text-muted-foreground">Followers</p>
-                  </div>
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    {stats?.avgRating ? (
-                      <>
-                        <p className="text-2xl font-bold flex items-center justify-center gap-1">
-                          <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                          {stats.avgRating}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{stats.ratingsCount} ratings</p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-2xl font-bold text-muted-foreground">-</p>
-                        <p className="text-xs text-muted-foreground">No ratings</p>
-                      </>
-                    )}
-                  </div>
+                )}
+
+                {/* Followers */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Trophy className="h-4 w-4 text-primary" />
+                  <span>{stats?.followers || 0} followers</span>
                 </div>
 
                 {/* Actions */}
                 {!isOwnProfile && user && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-2">
                     <Button
                       variant={isFollowing ? "outline" : "default"}
                       onClick={() => followMutation.mutate()}
@@ -435,9 +453,9 @@ export default function PlayerProfile() {
                   </Link>
                 )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Top Comments Section */}
         {topComments.length > 0 && (
