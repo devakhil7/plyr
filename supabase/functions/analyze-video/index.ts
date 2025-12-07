@@ -82,8 +82,10 @@ async function getGoogleAccessToken(serviceAccountKey: any): Promise<string> {
   return tokenData.access_token;
 }
 
-// Start Video Intelligence API annotation
-async function startVideoAnnotation(videoUrl: string, accessToken: string): Promise<string> {
+// Start Video Intelligence API annotation with inline content
+async function startVideoAnnotationWithContent(videoBase64: string, accessToken: string): Promise<string> {
+  console.log("Sending video to Video Intelligence API...");
+  
   const response = await fetch(
     "https://videointelligence.googleapis.com/v1/videos:annotate",
     {
@@ -93,7 +95,7 @@ async function startVideoAnnotation(videoUrl: string, accessToken: string): Prom
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        inputUri: videoUrl,
+        inputContent: videoBase64,
         features: ["SHOT_CHANGE_DETECTION", "LABEL_DETECTION"],
         videoContext: {
           labelDetectionConfig: {
@@ -116,7 +118,7 @@ async function startVideoAnnotation(videoUrl: string, accessToken: string): Prom
 
 // Poll for operation completion
 async function pollOperation(operationName: string, accessToken: string): Promise<any> {
-  const maxAttempts = 60;
+  const maxAttempts = 120; // 10 minutes max
   const pollInterval = 5000;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -158,7 +160,7 @@ function detectGoalsFromAnnotations(annotations: any, videoDuration: number): Go
 
   console.log(`Found ${shotAnnotations.length} shots and ${labelAnnotations.length} label annotations`);
 
-  const excitementKeywords = ['goal', 'score', 'celebration', 'crowd', 'cheering', 'soccer', 'football', 'net', 'goalkeeper'];
+  const excitementKeywords = ['goal', 'score', 'celebration', 'crowd', 'cheering', 'soccer', 'football', 'net', 'goalkeeper', 'ball', 'player'];
   const significantMoments: { time: number; score: number; description: string }[] = [];
 
   for (const label of labelAnnotations) {
@@ -181,21 +183,18 @@ function detectGoalsFromAnnotations(annotations: any, videoDuration: number): Go
     }
   }
 
-  if (significantMoments.length === 0) {
-    console.log("No goal-specific labels found, analyzing shot changes...");
+  // Also analyze shot changes for rapid action
+  for (let i = 1; i < shotAnnotations.length; i++) {
+    const currentShot = shotAnnotations[i];
+    const currentStart = parseFloat(currentShot.startTimeOffset?.replace('s', '') || '0');
+    const shotDuration = parseFloat(currentShot.endTimeOffset?.replace('s', '') || '0') - currentStart;
     
-    for (let i = 1; i < shotAnnotations.length; i++) {
-      const currentShot = shotAnnotations[i];
-      const currentStart = parseFloat(currentShot.startTimeOffset?.replace('s', '') || '0');
-      const shotDuration = parseFloat(currentShot.endTimeOffset?.replace('s', '') || '0') - currentStart;
-      
-      if (shotDuration < 3 && shotDuration > 0.5) {
-        significantMoments.push({
-          time: currentStart,
-          score: 1 / shotDuration,
-          description: "Rapid action sequence detected",
-        });
-      }
+    if (shotDuration < 3 && shotDuration > 0.3) {
+      significantMoments.push({
+        time: currentStart,
+        score: 0.5 / shotDuration,
+        description: "Rapid action sequence",
+      });
     }
   }
 
@@ -216,21 +215,63 @@ function detectGoalsFromAnnotations(annotations: any, videoDuration: number): Go
     }
   }
 
+  // Fallback if no goals detected
   if (goals.length === 0 && videoDuration > 60) {
-    console.log("No significant moments found, using fallback distribution");
-    const numGoals = Math.min(Math.floor(videoDuration / 90), 4);
-    const interval = videoDuration / (numGoals + 1);
+    console.log("No significant moments found, using shot change distribution");
+    
+    // Use shot changes as highlight points
+    const shotStarts = shotAnnotations.map((shot: any) => 
+      parseFloat(shot.startTimeOffset?.replace('s', '') || '0')
+    ).filter((t: number) => t > 10 && t < videoDuration - 10);
+    
+    // Pick evenly spaced shots
+    const numGoals = Math.min(Math.floor(videoDuration / 90), 4, shotStarts.length);
+    const step = Math.floor(shotStarts.length / (numGoals + 1));
     
     for (let i = 1; i <= numGoals; i++) {
-      goals.push({
-        timestamp_seconds: Math.round(interval * i),
-        description: "Potential highlight moment",
-        confidence: "low",
-      });
+      const idx = i * step;
+      if (idx < shotStarts.length) {
+        goals.push({
+          timestamp_seconds: Math.round(shotStarts[idx]),
+          description: "Highlight moment",
+          confidence: "medium",
+        });
+      }
     }
   }
 
   return goals.sort((a, b) => a.timestamp_seconds - b.timestamp_seconds);
+}
+
+// Download video and convert to base64
+async function downloadVideoAsBase64(videoUrl: string): Promise<string> {
+  console.log("Downloading video...");
+  
+  const response = await fetch(videoUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to download video: ${response.status}`);
+  }
+  
+  const arrayBuffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  
+  // Check size - Video Intelligence API has a 20MB limit for inline content
+  const sizeMB = bytes.length / (1024 * 1024);
+  console.log(`Video size: ${sizeMB.toFixed(2)} MB`);
+  
+  if (sizeMB > 20) {
+    throw new Error(`Video too large for inline analysis (${sizeMB.toFixed(1)}MB). Maximum is 20MB.`);
+  }
+  
+  // Convert to base64
+  let binary = '';
+  const chunkSize = 32768;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  
+  return btoa(binary);
 }
 
 serve(async (req) => {
@@ -253,16 +294,13 @@ serve(async (req) => {
       throw new Error('GOOGLE_VIDEO_INTELLIGENCE_KEY is not configured');
     }
 
-    // Handle potential double-escaping of JSON
     let googleKey;
     try {
       googleKey = JSON.parse(googleKeyJson);
     } catch {
-      // Try parsing again if it was double-escaped
       try {
         googleKey = JSON.parse(JSON.parse(googleKeyJson));
       } catch {
-        // Try removing surrounding quotes if present
         const cleaned = googleKeyJson.replace(/^["']|["']$/g, '');
         googleKey = JSON.parse(cleaned);
       }
@@ -287,13 +325,15 @@ serve(async (req) => {
       .update({ status: 'analyzing', updated_at: new Date().toISOString() })
       .eq('id', jobId);
 
+    // Download video and convert to base64
+    const videoBase64 = await downloadVideoAsBase64(job.video_url);
+    console.log("Video downloaded and encoded");
+
     console.log("Getting Google access token...");
     const accessToken = await getGoogleAccessToken(googleKey);
 
-    const inputUri = job.video_url;
-    console.log(`Starting Video Intelligence analysis for: ${inputUri}`);
-    
-    const operationName = await startVideoAnnotation(inputUri, accessToken);
+    console.log("Starting Video Intelligence analysis...");
+    const operationName = await startVideoAnnotationWithContent(videoBase64, accessToken);
     console.log(`Video Intelligence operation started: ${operationName}`);
 
     console.log("Waiting for video analysis to complete...");
