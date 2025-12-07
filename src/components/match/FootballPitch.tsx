@@ -136,11 +136,11 @@ function PlaceholderChip({ team }: { team: "A" | "B" }) {
 
 export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, totalSlots, onRefetch }: FootballPitchProps) {
   const [isAssigning, setIsAssigning] = useState(false);
-  const [hasAutoAssigned, setHasAutoAssigned] = useState(false);
+  const [autoAssignAttempted, setAutoAssignAttempted] = useState(false);
 
   const teamA = players.filter(p => p.team === "A");
   const teamB = players.filter(p => p.team === "B");
-  const unassigned = players.filter(p => p.team === "unassigned");
+  const unassigned = players.filter(p => p.team === "unassigned" || !p.team);
   
   // Calculate slots per team
   const slotsPerTeam = Math.ceil(totalSlots / 2);
@@ -175,22 +175,23 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
     });
   };
 
-  // Auto-assign unassigned players to teams on mount
+  // Auto-assign unassigned players to teams
   const autoAssignUnassigned = async () => {
-    if (unassigned.length === 0 || hasAutoAssigned) return;
+    if (unassigned.length === 0 || isAssigning) return;
     
-    setHasAutoAssigned(true);
     setIsAssigning(true);
     
     try {
-      // Shuffle unassigned players
-      const shuffled = [...unassigned].sort(() => Math.random() - 0.5);
+      // Sort by position priority first
+      const sorted = [...unassigned].sort((a, b) => {
+        return getPositionPriority(a.profiles?.position) - getPositionPriority(b.profiles?.position);
+      });
       
       // Distribute evenly between teams, considering current team sizes
       let teamACount = teamA.length;
       let teamBCount = teamB.length;
       
-      for (const player of shuffled) {
+      for (const player of sorted) {
         // Assign to the team with fewer players
         const team = teamACount <= teamBCount ? "A" : "B";
         
@@ -199,26 +200,32 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
           .update({ team })
           .eq("id", player.id);
         
-        if (error) throw error;
+        if (error) {
+          console.error("Failed to assign player:", error);
+          continue;
+        }
         
         if (team === "A") teamACount++;
         else teamBCount++;
       }
 
+      toast.success("Players auto-assigned to teams!");
       onRefetch();
     } catch (error: any) {
       console.error("Auto-assign failed:", error);
+      toast.error("Failed to auto-assign players");
     } finally {
       setIsAssigning(false);
     }
   };
 
-  // Auto-assign on mount if there are unassigned players
+  // Auto-assign on mount if host and there are unassigned players
   useEffect(() => {
-    if (unassigned.length > 0 && !hasAutoAssigned) {
+    if (isHost && unassigned.length > 0 && !autoAssignAttempted && players.length > 0) {
+      setAutoAssignAttempted(true);
       autoAssignUnassigned();
     }
-  }, [unassigned.length, hasAutoAssigned]);
+  }, [isHost, players.length, autoAssignAttempted]);
 
   const handleAutoSplit = async () => {
     setIsAssigning(true);
