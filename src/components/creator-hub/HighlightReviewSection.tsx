@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, Film, Send, Layers, Upload, Play } from "lucide-react";
-import { useState, useRef } from "react";
+import { CheckCircle, Film, Send, Layers, Upload, Play, Pause, RotateCcw } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 
 interface HighlightClip {
   id: string;
@@ -183,79 +183,126 @@ interface ClipCardProps {
 const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }: ClipCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(clip.start_time_seconds);
+  const animationRef = useRef<number | null>(null);
 
-  const handlePlayClip = async () => {
-    console.log("handlePlayClip called", { 
-      start: clip.start_time_seconds, 
-      end: clip.end_time_seconds,
-      videoRef: !!videoRef.current 
-    });
+  // Create video URL with time fragment
+  const videoSrcWithTime = `${videoUrl}#t=${clip.start_time_seconds},${clip.end_time_seconds}`;
+
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current;
+    if (!video) return;
     
-    if (videoRef.current) {
-      try {
-        // Always seek to start of clip before playing
-        console.log("Setting currentTime to:", clip.start_time_seconds);
-        videoRef.current.currentTime = clip.start_time_seconds;
-        console.log("currentTime after set:", videoRef.current.currentTime);
+    // Check if video is long enough
+    if (video.duration < clip.end_time_seconds) {
+      setError(`Video too short (${Math.round(video.duration)}s)`);
+      return;
+    }
+    
+    // Seek to clip start
+    video.currentTime = clip.start_time_seconds;
+  };
+
+  const handleCanPlayThrough = () => {
+    setIsReady(true);
+    setError(null);
+  };
+
+  const handleError = () => {
+    setError("Failed to load video");
+    setIsReady(false);
+  };
+
+  const handlePlay = async () => {
+    const video = videoRef.current;
+    if (!video || !isReady) return;
+
+    try {
+      // Ensure we start from the clip start time
+      if (video.currentTime < clip.start_time_seconds || video.currentTime >= clip.end_time_seconds) {
+        video.currentTime = clip.start_time_seconds;
+      }
+      
+      await video.play();
+      setIsPlaying(true);
+      
+      // Use requestAnimationFrame for smoother time tracking
+      const checkTime = () => {
+        if (video.paused) return;
         
-        await videoRef.current.play();
-        console.log("Video playing, currentTime:", videoRef.current.currentTime);
-        setIsPlaying(true);
-      } catch (error) {
-        console.error("Error playing video:", error);
+        setCurrentTime(video.currentTime);
+        
+        if (video.currentTime >= clip.end_time_seconds) {
+          video.pause();
+          video.currentTime = clip.start_time_seconds;
+          setCurrentTime(clip.start_time_seconds);
+          setIsPlaying(false);
+          return;
+        }
+        
+        animationRef.current = requestAnimationFrame(checkTime);
+      };
+      
+      animationRef.current = requestAnimationFrame(checkTime);
+    } catch (err) {
+      console.error("Play error:", err);
+      setError("Cannot play video");
+    }
+  };
+
+  const handlePause = () => {
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      setIsPlaying(false);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
       }
     }
   };
 
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      const currentTime = videoRef.current.currentTime;
-      // Stop playback when we reach the end of the clip
-      if (currentTime >= clip.end_time_seconds) {
-        console.log("Reached end of clip, stopping", { currentTime, endTime: clip.end_time_seconds });
-        videoRef.current.pause();
-        videoRef.current.currentTime = clip.start_time_seconds;
-        setIsPlaying(false);
+  const handleReset = () => {
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.currentTime = clip.start_time_seconds;
+      setCurrentTime(clip.start_time_seconds);
+      setIsPlaying(false);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
       }
+    }
+  };
+
+  const handleVideoEnded = () => {
+    setIsPlaying(false);
+    if (videoRef.current) {
+      videoRef.current.currentTime = clip.start_time_seconds;
+      setCurrentTime(clip.start_time_seconds);
     }
   };
 
   const handleVideoClick = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        handlePlayClip();
-      }
+    if (isPlaying) {
+      handlePause();
+    } else {
+      handlePlay();
     }
   };
 
-  const handleLoadedMetadata = () => {
-    console.log("Video metadata loaded", { 
-      duration: videoRef.current?.duration,
-      clipStart: clip.start_time_seconds,
-      clipEnd: clip.end_time_seconds
-    });
-    setIsLoaded(true);
-    // Set initial position to start of clip when video metadata loads
-    if (videoRef.current) {
-      videoRef.current.currentTime = clip.start_time_seconds;
-      console.log("Set initial currentTime to:", clip.start_time_seconds);
-    }
-  };
-
-  const handleCanPlay = () => {
-    console.log("Video can play, currentTime:", videoRef.current?.currentTime);
-  };
-
-  const handleSeeked = () => {
-    console.log("Video seeked to:", videoRef.current?.currentTime);
-    // Ensure we're at the right position after seeking
-    if (videoRef.current && videoRef.current.currentTime < clip.start_time_seconds) {
-      videoRef.current.currentTime = clip.start_time_seconds;
-    }
-  };
+  // Calculate progress within the clip
+  const clipDuration = clip.end_time_seconds - clip.start_time_seconds;
+  const progress = Math.max(0, Math.min(100, ((currentTime - clip.start_time_seconds) / clipDuration) * 100));
 
   return (
     <div 
@@ -287,38 +334,88 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
       <div className="relative aspect-video bg-black rounded overflow-hidden">
         <video
           ref={videoRef}
-          src={videoUrl}
+          src={videoSrcWithTime}
           className="w-full h-full object-contain cursor-pointer"
-          preload="auto"
+          preload="metadata"
           onLoadedMetadata={handleLoadedMetadata}
-          onCanPlay={handleCanPlay}
-          onTimeUpdate={handleTimeUpdate}
-          onSeeked={handleSeeked}
-          onPause={() => setIsPlaying(false)}
-          onEnded={() => setIsPlaying(false)}
-          onError={(e) => console.error("Video error:", e)}
+          onCanPlayThrough={handleCanPlayThrough}
+          onEnded={handleVideoEnded}
+          onError={handleError}
           onClick={handleVideoClick}
+          playsInline
+          muted={false}
         />
-        {!isPlaying && isLoaded && (
+        
+        {/* Progress bar */}
+        {isReady && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
+            <div 
+              className="h-full bg-primary transition-all duration-100"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        )}
+
+        {/* Loading/Error overlay */}
+        {!isReady && !error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80">
+            <p className="text-destructive text-sm text-center px-4">{error}</p>
+          </div>
+        )}
+
+        {/* Play/Pause overlay */}
+        {isReady && !error && !isPlaying && (
           <button
             onClick={(e) => {
               e.stopPropagation();
-              console.log("Play button clicked!");
-              handlePlayClip();
+              handlePlay();
             }}
-            className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/30 transition-colors z-10"
+            className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/30 transition-colors"
           >
             <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center">
               <Play className="h-6 w-6 text-primary-foreground ml-1" />
             </div>
           </button>
         )}
-        {!isLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
       </div>
+
+      {/* Playback Controls */}
+      {isReady && (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={isPlaying ? handlePause : handlePlay}
+            className="flex-1"
+          >
+            {isPlaying ? (
+              <>
+                <Pause className="h-4 w-4 mr-1" />
+                Pause
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4 mr-1" />
+                Play Clip
+              </>
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            title="Reset to start"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {/* Caption Input */}
       <Input
