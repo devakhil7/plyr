@@ -15,6 +15,7 @@ import { ArrowLeft, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { PlayerCard } from "@/components/player/PlayerCard";
+import { calculatePlayerWins } from "@/lib/playerStats";
 
 const positions = ["Striker", "Midfielder", "Defender", "Goalkeeper", "Winger", "Forward", "All-rounder"];
 const skillLevels = [
@@ -125,34 +126,8 @@ export default function Profile() {
         .select("*", { count: "exact", head: true })
         .eq("assist_user_id", user.id);
 
-      // Get wins
-      const { data: playerMatches } = await supabase
-        .from("match_players")
-        .select("match_id, team")
-        .eq("user_id", user.id);
-
-      let winsCount = 0;
-      if (playerMatches && playerMatches.length > 0) {
-        const matchIds = playerMatches.map(pm => pm.match_id);
-        const { data: completedMatches } = await supabase
-          .from("matches")
-          .select("id, team_a_score, team_b_score, status")
-          .in("id", matchIds)
-          .eq("status", "completed");
-
-        if (completedMatches) {
-          for (const match of completedMatches) {
-            const playerTeam = playerMatches.find(pm => pm.match_id === match.id)?.team;
-            if (match.team_a_score !== null && match.team_b_score !== null) {
-              if (playerTeam === "A" && match.team_a_score > match.team_b_score) {
-                winsCount++;
-              } else if (playerTeam === "B" && match.team_b_score > match.team_a_score) {
-                winsCount++;
-              }
-            }
-          }
-        }
-      }
+      // Get wins using shared utility
+      const winsCount = await calculatePlayerWins(user.id);
 
       const avgBallControl = calcAvg('ball_control');
       const avgFinishing = calcAvg('finishing');

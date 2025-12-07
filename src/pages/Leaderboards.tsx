@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy, Star, Target, Users, Award, Medal, Crown } from "lucide-react";
 import { Link } from "react-router-dom";
+import { didPlayerWin } from "@/lib/playerStats";
 
 interface LeaderboardEntry {
   id: string;
@@ -398,14 +399,11 @@ export default function Leaderboards() {
         );
       }
 
-      // Count wins per player
+      // Count wins per player using shared utility
       const winCounts = new Map<string, number>();
       filteredMatches.forEach((match: any) => {
-        const teamAWon = match.team_a_score > match.team_b_score;
-        const teamBWon = match.team_b_score > match.team_a_score;
-        
         match.match_players?.forEach((player: any) => {
-          if ((player.team === "A" && teamAWon) || (player.team === "B" && teamBWon)) {
+          if (didPlayerWin(player.team, match.team_a_score, match.team_b_score)) {
             const current = winCounts.get(player.user_id) || 0;
             winCounts.set(player.user_id, current + 1);
           }

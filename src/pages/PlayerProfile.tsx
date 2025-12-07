@@ -17,6 +17,7 @@ import {
   Handshake, Calendar, Ruler, Scale, Heart
 } from "lucide-react";
 import { PlayerCard } from "@/components/player/PlayerCard";
+import { calculatePlayerWins } from "@/lib/playerStats";
 
 function calculateAge(dateOfBirth: string): number {
   const today = new Date();
@@ -124,34 +125,8 @@ export default function PlayerProfile() {
         .select("*", { count: "exact", head: true })
         .eq("assist_user_id", id);
 
-      // Get wins - matches where user's team won
-      const { data: playerMatches } = await supabase
-        .from("match_players")
-        .select("match_id, team")
-        .eq("user_id", id);
-
-      let winsCount = 0;
-      if (playerMatches && playerMatches.length > 0) {
-        const matchIds = playerMatches.map(pm => pm.match_id);
-        const { data: completedMatches } = await supabase
-          .from("matches")
-          .select("id, team_a_score, team_b_score, status")
-          .in("id", matchIds)
-          .eq("status", "completed");
-
-        if (completedMatches) {
-          for (const match of completedMatches) {
-            const playerTeam = playerMatches.find(pm => pm.match_id === match.id)?.team;
-            if (match.team_a_score !== null && match.team_b_score !== null) {
-              if (playerTeam === "A" && match.team_a_score > match.team_b_score) {
-                winsCount++;
-              } else if (playerTeam === "B" && match.team_b_score > match.team_a_score) {
-                winsCount++;
-              }
-            }
-          }
-        }
-      }
+      // Get wins using shared utility
+      const winsCount = await calculatePlayerWins(id!);
 
       return {
         followers: followersCount || 0,
