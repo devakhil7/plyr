@@ -216,21 +216,17 @@ export default function HostMatch() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="total_slots">Total Player Slots</Label>
-                    <Select
-                      value={String(formData.total_slots)}
-                      onValueChange={(value) => setFormData({ ...formData, total_slots: Number(value) })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="6">6 players</SelectItem>
-                        <SelectItem value="10">10 players</SelectItem>
-                        <SelectItem value="14">14 players</SelectItem>
-                        <SelectItem value="22">22 players</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="total_slots">Maximum Players</Label>
+                    <Input
+                      id="total_slots"
+                      type="number"
+                      min={2}
+                      max={22}
+                      value={formData.total_slots}
+                      onChange={(e) => setFormData({ ...formData, total_slots: Math.min(22, Math.max(2, Number(e.target.value) || 2)) })}
+                      placeholder="Enter max players (2-22)"
+                    />
+                    <p className="text-xs text-muted-foreground">Players per team: {Math.ceil(formData.total_slots / 2)}</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="visibility">Visibility</Label>
