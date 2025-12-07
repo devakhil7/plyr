@@ -92,7 +92,9 @@ export function MatchHighlightCard({
           <video 
             src={post.media_url} 
             className="w-full h-full object-cover"
+            controls
             muted
+            autoPlay
             loop
             playsInline
           />
