@@ -183,33 +183,43 @@ interface ClipCardProps {
 const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }: ClipCardProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const handlePlayClip = () => {
+  const handlePlayClip = async () => {
     if (videoRef.current) {
-      videoRef.current.currentTime = clip.start_time_seconds;
-      videoRef.current.play();
-      setIsPlaying(true);
+      try {
+        videoRef.current.currentTime = clip.start_time_seconds;
+        await videoRef.current.play();
+        setIsPlaying(true);
+      } catch (error) {
+        console.error("Error playing video:", error);
+      }
     }
   };
 
   const handleTimeUpdate = () => {
     if (videoRef.current && videoRef.current.currentTime >= clip.end_time_seconds) {
       videoRef.current.pause();
-      videoRef.current.currentTime = clip.start_time_seconds;
       setIsPlaying(false);
     }
   };
 
-  const handlePause = () => {
-    setIsPlaying(false);
+  const handleVideoClick = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        handlePlayClip();
+      }
+    }
   };
 
-  const handlePlay = () => {
-    // Ensure we start from the correct position when play is triggered
-    if (videoRef.current && videoRef.current.currentTime < clip.start_time_seconds) {
+  const handleLoadedMetadata = () => {
+    setIsLoaded(true);
+    // Set initial position to start of clip
+    if (videoRef.current) {
       videoRef.current.currentTime = clip.start_time_seconds;
     }
-    setIsPlaying(true);
   };
 
   return (
@@ -243,11 +253,13 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
         <video
           ref={videoRef}
           src={videoUrl}
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain cursor-pointer"
+          preload="metadata"
+          onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
-          onPause={handlePause}
-          onPlay={handlePlay}
+          onPause={() => setIsPlaying(false)}
           onEnded={() => setIsPlaying(false)}
+          onClick={handleVideoClick}
         />
         {!isPlaying && (
           <button
@@ -258,6 +270,11 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
               <Play className="h-6 w-6 text-primary-foreground ml-1" />
             </div>
           </button>
+        )}
+        {!isLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
         )}
       </div>
 
