@@ -117,14 +117,22 @@ export default function Profile() {
     }
   };
 
+  const handleRepositionClick = () => {
+    const currentPhotoUrl = profilePhotoUrl || profile?.profile_photo_url;
+    if (currentPhotoUrl) {
+      setSelectedImageUrl(currentPhotoUrl);
+      setCropDialogOpen(true);
+    }
+  };
+
   const handleCropComplete = async (croppedBlob: Blob) => {
     if (!user) return;
 
-    // Clean up object URL
-    if (selectedImageUrl) {
+    // Clean up object URL only if it's a blob URL (not a remote URL)
+    if (selectedImageUrl && selectedImageUrl.startsWith('blob:')) {
       URL.revokeObjectURL(selectedImageUrl);
-      setSelectedImageUrl(null);
     }
+    setSelectedImageUrl(null);
 
     setUploadingPhoto(true);
     try {
@@ -364,14 +372,29 @@ export default function Profile() {
                 <div>
                   <CardTitle className="text-2xl">{profile?.name || "Your Profile"}</CardTitle>
                   <CardDescription>{user?.email}</CardDescription>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingPhoto}
-                    className="text-xs text-primary hover:underline mt-1"
-                  >
-                    {uploadingPhoto ? "Uploading..." : "Change photo"}
-                  </button>
+                  <div className="flex gap-2 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingPhoto}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      {uploadingPhoto ? "Uploading..." : "Change photo"}
+                    </button>
+                    {(profilePhotoUrl || profile?.profile_photo_url) && (
+                      <>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <button
+                          type="button"
+                          onClick={handleRepositionClick}
+                          disabled={uploadingPhoto}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Reposition
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardHeader>

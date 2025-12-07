@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -27,10 +27,34 @@ export function PhotoCropDialog({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
+  const CONTAINER_SIZE = 256; // 64 * 4 = 256px (w-64)
+
+  // Reset state when dialog opens with new image
+  useEffect(() => {
+    if (open) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+      setImageLoaded(false);
+    }
+  }, [open, imageUrl]);
+
+  const handleImageLoad = useCallback(() => {
+    if (imageRef.current) {
+      setImageDimensions({
+        width: imageRef.current.naturalWidth,
+        height: imageRef.current.naturalHeight,
+      });
+      setImageLoaded(true);
+    }
+  }, []);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
     setIsDragging(true);
     setDragStart({
       x: e.clientX - position.x,
@@ -69,40 +93,55 @@ export function PhotoCropDialog({
   }, [isDragging, dragStart]);
 
   const handleCrop = useCallback(() => {
-    if (!imageRef.current || !containerRef.current) return;
+    if (!imageRef.current || !containerRef.current || !imageLoaded) return;
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const outputSize = 400; // Output image size
+    const outputSize = 400;
     canvas.width = outputSize;
     canvas.height = outputSize;
 
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const containerSize = containerRect.width;
-
-    // Calculate the visible area of the image
     const img = imageRef.current;
-    const imgNaturalWidth = img.naturalWidth;
-    const imgNaturalHeight = img.naturalHeight;
+    const naturalWidth = img.naturalWidth;
+    const naturalHeight = img.naturalHeight;
 
-    // Calculate the scaled image dimensions as displayed
-    const displayedWidth = imgNaturalWidth * scale;
-    const displayedHeight = imgNaturalHeight * scale;
+    // Calculate displayed image size (image is set to width: 100% of container)
+    const displayedWidth = CONTAINER_SIZE;
+    const displayedHeight = (naturalHeight / naturalWidth) * CONTAINER_SIZE;
 
-    // Calculate source coordinates
-    const sourceX = ((containerSize / 2 - position.x) / scale) - (imgNaturalWidth / 2) + (imgNaturalWidth / 2);
-    const sourceY = ((containerSize / 2 - position.y) / scale) - (imgNaturalHeight / 2) + (imgNaturalHeight / 2);
-    const sourceSize = containerSize / scale;
+    // Scale factor from displayed to natural
+    const displayToNaturalRatio = naturalWidth / displayedWidth;
 
-    // Draw the cropped image
+    // The image is centered at 50%/50%, then offset by position and scaled
+    // Calculate what portion of the natural image is visible in the container
+
+    // Center of container in image coordinates (before position offset)
+    const centerX = naturalWidth / 2;
+    const centerY = naturalHeight / 2;
+
+    // The visible area size in natural coordinates
+    const visibleSize = CONTAINER_SIZE / scale * displayToNaturalRatio;
+
+    // Position offset converted to natural coordinates
+    const offsetX = position.x * displayToNaturalRatio / scale;
+    const offsetY = position.y * displayToNaturalRatio / scale;
+
+    // Source rectangle
+    const sourceX = centerX - visibleSize / 2 - offsetX;
+    const sourceY = centerY - visibleSize / 2 - offsetY;
+
+    // Draw with white background for any areas outside the image
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, outputSize, outputSize);
+
     ctx.drawImage(
       img,
-      (imgNaturalWidth / 2) - (sourceSize / 2) - (position.x / scale),
-      (imgNaturalHeight / 2) - (sourceSize / 2) - (position.y / scale),
-      sourceSize,
-      sourceSize,
+      sourceX,
+      sourceY,
+      visibleSize,
+      visibleSize,
       0,
       0,
       outputSize,
@@ -113,17 +152,30 @@ export function PhotoCropDialog({
       if (blob) {
         onCropComplete(blob);
         onOpenChange(false);
-        // Reset state
-        setScale(1);
-        setPosition({ x: 0, y: 0 });
       }
     }, "image/jpeg", 0.9);
-  }, [scale, position, onCropComplete, onOpenChange]);
+  }, [scale, position, onCropComplete, onOpenChange, imageLoaded]);
 
   const handleCancel = () => {
     onOpenChange(false);
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
+  };
+
+  // Calculate image style for preview
+  const getImageStyle = () => {
+    if (!imageLoaded) return {};
+    
+    const aspectRatio = imageDimensions.height / imageDimensions.width;
+    const displayedHeight = CONTAINER_SIZE * aspectRatio;
+    
+    return {
+      width: CONTAINER_SIZE,
+      height: displayedHeight,
+      transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px)) scale(${scale})`,
+      transformOrigin: "center center",
+      left: "50%",
+      top: "50%",
+      maxWidth: "none",
+    };
   };
 
   return (
@@ -156,16 +208,8 @@ export function PhotoCropDialog({
               src={imageUrl}
               alt="Crop preview"
               className="absolute select-none pointer-events-none"
-              style={{
-                transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                transformOrigin: "center center",
-                left: "50%",
-                top: "50%",
-                marginLeft: "-50%",
-                marginTop: "-50%",
-                maxWidth: "none",
-                width: "100%",
-              }}
+              style={getImageStyle()}
+              onLoad={handleImageLoad}
               draggable={false}
             />
           </div>
@@ -189,7 +233,7 @@ export function PhotoCropDialog({
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button onClick={handleCrop}>
+          <Button onClick={handleCrop} disabled={!imageLoaded}>
             Save
           </Button>
         </DialogFooter>
