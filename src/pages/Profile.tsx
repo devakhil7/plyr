@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, User } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { PlayerCard } from "@/components/player/PlayerCard";
 
 const positions = ["Striker", "Midfielder", "Defender", "Goalkeeper", "Winger", "Forward", "All-rounder"];
 const skillLevels = [
@@ -79,6 +81,100 @@ export default function Profile() {
       });
     }
   }, [user, profile, loading, navigate]);
+
+  // Fetch player stats for the card
+  const { data: stats } = useQuery({
+    queryKey: ["my-player-stats", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      // Get matches played
+      const { count: matchesCount } = await supabase
+        .from("match_players")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      // Get ratings with all attributes
+      const { data: ratings } = await supabase
+        .from("player_ratings")
+        .select("rating, pace, shooting, passing, dribbling, defending, ball_control, finishing")
+        .eq("rated_user_id", user.id)
+        .eq("moderation_status", "approved");
+
+      const avgRating = ratings?.length
+        ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
+        : null;
+
+      // Calculate average attribute ratings
+      const calcAvg = (field: string) => {
+        if (!ratings?.length) return null;
+        const validRatings = ratings.filter(r => (r as any)[field] !== null);
+        if (!validRatings.length) return null;
+        return validRatings.reduce((sum, r) => sum + ((r as any)[field] as number), 0) / validRatings.length;
+      };
+
+      // Get total goals
+      const { count: goalsCount } = await supabase
+        .from("match_events")
+        .select("*", { count: "exact", head: true })
+        .eq("scorer_user_id", user.id);
+
+      // Get total assists
+      const { count: assistsCount } = await supabase
+        .from("match_events")
+        .select("*", { count: "exact", head: true })
+        .eq("assist_user_id", user.id);
+
+      // Get wins
+      const { data: playerMatches } = await supabase
+        .from("match_players")
+        .select("match_id, team")
+        .eq("user_id", user.id);
+
+      let winsCount = 0;
+      if (playerMatches && playerMatches.length > 0) {
+        const matchIds = playerMatches.map(pm => pm.match_id);
+        const { data: completedMatches } = await supabase
+          .from("matches")
+          .select("id, team_a_score, team_b_score, status")
+          .in("id", matchIds)
+          .eq("status", "completed");
+
+        if (completedMatches) {
+          for (const match of completedMatches) {
+            const playerTeam = playerMatches.find(pm => pm.match_id === match.id)?.team;
+            if (match.team_a_score !== null && match.team_b_score !== null) {
+              if (playerTeam === "A" && match.team_a_score > match.team_b_score) {
+                winsCount++;
+              } else if (playerTeam === "B" && match.team_b_score > match.team_a_score) {
+                winsCount++;
+              }
+            }
+          }
+        }
+      }
+
+      const avgBallControl = calcAvg('ball_control');
+      const avgFinishing = calcAvg('finishing');
+
+      return {
+        matches: matchesCount || 0,
+        goals: goalsCount || 0,
+        assists: assistsCount || 0,
+        wins: winsCount,
+        overall: avgRating,
+        pace: calcAvg('pace'),
+        shooting: calcAvg('shooting'),
+        passing: calcAvg('passing'),
+        dribbling: calcAvg('dribbling'),
+        defending: calcAvg('defending'),
+        physical: avgBallControl && avgFinishing 
+          ? (avgBallControl + avgFinishing) / 2 
+          : avgBallControl || avgFinishing || null,
+      };
+    },
+    enabled: !!user?.id,
+  });
 
   const handleClubChange = (value: string) => {
     if (value === "other") {
@@ -150,7 +246,38 @@ export default function Profile() {
           Back to dashboard
         </Link>
 
-        <div className="max-w-2xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Player Card Preview */}
+          <div className="lg:col-span-1 flex justify-center lg:justify-start">
+            <div className="sticky top-24">
+              <p className="text-sm text-muted-foreground text-center mb-4">Your Player Card</p>
+              <PlayerCard
+                player={{
+                  name: formData.name || profile?.name || null,
+                  position: formData.position || profile?.position || null,
+                  city: formData.city || profile?.city || null,
+                  profile_photo_url: profile?.profile_photo_url || null,
+                  favourite_club: getFinalClub(),
+                }}
+                stats={{
+                  overall: stats?.overall || null,
+                  pace: stats?.pace || null,
+                  shooting: stats?.shooting || null,
+                  passing: stats?.passing || null,
+                  dribbling: stats?.dribbling || null,
+                  defending: stats?.defending || null,
+                  physical: stats?.physical || null,
+                  matches: stats?.matches || 0,
+                  goals: stats?.goals || 0,
+                  assists: stats?.assists || 0,
+                  wins: stats?.wins || 0,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Edit Form */}
+          <div className="lg:col-span-2">
           <Card>
             <CardHeader>
               <div className="flex items-center gap-4">
@@ -332,6 +459,7 @@ export default function Profile() {
               </form>
             </CardContent>
           </Card>
+          </div>
         </div>
       </div>
     </Layout>
