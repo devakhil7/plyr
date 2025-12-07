@@ -45,13 +45,19 @@ function PlayerChip({
   team, 
   isHost, 
   onMoveToTeam,
-  onRemove
+  onRemove,
+  isDragging,
+  onDragStart,
+  onDragEnd
 }: { 
   player: Player; 
   team: "A" | "B" | "unassigned";
   isHost: boolean;
   onMoveToTeam?: (playerId: string, team: "A" | "B" | "unassigned") => void;
   onRemove?: (playerId: string) => void;
+  isDragging?: boolean;
+  onDragStart?: (e: React.DragEvent, playerId: string) => void;
+  onDragEnd?: () => void;
 }) {
   const teamColors = {
     A: "from-blue-500/20 to-blue-600/20 border-blue-500/50",
@@ -68,32 +74,44 @@ function PlayerChip({
   const isOfflinePlayer = !player.user_id && player.offline_player_name;
   const displayName = isOfflinePlayer ? player.offline_player_name : player.profiles?.name;
 
+  const handleDragStart = (e: React.DragEvent) => {
+    if (isHost && onDragStart) {
+      e.dataTransfer.effectAllowed = 'move';
+      onDragStart(e, player.id);
+    }
+  };
+
   const content = (
     <div
+      draggable={isHost}
+      onDragStart={handleDragStart}
+      onDragEnd={onDragEnd}
       className={`
         flex flex-col items-center p-2 rounded-lg 
         bg-gradient-to-b ${teamColors[team]} 
         border backdrop-blur-sm
         hover:scale-105 transition-transform duration-200
         min-w-[70px]
+        ${isHost ? 'cursor-grab active:cursor-grabbing' : ''}
+        ${isDragging ? 'opacity-50 scale-95' : ''}
       `}
     >
-      <Avatar className="h-10 w-10 border-2 border-background shadow-lg">
+      <Avatar className="h-10 w-10 border-2 border-background shadow-lg pointer-events-none">
         <AvatarImage src={player.profiles?.profile_photo_url || undefined} />
         <AvatarFallback className={`${teamTextColors[team]} bg-background/80 text-xs font-bold`}>
           {displayName?.charAt(0) || "P"}
         </AvatarFallback>
       </Avatar>
-      <span className="text-[10px] font-medium text-white mt-1 truncate max-w-[60px] text-center drop-shadow-lg">
+      <span className="text-[10px] font-medium text-white mt-1 truncate max-w-[60px] text-center drop-shadow-lg pointer-events-none">
         {displayName?.split(' ')[0] || "Player"}
       </span>
       {isOfflinePlayer && (
-        <span className="text-[8px] text-yellow-300/80 uppercase tracking-wider">
+        <span className="text-[8px] text-yellow-300/80 uppercase tracking-wider pointer-events-none">
           Offline
         </span>
       )}
       {!isOfflinePlayer && player.profiles?.position && (
-        <span className="text-[8px] text-white/70 uppercase tracking-wider">
+        <span className="text-[8px] text-white/70 uppercase tracking-wider pointer-events-none">
           {player.profiles.position.substring(0, 3)}
         </span>
       )}
@@ -102,7 +120,7 @@ function PlayerChip({
 
   return (
     <div className="group relative">
-      {isOfflinePlayer ? (
+      {isHost || isOfflinePlayer ? (
         content
       ) : (
         <Link to={`/players/${player.user_id}`}>
@@ -194,6 +212,8 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
   const [addPlayerTeam, setAddPlayerTeam] = useState<"A" | "B">("A");
   const [offlinePlayerName, setOfflinePlayerName] = useState("");
   const [isAddingPlayer, setIsAddingPlayer] = useState(false);
+  const [draggingPlayerId, setDraggingPlayerId] = useState<string | null>(null);
+  const [dragOverTeam, setDragOverTeam] = useState<"A" | "B" | null>(null);
 
   const teamA = players.filter(p => p.team === "A");
   const teamB = players.filter(p => p.team === "B");
@@ -332,6 +352,37 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
     } catch (error: any) {
       toast.error(error.message || "Failed to move player");
     }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, playerId: string) => {
+    setDraggingPlayerId(playerId);
+    e.dataTransfer.setData('text/plain', playerId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingPlayerId(null);
+    setDragOverTeam(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, team: "A" | "B") => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverTeam(team);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverTeam(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, team: "A" | "B") => {
+    e.preventDefault();
+    const playerId = e.dataTransfer.getData('text/plain');
+    if (playerId) {
+      await handleMoveToTeam(playerId, team);
+    }
+    setDraggingPlayerId(null);
+    setDragOverTeam(null);
   };
 
   // Handle adding offline player
@@ -502,8 +553,15 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
           </div>
         </div>
 
-        {/* Team B Players (Top Half) */}
-        <div className="absolute inset-0 top-0 h-1/2">
+        {/* Team B Players (Top Half) - Drop Zone */}
+        <div 
+          className={`absolute inset-0 top-0 h-1/2 transition-all ${
+            isHost && dragOverTeam === "B" ? 'bg-red-500/20 ring-2 ring-red-500 ring-inset' : ''
+          }`}
+          onDragOver={isHost ? (e) => handleDragOver(e, "B") : undefined}
+          onDragLeave={isHost ? handleDragLeave : undefined}
+          onDrop={isHost ? (e) => handleDrop(e, "B") : undefined}
+        >
           <div className="relative w-full h-full">
             {/* Active players */}
             {sortedTeamB.map((player, index) => {
@@ -521,6 +579,9 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
                     isHost={isHost}
                     onMoveToTeam={isHost ? handleMoveToTeam : undefined}
                     onRemove={isHost && !player.user_id ? handleRemoveOfflinePlayer : undefined}
+                    isDragging={draggingPlayerId === player.id}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
                   />
                 </div>
               );
@@ -542,8 +603,15 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
           </div>
         </div>
 
-        {/* Team A Players (Bottom Half) */}
-        <div className="absolute inset-0 top-1/2 h-1/2">
+        {/* Team A Players (Bottom Half) - Drop Zone */}
+        <div 
+          className={`absolute inset-0 top-1/2 h-1/2 transition-all ${
+            isHost && dragOverTeam === "A" ? 'bg-blue-500/20 ring-2 ring-blue-500 ring-inset' : ''
+          }`}
+          onDragOver={isHost ? (e) => handleDragOver(e, "A") : undefined}
+          onDragLeave={isHost ? handleDragLeave : undefined}
+          onDrop={isHost ? (e) => handleDrop(e, "A") : undefined}
+        >
           <div className="relative w-full h-full">
             {/* Active players */}
             {sortedTeamA.map((player, index) => {
@@ -561,6 +629,9 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
                     isHost={isHost}
                     onMoveToTeam={isHost ? handleMoveToTeam : undefined}
                     onRemove={isHost && !player.user_id ? handleRemoveOfflinePlayer : undefined}
+                    isDragging={draggingPlayerId === player.id}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
                   />
                 </div>
               );
@@ -602,6 +673,9 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
                   isHost={isHost}
                   onMoveToTeam={isHost ? handleMoveToTeam : undefined}
                   onRemove={isHost && !player.user_id ? handleRemoveOfflinePlayer : undefined}
+                  isDragging={draggingPlayerId === player.id}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
                 />
               ))}
             </div>
