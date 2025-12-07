@@ -17,6 +17,7 @@ import { MatchShareDialog } from "@/components/match/MatchShareDialog";
 import { FootballPitch } from "@/components/match/FootballPitch";
 import { MatchStatsInput } from "@/components/match/MatchStatsInput";
 import { MatchScorecard } from "@/components/match/MatchScorecard";
+import { PlayerRatingsSection } from "@/components/match/PlayerRatingsSection";
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
   open: "open",
   full: "full",
@@ -593,7 +594,7 @@ export default function MatchDetails() {
             </div>
           </TabsContent>
 
-          <TabsContent value="players" className="mt-6">
+          <TabsContent value="players" className="mt-6 space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -618,6 +619,20 @@ export default function MatchDetails() {
                 />
               </CardContent>
             </Card>
+
+            {/* Player Ratings Section - Only show for completed matches */}
+            {match.status === "completed" && user && isJoined && (
+              <PlayerRatingsSection
+                matchId={match.id}
+                userId={user.id}
+                players={confirmedPlayers
+                  .filter((p: any) => p.user_id)
+                  .map((mp: any) => ({
+                    user_id: mp.user_id,
+                    profiles: mp.profiles,
+                  }))}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="analytics" className="mt-6">
