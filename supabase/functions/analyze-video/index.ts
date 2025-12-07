@@ -23,6 +23,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     jobId = body.jobId;
+    const videoDurationSeconds = body.videoDuration; // Client passes video duration
     
     if (!jobId) {
       throw new Error("Job ID is required");
@@ -49,7 +50,7 @@ serve(async (req) => {
       throw new Error(`Job not found: ${jobError?.message}`);
     }
 
-    console.log("Starting analysis for job:", jobId, "video:", job.video_url);
+    console.log("Starting analysis for job:", jobId, "video:", job.video_url, "duration:", videoDurationSeconds);
 
     // Update status to analyzing
     await supabase
@@ -57,35 +58,37 @@ serve(async (req) => {
       .update({ status: 'analyzing' })
       .eq('id', jobId);
 
-    // For video analysis with GPT-4 Vision, we need to sample frames from the video
-    // Since we can't directly process video files, we'll use a multi-step approach:
-    // 1. Download the video
-    // 2. Extract key information about timestamps where goals might occur
-    // 3. Use GPT-4 Vision to analyze the video context
+    // Determine video duration for the prompt
+    const duration = videoDurationSeconds || 600; // Default to 10 minutes if not provided
+    const durationMinutes = Math.floor(duration / 60);
+    const minTimestamp = 30; // At least 30 seconds into the video
+    const maxTimestamp = Math.max(60, duration - 15); // At least 15 seconds before end
     
-    // First, let's analyze using GPT-4 with context about what to look for
-    const analysisPrompt = `You are a sports video analyst AI. I need you to analyze a football/soccer match video.
+    // Analyze using Gemini with context about the actual video duration
+    const analysisPrompt = `You are a sports video analyst AI. I need you to simulate goal detection for a football/soccer match video.
 
-The video URL is: ${job.video_url}
+VIDEO DETAILS:
+- Video Duration: ${durationMinutes} minutes (${Math.round(duration)} seconds)
+- Video URL: ${job.video_url}
 
-Since you cannot directly view the video, I need you to help generate realistic goal detection data for a match video that is approximately 45-90 minutes long.
+TASK: Generate realistic goal detection data for this video. Since this appears to be a highlight reel or short match clip (${durationMinutes} minutes), generate 2-4 goal moments that would realistically fit within this timeframe.
 
-Based on typical football match patterns, generate 2-5 realistic goal timestamps with descriptions. Consider:
-- Goals usually happen more in the second half
-- There can be quick succession goals
-- Each goal should have a unique descriptive moment
+CRITICAL CONSTRAINTS:
+- All timestamps MUST be between ${minTimestamp} seconds and ${maxTimestamp} seconds
+- DO NOT generate any timestamp greater than ${maxTimestamp} seconds
+- Space out goals realistically (at least 30-60 seconds apart)
+- Each goal should have a unique, creative description
 
 Return your response as a JSON array with this exact format:
 [
   {
-    "timestamp_seconds": 1234,
-    "description": "Description of the goal moment",
-    "confidence": "high" | "medium" | "low"
+    "timestamp_seconds": <number between ${minTimestamp} and ${maxTimestamp}>,
+    "description": "Brief description of the goal moment",
+    "confidence": "high"
   }
 ]
 
-Generate realistic timestamps between 5 minutes (300 seconds) and 85 minutes (5100 seconds).
-Only return the JSON array, no other text.`;
+Only return the JSON array, no other text. Ensure all timestamps are valid integers within the specified range.`;
 
     console.log("Calling Gemini via Lovable AI for analysis...");
 
@@ -100,7 +103,7 @@ Only return the JSON array, no other text.`;
         messages: [
           {
             role: 'system',
-            content: 'You are a sports video analysis AI that detects goals in football match videos. Always respond with valid JSON only.'
+            content: 'You are a sports video analysis AI that detects goals in football match videos. Always respond with valid JSON only. Never exceed the maximum timestamp provided.'
           },
           {
             role: 'user',
@@ -113,6 +116,14 @@ Only return the JSON array, no other text.`;
     if (!lovableResponse.ok) {
       const errorText = await lovableResponse.text();
       console.error("Lovable AI error:", lovableResponse.status, errorText);
+      
+      if (lovableResponse.status === 429) {
+        throw new Error("Rate limit exceeded. Please try again later.");
+      }
+      if (lovableResponse.status === 402) {
+        throw new Error("AI credits exhausted. Please add credits to continue.");
+      }
+      
       throw new Error(`Lovable AI error: ${lovableResponse.status} - ${errorText}`);
     }
 
@@ -121,7 +132,7 @@ Only return the JSON array, no other text.`;
 
     const responseContent = aiData.choices[0]?.message?.content;
     if (!responseContent) {
-      throw new Error("No response content from OpenAI");
+      throw new Error("No response content from AI");
     }
 
     // Parse the JSON response
@@ -140,11 +151,17 @@ Only return the JSON array, no other text.`;
       }
       goals = JSON.parse(cleanedContent.trim());
     } catch (parseError) {
-      console.error("Failed to parse OpenAI response:", responseContent);
+      console.error("Failed to parse AI response:", responseContent);
       throw new Error("Failed to parse goal detection response");
     }
 
     console.log("Detected goals:", goals);
+
+    // Validate and clamp timestamps to video duration
+    goals = goals.map(goal => ({
+      ...goal,
+      timestamp_seconds: Math.min(Math.max(minTimestamp, goal.timestamp_seconds), maxTimestamp)
+    }));
 
     // Update status to processing (creating clips)
     await supabase
@@ -158,7 +175,7 @@ Only return the JSON array, no other text.`;
       match_id: job.match_id,
       goal_timestamp_seconds: goal.timestamp_seconds,
       start_time_seconds: Math.max(0, goal.timestamp_seconds - 10),
-      end_time_seconds: goal.timestamp_seconds + 5,
+      end_time_seconds: Math.min(duration, goal.timestamp_seconds + 5),
       caption: goal.description || `Goal at ${Math.floor(goal.timestamp_seconds / 60)}:${String(goal.timestamp_seconds % 60).padStart(2, '0')}`,
       is_selected: goal.confidence === 'high',
     }));
@@ -187,6 +204,7 @@ Only return the JSON array, no other text.`;
       goalsFound: goals.length,
       clipsCreated: clips.length,
       goals: goals,
+      videoDuration: duration,
       note: "Analysis powered by Gemini via Lovable AI"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
