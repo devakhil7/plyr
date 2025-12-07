@@ -602,27 +602,30 @@ export type Database = {
           id: string
           join_status: Database["public"]["Enums"]["join_status"] | null
           match_id: string
+          offline_player_name: string | null
           role: Database["public"]["Enums"]["player_role"] | null
           team: Database["public"]["Enums"]["team_type"] | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           join_status?: Database["public"]["Enums"]["join_status"] | null
           match_id: string
+          offline_player_name?: string | null
           role?: Database["public"]["Enums"]["player_role"] | null
           team?: Database["public"]["Enums"]["team_type"] | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           join_status?: Database["public"]["Enums"]["join_status"] | null
           match_id?: string
+          offline_player_name?: string | null
           role?: Database["public"]["Enums"]["player_role"] | null
           team?: Database["public"]["Enums"]["team_type"] | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
