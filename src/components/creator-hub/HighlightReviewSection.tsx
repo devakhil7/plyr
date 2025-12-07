@@ -299,10 +299,14 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
           onError={(e) => console.error("Video error:", e)}
           onClick={handleVideoClick}
         />
-        {!isPlaying && (
+        {!isPlaying && isLoaded && (
           <button
-            onClick={handlePlayClip}
-            className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/30 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log("Play button clicked!");
+              handlePlayClip();
+            }}
+            className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/30 transition-colors z-10"
           >
             <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center">
               <Play className="h-6 w-6 text-primary-foreground ml-1" />
@@ -310,7 +314,7 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
           </button>
         )}
         {!isLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
         )}
