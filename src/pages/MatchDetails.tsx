@@ -574,6 +574,7 @@ export default function MatchDetails() {
                   }))}
                   isHost={!!isHost}
                   teamAssignmentMode={match.team_assignment_mode || "auto"}
+                  totalSlots={match.total_slots || 10}
                   onRefetch={refetch}
                 />
               </CardContent>

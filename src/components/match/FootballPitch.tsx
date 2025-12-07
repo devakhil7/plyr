@@ -26,6 +26,7 @@ interface FootballPitchProps {
   players: Player[];
   isHost: boolean;
   teamAssignmentMode: "auto" | "manual";
+  totalSlots: number;
   onRefetch: () => void;
 }
 
@@ -108,12 +109,42 @@ function PlayerChip({
   );
 }
 
-export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, onRefetch }: FootballPitchProps) {
+// Placeholder chip for empty slots
+function PlaceholderChip({ team }: { team: "A" | "B" }) {
+  const teamColors = {
+    A: "from-blue-500/10 to-blue-600/10 border-blue-500/30",
+    B: "from-red-500/10 to-red-600/10 border-red-500/30",
+  };
+
+  return (
+    <div
+      className={`
+        flex flex-col items-center justify-center p-2 rounded-lg 
+        bg-gradient-to-b ${teamColors[team]} 
+        border border-dashed backdrop-blur-sm
+        min-w-[70px] min-h-[70px]
+        opacity-50
+      `}
+    >
+      <div className="h-10 w-10 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center">
+        <User className="h-5 w-5 text-white/40" />
+      </div>
+      <span className="text-[10px] font-medium text-white/40 mt-1">Empty</span>
+    </div>
+  );
+}
+
+export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, totalSlots, onRefetch }: FootballPitchProps) {
   const [isAssigning, setIsAssigning] = useState(false);
 
   const teamA = players.filter(p => p.team === "A");
   const teamB = players.filter(p => p.team === "B");
   const unassigned = players.filter(p => p.team === "unassigned");
+  
+  // Calculate slots per team
+  const slotsPerTeam = Math.ceil(totalSlots / 2);
+  const teamAEmpty = Math.max(0, slotsPerTeam - teamA.length);
+  const teamBEmpty = Math.max(0, slotsPerTeam - teamB.length);
 
   const handleAutoSplit = async () => {
     setIsAssigning(true);
@@ -258,8 +289,9 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, on
         {/* Team B Players (Top Half) */}
         <div className="absolute inset-0 top-0 h-1/2">
           <div className="relative w-full h-full">
+            {/* Active players */}
             {teamB.map((player, index) => {
-              const positions = getFormationPositions(teamB, true);
+              const positions = getFormationPositions([...teamB, ...Array(teamBEmpty).fill(null)], true);
               const pos = positions[index % positions.length];
               return (
                 <div
@@ -276,14 +308,29 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, on
                 </div>
               );
             })}
+            {/* Empty placeholders */}
+            {Array.from({ length: teamBEmpty }).map((_, index) => {
+              const positions = getFormationPositions([...teamB, ...Array(teamBEmpty).fill(null)], true);
+              const pos = positions[(teamB.length + index) % positions.length];
+              return (
+                <div
+                  key={`empty-b-${index}`}
+                  className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
+                  style={{ top: pos.top, left: pos.left }}
+                >
+                  <PlaceholderChip team="B" />
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Team A Players (Bottom Half) */}
         <div className="absolute inset-0 top-1/2 h-1/2">
           <div className="relative w-full h-full">
+            {/* Active players */}
             {teamA.map((player, index) => {
-              const positions = getFormationPositions(teamA, false);
+              const positions = getFormationPositions([...teamA, ...Array(teamAEmpty).fill(null)], false);
               const pos = positions[index % positions.length];
               return (
                 <div
@@ -297,6 +344,20 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, on
                     isHost={isHost}
                     onMoveToTeam={isHost ? handleMoveToTeam : undefined}
                   />
+                </div>
+              );
+            })}
+            {/* Empty placeholders */}
+            {Array.from({ length: teamAEmpty }).map((_, index) => {
+              const positions = getFormationPositions([...teamA, ...Array(teamAEmpty).fill(null)], false);
+              const pos = positions[(teamA.length + index) % positions.length];
+              return (
+                <div
+                  key={`empty-a-${index}`}
+                  className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
+                  style={{ top: pos.top, left: pos.left }}
+                >
+                  <PlaceholderChip team="A" />
                 </div>
               );
             })}
