@@ -4,122 +4,123 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap');
 
-/* SPORTIQ Design System - Premium Blue Sports Theme */
+/* SPORTIQ Design System - Dark Theme with Lime Accent */
 
 @layer base {
   :root {
-    /* Core Brand Colors - Premium Blue Palette */
-    --primary: 216 85% 30%;
-    --primary-foreground: 210 40% 98%;
+    /* Core Brand Colors - Lime/Neon Green Accent */
+    --primary: 68 100% 50%;
+    --primary-foreground: 0 0% 5%;
     
-    --secondary: 214 78% 36%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 68 80% 45%;
+    --secondary-foreground: 0 0% 5%;
     
-    /* Background hierarchy */
-    --background: 220 30% 97%;
-    --foreground: 222 47% 11%;
+    /* Background hierarchy - Dark theme */
+    --background: 0 0% 7%;
+    --foreground: 0 0% 95%;
     
     /* Card surfaces */
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
     
     /* Popover surfaces */
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
     
     /* Muted elements */
-    --muted: 220 20% 93%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
     
-    /* Accent - Vibrant action color */
-    --accent: 151 67% 45%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Same as primary for consistency */
+    --accent: 68 100% 50%;
+    --accent-foreground: 0 0% 5%;
     
     /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
     /* Border & Input */
-    --border: 220 20% 88%;
-    --input: 220 20% 88%;
-    --ring: 216 85% 30%;
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: 68 100% 50%;
     
     /* Radius */
     --radius: 0.75rem;
     
     /* Sidebar */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 216 85% 30%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 220 30% 97%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 220 20% 88%;
-    --sidebar-ring: 216 85% 30%;
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 68 100% 50%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 68 100% 50%;
     
     /* Custom SPORTIQ tokens */
-    --sportiq-primary: 216 85% 30%;
-    --sportiq-secondary: 214 78% 36%;
-    --sportiq-accent: 151 67% 45%;
-    --sportiq-surface: 220 30% 97%;
-    --sportiq-glass: 220 30% 97%;
+    --sportiq-primary: 68 100% 50%;
+    --sportiq-secondary: 68 80% 45%;
+    --sportiq-accent: 68 100% 50%;
+    --sportiq-surface: 0 0% 10%;
+    --sportiq-glass: 0 0% 12%;
     
     /* Gradient colors */
-    --gradient-start: 216 85% 30%;
-    --gradient-end: 214 78% 36%;
+    --gradient-start: 68 100% 50%;
+    --gradient-end: 80 100% 45%;
     
     /* Status colors */
-    --status-open: 151 67% 45%;
+    --status-open: 68 100% 50%;
     --status-full: 38 92% 50%;
-    --status-progress: 216 85% 50%;
-    --status-completed: 220 10% 45%;
+    --status-progress: 200 90% 50%;
+    --status-completed: 0 0% 50%;
     --status-cancelled: 0 84% 60%;
     
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(220 30% 10% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(220 30% 10% / 0.1), 0 2px 4px -2px hsl(220 30% 10% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(220 30% 10% / 0.1), 0 4px 6px -4px hsl(220 30% 10% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(220 30% 10% / 0.1), 0 8px 10px -6px hsl(220 30% 10% / 0.1);
-    --shadow-glow: 0 0 40px hsl(216 85% 30% / 0.15);
+    /* Shadows - darker for dark theme */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 8px 10px -6px hsl(0 0% 0% / 0.3);
+    --shadow-glow: 0 0 40px hsl(68 100% 50% / 0.2);
   }
 
   .dark {
-    --primary: 210 90% 60%;
-    --primary-foreground: 222 47% 11%;
+    /* Same as root since we're dark-first now */
+    --primary: 68 100% 50%;
+    --primary-foreground: 0 0% 5%;
     
-    --secondary: 214 78% 55%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 68 80% 45%;
+    --secondary-foreground: 0 0% 5%;
     
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 95%;
     
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
     
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
     
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
     
-    --accent: 151 67% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 68 100% 50%;
+    --accent-foreground: 0 0% 5%;
     
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 0 0% 100%;
     
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 210 90% 60%;
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: 68 100% 50%;
     
-    --sidebar-background: 222 47% 8%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 90% 60%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 210 90% 60%;
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 68 100% 50%;
+    --sidebar-primary-foreground: 0 0% 5%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 68 100% 50%;
   }
 }
 
@@ -166,15 +167,15 @@
   
   /* Status badges */
   .status-open {
-    @apply bg-accent/10 text-accent border border-accent/20;
+    @apply bg-primary/15 text-primary border border-primary/30;
   }
   
   .status-full {
-    @apply bg-amber-500/10 text-amber-600 border border-amber-500/20;
+    @apply bg-amber-500/15 text-amber-400 border border-amber-500/30;
   }
   
   .status-progress {
-    @apply bg-primary/10 text-primary border border-primary/20;
+    @apply bg-sky-500/15 text-sky-400 border border-sky-500/30;
   }
   
   .status-completed {
@@ -182,25 +183,25 @@
   }
   
   .status-cancelled {
-    @apply bg-destructive/10 text-destructive border border-destructive/20;
+    @apply bg-destructive/15 text-destructive border border-destructive/30;
   }
   
   /* Skill level badges */
   .skill-beginner {
-    @apply bg-emerald-500/10 text-emerald-600 border border-emerald-500/20;
+    @apply bg-emerald-500/15 text-emerald-400 border border-emerald-500/30;
   }
   
   .skill-intermediate {
-    @apply bg-amber-500/10 text-amber-600 border border-amber-500/20;
+    @apply bg-amber-500/15 text-amber-400 border border-amber-500/30;
   }
   
   .skill-advanced {
-    @apply bg-rose-500/10 text-rose-600 border border-rose-500/20;
+    @apply bg-rose-500/15 text-rose-400 border border-rose-500/30;
   }
   
   /* Sport type badge */
   .sport-badge {
-    @apply bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full text-xs font-medium;
+    @apply bg-primary/15 text-primary border border-primary/30 px-2 py-0.5 rounded-full text-xs font-medium;
   }
   
   /* Container max width */
@@ -215,7 +216,7 @@
   
   /* Form input focus ring */
   .input-focus {
-    @apply focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200;
+    @apply focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200;
   }
   
   /* Animated underline */
@@ -225,7 +226,7 @@
   
   /* Pulse animation for live indicator */
   .pulse-live {
-    @apply animate-pulse bg-accent rounded-full;
+    @apply animate-pulse bg-primary rounded-full;
   }
 }
 
@@ -308,10 +309,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/30 transition-colors;
+  @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/40 transition-colors;
 }
 
 /* Selection styling */
 ::selection {
-  @apply bg-primary/20 text-foreground;
+  @apply bg-primary/30 text-foreground;
 }
