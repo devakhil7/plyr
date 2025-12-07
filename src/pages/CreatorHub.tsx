@@ -142,7 +142,12 @@ const CreatorHub = () => {
       
       // Get the upload URL for tracking progress
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      // Get the user's session token for proper authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Not authenticated');
+      }
       
       // Use XMLHttpRequest for progress tracking
       const uploadUrl = `${supabaseUrl}/storage/v1/object/match-videos/${fileName}`;
@@ -169,7 +174,7 @@ const CreatorHub = () => {
         xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
         
         xhr.open('POST', uploadUrl);
-        xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
+        xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
         xhr.setRequestHeader('x-upsert', 'true');
         xhr.send(file);
       });
