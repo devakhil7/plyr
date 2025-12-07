@@ -182,15 +182,23 @@ function PlayerChip({
   );
 }
 
-// Placeholder chip for empty slots - now clickable for hosts
+// Placeholder chip for empty slots - now clickable and droppable for hosts
 function PlaceholderChip({ 
   team, 
   isHost, 
-  onAddOfflinePlayer 
+  onAddOfflinePlayer,
+  isDragOver,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: { 
   team: "A" | "B"; 
   isHost: boolean;
   onAddOfflinePlayer?: (team: "A" | "B") => void;
+  isDragOver?: boolean;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: () => void;
+  onDrop?: (e: React.DragEvent) => void;
 }) {
   const teamColors = {
     A: "from-blue-500/10 to-blue-600/10 border-blue-500/30",
@@ -200,24 +208,30 @@ function PlaceholderChip({
   return (
     <div
       onClick={() => isHost && onAddOfflinePlayer?.(team)}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
       className={`
         flex flex-col items-center justify-center p-2 rounded-lg 
         bg-gradient-to-b ${teamColors[team]} 
         border border-dashed backdrop-blur-sm
         min-w-[70px] min-h-[70px]
-        opacity-50
-        ${isHost ? 'cursor-pointer hover:opacity-80 hover:scale-105 transition-all' : ''}
+        transition-all
+        ${isDragOver ? 'opacity-100 scale-110 ring-2 ring-yellow-400 border-yellow-400' : 'opacity-50'}
+        ${isHost ? 'cursor-pointer hover:opacity-80 hover:scale-105' : ''}
       `}
     >
-      <div className="h-10 w-10 rounded-full border-2 border-dashed border-white/30 flex items-center justify-center">
+      <div className={`h-10 w-10 rounded-full border-2 border-dashed flex items-center justify-center transition-colors ${
+        isDragOver ? 'border-yellow-400 bg-yellow-400/20' : 'border-white/30'
+      }`}>
         {isHost ? (
-          <Plus className="h-5 w-5 text-white/60" />
+          <Plus className={`h-5 w-5 ${isDragOver ? 'text-yellow-400' : 'text-white/60'}`} />
         ) : (
           <User className="h-5 w-5 text-white/40" />
         )}
       </div>
-      <span className="text-[10px] font-medium text-white/40 mt-1">
-        {isHost ? "Add" : "Empty"}
+      <span className={`text-[10px] font-medium mt-1 ${isDragOver ? 'text-yellow-400' : 'text-white/40'}`}>
+        {isDragOver ? "Drop here" : isHost ? "Add" : "Empty"}
       </span>
     </div>
   );
@@ -232,6 +246,7 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
   const [isAddingPlayer, setIsAddingPlayer] = useState(false);
   const [draggingPlayerId, setDraggingPlayerId] = useState<string | null>(null);
   const [dragOverTeam, setDragOverTeam] = useState<"A" | "B" | null>(null);
+  const [dragOverPlaceholder, setDragOverPlaceholder] = useState<{ team: "A" | "B"; index: number } | null>(null);
 
   const teamA = players.filter(p => p.team === "A");
   const teamB = players.filter(p => p.team === "B");
@@ -795,13 +810,36 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
             {Array.from({ length: teamBEmpty }).map((_, index) => {
               const positions = getFormationPositions(slotsPerTeam, true);
               const pos = positions[(sortedTeamB.length + index) % positions.length];
+              const isPlaceholderDragOver = dragOverPlaceholder?.team === "B" && dragOverPlaceholder?.index === index;
               return (
                 <div
                   key={`empty-b-${index}`}
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
                   style={{ top: pos?.top, left: pos?.left }}
                 >
-                  <PlaceholderChip team="B" isHost={isHost} onAddOfflinePlayer={handleAddOfflinePlayer} />
+                  <PlaceholderChip 
+                    team="B" 
+                    isHost={isHost} 
+                    onAddOfflinePlayer={handleAddOfflinePlayer}
+                    isDragOver={isPlaceholderDragOver}
+                    onDragOver={isHost ? (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDragOverPlaceholder({ team: "B", index });
+                      setDragOverTeam("B");
+                    } : undefined}
+                    onDragLeave={() => setDragOverPlaceholder(null)}
+                    onDrop={isHost ? async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const playerId = e.dataTransfer.getData('text/plain');
+                      if (playerId) {
+                        await handleMoveToTeam(playerId, "B");
+                      }
+                      setDragOverPlaceholder(null);
+                      handleDragEnd();
+                    } : undefined}
+                  />
                 </div>
               );
             })}
@@ -855,13 +893,36 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
             {Array.from({ length: teamAEmpty }).map((_, index) => {
               const positions = getFormationPositions(slotsPerTeam, false);
               const pos = positions[(sortedTeamA.length + index) % positions.length];
+              const isPlaceholderDragOver = dragOverPlaceholder?.team === "A" && dragOverPlaceholder?.index === index;
               return (
                 <div
                   key={`empty-a-${index}`}
                   className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
                   style={{ top: pos?.top, left: pos?.left }}
                 >
-                  <PlaceholderChip team="A" isHost={isHost} onAddOfflinePlayer={handleAddOfflinePlayer} />
+                  <PlaceholderChip 
+                    team="A" 
+                    isHost={isHost} 
+                    onAddOfflinePlayer={handleAddOfflinePlayer}
+                    isDragOver={isPlaceholderDragOver}
+                    onDragOver={isHost ? (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDragOverPlaceholder({ team: "A", index });
+                      setDragOverTeam("A");
+                    } : undefined}
+                    onDragLeave={() => setDragOverPlaceholder(null)}
+                    onDrop={isHost ? async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const playerId = e.dataTransfer.getData('text/plain');
+                      if (playerId) {
+                        await handleMoveToTeam(playerId, "A");
+                      }
+                      setDragOverPlaceholder(null);
+                      handleDragEnd();
+                    } : undefined}
+                  />
                 </div>
               );
             })}
