@@ -49,14 +49,14 @@ export default function Index() {
         <div className="container-app relative py-20 md:py-32">
           <div className="max-w-3xl mx-auto text-center">
             <Badge variant="secondary" className="mb-6 bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20">
-              Next-Gen Amateur Sports Platform
+              India's #1 Amateur Sports Platform
             </Badge>
             <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 leading-tight">
-              Host, join, and analyze local matches.{" "}
-              <span className="opacity-90">Build your sports identity.</span>
+              Join India's fastest-growing{" "}
+              <span className="opacity-90">athlete community.</span>
             </h1>
             <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-              SPORTIQ connects amateur athletes across India. Find turfs, organize matches, upload game footage, and track your performance with AI-powered analytics.
+              Find matches, upload game footage, and get AI-powered insights and highlights — instantly.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               {user ? (
