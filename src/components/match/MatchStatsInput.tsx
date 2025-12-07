@@ -315,14 +315,14 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
                 <div className="flex-1">
                   <Label className="text-xs">Assist</Label>
                   <Select
-                    value={event.assistId}
-                    onValueChange={(v) => updateGoalEvent(event.id, "assistId", v)}
+                    value={event.assistId || "_none"}
+                    onValueChange={(v) => updateGoalEvent(event.id, "assistId", v === "_none" ? "" : v)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Optional" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="_none">None</SelectItem>
                       {allPlayers.map((p) => (
                         <SelectItem key={p.user_id} value={p.user_id}>
                           {p.profiles?.name || "Player"}
