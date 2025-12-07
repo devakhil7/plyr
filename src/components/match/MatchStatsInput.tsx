@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Trophy, Plus, Upload, Trash2, Loader2 } from "lucide-react";
+import { Trophy, Plus, Upload, Trash2, Loader2, Edit3 } from "lucide-react";
 
 interface MatchStatsInputProps {
   matchId: string;
@@ -21,6 +21,13 @@ interface MatchStatsInputProps {
   }>;
   existingScore: { teamA: number | null; teamB: number | null };
   videoUrl: string | null;
+  existingEvents?: Array<{
+    id: string;
+    team: string;
+    scorer_user_id: string;
+    assist_user_id: string | null;
+    minute: number | null;
+  }>;
   onUpdate: () => void;
 }
 
@@ -30,18 +37,38 @@ interface GoalEvent {
   scorerId: string;
   assistId: string;
   minute: string;
+  isExisting?: boolean; // Flag to track if this is an existing event from DB
 }
 
-export function MatchStatsInput({ matchId, players, existingScore, videoUrl, onUpdate }: MatchStatsInputProps) {
+export function MatchStatsInput({ matchId, players, existingScore, videoUrl, existingEvents = [], onUpdate }: MatchStatsInputProps) {
   const queryClient = useQueryClient();
   const [teamAScore, setTeamAScore] = useState(existingScore.teamA?.toString() || "0");
   const [teamBScore, setTeamBScore] = useState(existingScore.teamB?.toString() || "0");
   const [highlightUrl, setHighlightUrl] = useState(videoUrl || "");
   const [goalEvents, setGoalEvents] = useState<GoalEvent[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  // Initialize goal events from existing data
+  useEffect(() => {
+    if (!initialized && existingEvents.length > 0) {
+      setGoalEvents(
+        existingEvents.map((e) => ({
+          id: e.id,
+          team: e.team as "A" | "B",
+          scorerId: e.scorer_user_id,
+          assistId: e.assist_user_id || "",
+          minute: e.minute?.toString() || "",
+          isExisting: true,
+        }))
+      );
+      setInitialized(true);
+    }
+  }, [existingEvents, initialized]);
 
   const teamAPlayers = players.filter(p => p.team === "A" || p.team === "unassigned");
   const teamBPlayers = players.filter(p => p.team === "B" || p.team === "unassigned");
+  const allPlayers = players;
 
   const addGoalEvent = (team: "A" | "B") => {
     setGoalEvents(prev => [
@@ -77,34 +104,81 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, onU
 
       if (matchError) throw matchError;
 
-      // Insert goal events
-      if (goalEvents.length > 0) {
-        const validEvents = goalEvents.filter(e => e.scorerId);
-        if (validEvents.length > 0) {
-          const { error: eventsError } = await supabase
-            .from("match_events")
-            .insert(
-              validEvents.map(event => ({
-                match_id: matchId,
-                team: event.team,
-                scorer_user_id: event.scorerId,
-                assist_user_id: event.assistId || null,
-                minute: event.minute ? parseInt(event.minute) : null,
-              }))
-            );
+      // Delete existing events that are no longer in the list
+      const existingIds = goalEvents.filter(e => e.isExisting).map(e => e.id);
+      const removedIds = existingEvents.map(e => e.id).filter(id => !existingIds.includes(id));
+      
+      if (removedIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from("match_events")
+          .delete()
+          .in("id", removedIds);
+        if (deleteError) throw deleteError;
+      }
 
-          if (eventsError) throw eventsError;
+      // Insert new goal events (those without isExisting flag)
+      const newEvents = goalEvents.filter(e => !e.isExisting && e.scorerId);
+      if (newEvents.length > 0) {
+        const { error: eventsError } = await supabase
+          .from("match_events")
+          .insert(
+            newEvents.map(event => ({
+              match_id: matchId,
+              team: event.team,
+              scorer_user_id: event.scorerId,
+              assist_user_id: event.assistId || null,
+              minute: event.minute ? parseInt(event.minute) : null,
+            }))
+          );
+
+        if (eventsError) throw eventsError;
+      }
+
+      // Update existing events that changed
+      const existingToUpdate = goalEvents.filter(e => e.isExisting);
+      for (const event of existingToUpdate) {
+        const original = existingEvents.find(ex => ex.id === event.id);
+        if (original && (
+          original.scorer_user_id !== event.scorerId ||
+          (original.assist_user_id || "") !== event.assistId ||
+          (original.minute?.toString() || "") !== event.minute ||
+          original.team !== event.team
+        )) {
+          const { error: updateError } = await supabase
+            .from("match_events")
+            .update({
+              team: event.team,
+              scorer_user_id: event.scorerId,
+              assist_user_id: event.assistId || null,
+              minute: event.minute ? parseInt(event.minute) : null,
+            })
+            .eq("id", event.id);
+          if (updateError) throw updateError;
         }
       }
 
-      // Create feed post for the match
-      await supabase.from("feed_posts").insert({
-        match_id: matchId,
-        post_type: "highlight",
-        highlight_type: "match",
-        caption: `Match completed! Final Score: ${teamAScore} - ${teamBScore}`,
-        media_url: highlightUrl || null,
-      });
+      // Create/update feed post for the match (only if no existing one)
+      const { data: existingPost } = await supabase
+        .from("feed_posts")
+        .select("id")
+        .eq("match_id", matchId)
+        .eq("post_type", "highlight")
+        .maybeSingle();
+
+      if (!existingPost) {
+        await supabase.from("feed_posts").insert({
+          match_id: matchId,
+          post_type: "highlight",
+          highlight_type: "match",
+          caption: `Match completed! Final Score: ${teamAScore} - ${teamBScore}`,
+          media_url: highlightUrl || null,
+        });
+      } else {
+        await supabase.from("feed_posts").update({
+          caption: `Match completed! Final Score: ${teamAScore} - ${teamBScore}`,
+          media_url: highlightUrl || null,
+        }).eq("id", existingPost.id);
+      }
     },
     onSuccess: () => {
       toast.success("Match stats saved successfully!");
@@ -133,9 +207,12 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, onU
     <Card>
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-primary" />
-          Match Stats & Highlights
+          <Edit3 className="h-5 w-5 text-primary" />
+          Update Match Stats
         </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Manually enter the final score, goal scorers, and assist providers
+        </p>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Highlight Video */}
@@ -209,9 +286,6 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, onU
           </div>
 
           {goalEvents.map((event) => {
-            const teamPlayers = event.team === "A" ? teamAPlayers : teamBPlayers;
-            const allPlayers = [...teamAPlayers, ...teamBPlayers];
-
             return (
               <div key={event.id} className="flex gap-2 items-end p-3 border rounded-lg bg-muted/50">
                 <div className="w-16">
