@@ -29,18 +29,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trophy, Plus, Edit, Users, Trash2, IndianRupee, ArrowLeft } from "lucide-react";
+import { Trophy, Plus, Edit, Users, Trash2, IndianRupee, ArrowLeft, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { AdminTournamentForm } from "@/components/tournaments/AdminTournamentForm";
 import { AdminTournamentTeamsList } from "@/components/tournaments/AdminTournamentTeamsList";
+import { TournamentMatchScheduler } from "@/components/tournaments/TournamentMatchScheduler";
 import { useUserRoles } from "@/hooks/useUserRoles";
 
 export default function AdminTournaments() {
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [viewingTeamsFor, setViewingTeamsFor] = useState<any>(null);
+  const [schedulingMatchesFor, setSchedulingMatchesFor] = useState<any>(null);
   const [deletingTournament, setDeletingTournament] = useState<any>(null);
   const { isAdmin } = useUserRoles();
   const queryClient = useQueryClient();
@@ -70,7 +72,8 @@ export default function AdminTournaments() {
         .select(`
           *,
           turfs (name, city),
-          tournament_teams (id, payment_status)
+          tournament_teams (id, payment_status),
+          tournament_matches (id)
         `)
         .order("created_at", { ascending: false });
       return data || [];
@@ -160,6 +163,26 @@ export default function AdminTournaments() {
           </DialogContent>
         </Dialog>
 
+        {/* Schedule Matches Dialog */}
+        <Dialog open={!!schedulingMatchesFor} onOpenChange={() => setSchedulingMatchesFor(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                {schedulingMatchesFor?.name} - Match Schedule
+              </DialogTitle>
+            </DialogHeader>
+            {schedulingMatchesFor && (
+              <TournamentMatchScheduler
+                tournamentId={schedulingMatchesFor.id}
+                tournamentName={schedulingMatchesFor.name}
+                turfId={schedulingMatchesFor.turf_id}
+                sport={schedulingMatchesFor.sport}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Tournaments Table */}
         <Card>
           <CardHeader>
@@ -189,6 +212,7 @@ export default function AdminTournaments() {
                     <TableHead>Entry Fee</TableHead>
                     <TableHead>Registration</TableHead>
                     <TableHead>Teams</TableHead>
+                    <TableHead>Matches</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -246,6 +270,16 @@ export default function AdminTournaments() {
                           >
                             <Users className="h-4 w-4 mr-1" />
                             {teamCount} ({paidTeams} paid)
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSchedulingMatchesFor(tournament)}
+                          >
+                            <Calendar className="h-4 w-4 mr-1" />
+                            {tournament.tournament_matches?.length || 0}
                           </Button>
                         </TableCell>
                         <TableCell>
