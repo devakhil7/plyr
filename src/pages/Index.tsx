@@ -10,7 +10,7 @@ import {
   MapPin, Users, Calendar, ArrowRight, Play, Trophy, Target, TrendingUp,
   Zap, Video, BarChart3, Star, Sparkles
 } from "lucide-react";
-import { HeroSplashDecoration } from "@/components/decorative/SportsSplashBackground";
+import sportsSilhouettes from "@/assets/sports-silhouettes.png";
 
 export default function Index() {
   const { user } = useAuth();
@@ -55,15 +55,22 @@ export default function Index() {
     <Layout>
       {/* Hero Section */}
       <section className="relative overflow-hidden hero-gradient min-h-[90vh] flex items-center">
-        {/* Sports-themed splash background with athlete silhouettes */}
-        <HeroSplashDecoration />
+        {/* Sports silhouettes image as background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <img 
+            src={sportsSilhouettes} 
+            alt="Athletes in action" 
+            className="absolute right-0 top-1/2 -translate-y-1/2 h-[110%] w-auto object-contain opacity-30 md:opacity-40 mix-blend-luminosity"
+          />
+          {/* Gradient overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/95 to-transparent" />
+        </div>
         
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           {/* Gradient orbs */}
           <div className="absolute -top-40 -right-40 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-float" />
           <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float delay-300" />
-          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-accent/10 rounded-full blur-3xl animate-float delay-500" />
           
           {/* Grid pattern overlay */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:80px_80px]" />
