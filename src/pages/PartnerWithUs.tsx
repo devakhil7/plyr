@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,13 +91,12 @@ const PartnerWithUs = () => {
     }
   };
 
+  useEffect(() => {
+    document.title = "Partner With Us | SPORTIQ";
+  }, []);
+
   return (
     <Layout>
-      <Helmet>
-        <title>Partner With Us | SPORTIQ</title>
-        <meta name="description" content="List your turf or sports facility on SPORTIQ. Reach thousands of players and grow your business." />
-      </Helmet>
-
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-12">
         <div className="container max-w-3xl mx-auto px-4">
           <div className="text-center mb-8">
