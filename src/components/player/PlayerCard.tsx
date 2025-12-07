@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, MapPin, Trophy, Heart } from "lucide-react";
+import { User, MapPin, Heart } from "lucide-react";
 
 interface PlayerStats {
   overall: number | null;
@@ -27,16 +27,71 @@ interface PlayerCardProps {
   className?: string;
 }
 
+type CardTier = "gold" | "silver" | "bronze";
+
+const tierColors = {
+  gold: {
+    primary: "45 90% 55%",      // Golden yellow
+    secondary: "40 85% 45%",    // Darker gold
+    accent: "45 100% 70%",      // Bright gold
+    gradient: "linear-gradient(135deg, hsl(45, 90%, 55%) 0%, hsl(40, 85%, 45%) 50%, hsl(35, 80%, 35%) 100%)",
+    cardBg: "linear-gradient(180deg, hsl(40, 30%, 15%) 0%, hsl(35, 25%, 8%) 100%)",
+    textPrimary: "45 90% 65%",
+    textSecondary: "45 70% 75%",
+  },
+  silver: {
+    primary: "220 15% 70%",     // Silver
+    secondary: "220 10% 55%",   // Darker silver
+    accent: "220 20% 80%",      // Bright silver
+    gradient: "linear-gradient(135deg, hsl(220, 15%, 70%) 0%, hsl(220, 10%, 55%) 50%, hsl(220, 8%, 40%) 100%)",
+    cardBg: "linear-gradient(180deg, hsl(220, 15%, 20%) 0%, hsl(220, 12%, 10%) 100%)",
+    textPrimary: "220 15% 75%",
+    textSecondary: "220 10% 65%",
+  },
+  bronze: {
+    primary: "25 60% 45%",      // Bronze
+    secondary: "20 55% 35%",    // Darker bronze
+    accent: "30 65% 55%",       // Bright bronze
+    gradient: "linear-gradient(135deg, hsl(25, 60%, 45%) 0%, hsl(20, 55%, 35%) 50%, hsl(15, 50%, 25%) 100%)",
+    cardBg: "linear-gradient(180deg, hsl(20, 25%, 15%) 0%, hsl(15, 20%, 8%) 100%)",
+    textPrimary: "25 55% 60%",
+    textSecondary: "25 45% 50%",
+  },
+};
+
 export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
-  const formatStat = (value: number | null) => {
-    if (value === null || value === 0) return "--";
-    return Math.round(value * 20); // Convert 1-5 scale to 1-100
+  // Convert 1-5 scale to 1-100 scale
+  const convertTo100 = (value: number | null): number | null => {
+    if (value === null || value === 0) return null;
+    return Math.round(value * 20);
   };
 
-  const getOverallRating = () => {
-    if (stats.overall === null || stats.overall === 0) return "--";
-    return Math.round(stats.overall * 20);
+  const formatStat = (value: number | null): string => {
+    const converted = convertTo100(value);
+    if (converted === null) return "--";
+    return converted.toString();
   };
+
+  const getOverallRating = (): number | null => {
+    return convertTo100(stats.overall);
+  };
+
+  const getOverallDisplay = (): string => {
+    const rating = getOverallRating();
+    if (rating === null) return "--";
+    return rating.toString();
+  };
+
+  // Determine card tier based on converted rating
+  const getTier = (): CardTier => {
+    const rating = getOverallRating();
+    if (rating === null || rating < 60) return "bronze";
+    if (rating >= 80) return "gold";
+    return "silver";
+  };
+
+  const tier = getTier();
+  const colors = tierColors[tier];
 
   const getPositionAbbrev = (position: string | null) => {
     if (!position) return "POS";
@@ -81,20 +136,20 @@ export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
           preserveAspectRatio="xMidYMid meet"
         >
           <defs>
-            <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(var(--card))" />
-              <stop offset="100%" stopColor="hsl(var(--muted))" />
+            <linearGradient id={`cardGradient-${tier}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={`hsl(${colors.primary})`} stopOpacity="0.1" />
+              <stop offset="100%" stopColor={`hsl(${colors.secondary})`} stopOpacity="0.2" />
             </linearGradient>
-            <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="hsl(45, 80%, 55%)" />
-              <stop offset="50%" stopColor="hsl(45, 90%, 65%)" />
-              <stop offset="100%" stopColor="hsl(40, 75%, 50%)" />
+            <linearGradient id={`tierGradient-${tier}`} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={`hsl(${colors.primary})`} />
+              <stop offset="50%" stopColor={`hsl(${colors.accent})`} />
+              <stop offset="100%" stopColor={`hsl(${colors.secondary})`} />
             </linearGradient>
             <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="4" stdDeviation="8" floodOpacity="0.3" />
+              <feDropShadow dx="0" dy="4" stdDeviation="8" floodOpacity="0.4" />
             </filter>
           </defs>
-          {/* Main card shape */}
+          {/* Main card shape with tier-colored background */}
           <path
             d="M 20 0 
                L 260 0 
@@ -107,9 +162,9 @@ export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
                Q 0 370 0 350 
                L 0 20 
                Q 0 0 20 0"
-            fill="url(#cardGradient)"
-            stroke="url(#goldGradient)"
-            strokeWidth="2"
+            fill={tier === "gold" ? "#1a1508" : tier === "silver" ? "#151820" : "#1a1210"}
+            stroke={`url(#tierGradient-${tier})`}
+            strokeWidth="3"
             filter="url(#cardShadow)"
           />
           {/* Inner decorative lines */}
@@ -126,9 +181,15 @@ export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
                L 10 25 
                Q 10 10 25 10"
             fill="none"
-            stroke="url(#goldGradient)"
+            stroke={`url(#tierGradient-${tier})`}
             strokeWidth="0.5"
-            opacity="0.5"
+            opacity="0.4"
+          />
+          {/* Diagonal shine effect */}
+          <path
+            d="M 60 0 L 140 0 L 80 120 L 0 120 L 0 60 Z"
+            fill={`url(#tierGradient-${tier})`}
+            opacity="0.08"
           />
         </svg>
 
@@ -137,56 +198,115 @@ export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
           {/* Top Section - Rating and Position */}
           <div className="flex justify-between items-start mb-2">
             <div className="text-left">
-              <div className="text-3xl font-black text-primary" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                {getOverallRating()}
+              <div 
+                className="text-3xl font-black" 
+                style={{ 
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  color: `hsl(${colors.textPrimary})`,
+                  textShadow: `0 0 20px hsl(${colors.primary} / 0.5)`
+                }}
+              >
+                {getOverallDisplay()}
               </div>
-              <div className="text-xs font-bold text-primary/80 tracking-wider">
+              <div 
+                className="text-xs font-bold tracking-wider"
+                style={{ color: `hsl(${colors.textSecondary})` }}
+              >
                 {getPositionAbbrev(player.position)}
               </div>
             </div>
             
-            {/* City Badge */}
-            {player.city && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-full">
-                <MapPin className="h-3 w-3" />
-                <span className="truncate max-w-[60px]">{player.city}</span>
-              </div>
-            )}
+            {/* Tier Badge */}
+            <div 
+              className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
+              style={{ 
+                background: `linear-gradient(135deg, hsl(${colors.primary} / 0.3), hsl(${colors.secondary} / 0.3))`,
+                color: `hsl(${colors.textPrimary})`,
+                border: `1px solid hsl(${colors.primary} / 0.5)`
+              }}
+            >
+              {tier}
+            </div>
           </div>
 
           {/* Player Image Section */}
           <div className="flex-1 flex items-center justify-center py-2">
             <div className="relative">
               {/* Glow effect behind avatar */}
-              <div className="absolute inset-0 bg-gradient-to-b from-primary/20 to-transparent rounded-full blur-xl scale-110" />
-              <Avatar className="h-32 w-32 border-4 border-primary/20 shadow-2xl relative">
+              <div 
+                className="absolute inset-0 rounded-full blur-xl scale-125" 
+                style={{ background: `radial-gradient(circle, hsl(${colors.primary} / 0.4), transparent)` }}
+              />
+              <Avatar 
+                className="h-32 w-32 shadow-2xl relative"
+                style={{ 
+                  border: `4px solid hsl(${colors.primary} / 0.6)`,
+                  boxShadow: `0 0 30px hsl(${colors.primary} / 0.3)`
+                }}
+              >
                 <AvatarImage src={player.profile_photo_url || undefined} className="object-cover" />
-                <AvatarFallback className="bg-gradient-to-br from-primary/30 to-secondary/30 text-primary text-4xl font-bold">
+                <AvatarFallback 
+                  className="text-4xl font-bold"
+                  style={{ 
+                    background: `linear-gradient(135deg, hsl(${colors.primary} / 0.3), hsl(${colors.secondary} / 0.3))`,
+                    color: `hsl(${colors.textPrimary})`
+                  }}
+                >
                   {player.name?.charAt(0) || <User className="h-16 w-16" />}
                 </AvatarFallback>
               </Avatar>
               
               {/* Decorative diagonal lines */}
-              <div className="absolute -left-4 top-1/4 w-8 h-0.5 bg-gradient-to-r from-transparent to-primary/30 rotate-45" />
-              <div className="absolute -right-4 top-1/4 w-8 h-0.5 bg-gradient-to-l from-transparent to-primary/30 -rotate-45" />
+              <div 
+                className="absolute -left-4 top-1/4 w-8 h-0.5 rotate-45" 
+                style={{ background: `linear-gradient(to right, transparent, hsl(${colors.primary} / 0.5))` }}
+              />
+              <div 
+                className="absolute -right-4 top-1/4 w-8 h-0.5 -rotate-45" 
+                style={{ background: `linear-gradient(to left, transparent, hsl(${colors.primary} / 0.5))` }}
+              />
             </div>
           </div>
 
           {/* Player Name */}
           <div className="text-center mb-3">
-            <h3 className="text-lg font-bold text-foreground truncate px-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            <h3 
+              className="text-lg font-bold truncate px-2" 
+              style={{ 
+                fontFamily: "'Space Grotesk', sans-serif",
+                color: `hsl(${colors.textPrimary})`
+              }}
+            >
               {player.name || "Player"}
             </h3>
+            {player.city && (
+              <div 
+                className="flex items-center justify-center gap-1 text-xs mt-1"
+                style={{ color: `hsl(${colors.textSecondary})` }}
+              >
+                <MapPin className="h-3 w-3" />
+                <span className="truncate max-w-[120px]">{player.city}</span>
+              </div>
+            )}
           </div>
 
           {/* Attributes Grid */}
           <div className="grid grid-cols-6 gap-1 mb-3 px-2">
             {attributes.map((attr) => (
               <div key={attr.label} className="text-center">
-                <div className="text-[10px] font-semibold text-muted-foreground tracking-wide">
+                <div 
+                  className="text-[10px] font-semibold tracking-wide"
+                  style={{ color: `hsl(${colors.textSecondary})` }}
+                >
                   {attr.label}
                 </div>
-                <div className="text-sm font-black text-foreground" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                <div 
+                  className="text-sm font-black" 
+                  style={{ 
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    color: `hsl(${colors.textPrimary})`
+                  }}
+                >
                   {attr.value}
                 </div>
               </div>
@@ -194,29 +314,35 @@ export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
           </div>
 
           {/* Bottom Stats Row */}
-          <div className="grid grid-cols-4 gap-1 px-3 py-2 bg-muted/30 rounded-lg mb-2">
+          <div 
+            className="grid grid-cols-4 gap-1 px-3 py-2 rounded-lg mb-2"
+            style={{ background: `hsl(${colors.primary} / 0.1)` }}
+          >
             <div className="text-center">
-              <div className="text-xs font-bold text-foreground">{stats.matches}</div>
-              <div className="text-[9px] text-muted-foreground">MATCHES</div>
+              <div className="text-xs font-bold" style={{ color: `hsl(${colors.textPrimary})` }}>{stats.matches}</div>
+              <div className="text-[9px]" style={{ color: `hsl(${colors.textSecondary})` }}>MATCHES</div>
             </div>
             <div className="text-center">
-              <div className="text-xs font-bold text-accent">{stats.wins}</div>
-              <div className="text-[9px] text-muted-foreground">WINS</div>
+              <div className="text-xs font-bold text-emerald-400">{stats.wins}</div>
+              <div className="text-[9px]" style={{ color: `hsl(${colors.textSecondary})` }}>WINS</div>
             </div>
             <div className="text-center">
-              <div className="text-xs font-bold text-foreground">{stats.goals}</div>
-              <div className="text-[9px] text-muted-foreground">GOALS</div>
+              <div className="text-xs font-bold" style={{ color: `hsl(${colors.textPrimary})` }}>{stats.goals}</div>
+              <div className="text-[9px]" style={{ color: `hsl(${colors.textSecondary})` }}>GOALS</div>
             </div>
             <div className="text-center">
-              <div className="text-xs font-bold text-foreground">{stats.assists}</div>
-              <div className="text-[9px] text-muted-foreground">ASSISTS</div>
+              <div className="text-xs font-bold" style={{ color: `hsl(${colors.textPrimary})` }}>{stats.assists}</div>
+              <div className="text-[9px]" style={{ color: `hsl(${colors.textSecondary})` }}>ASSISTS</div>
             </div>
           </div>
 
           {/* Club Badge */}
           {player.favourite_club && (
-            <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-              <Heart className="h-3 w-3 text-destructive fill-destructive" />
+            <div 
+              className="flex items-center justify-center gap-1 text-xs"
+              style={{ color: `hsl(${colors.textSecondary})` }}
+            >
+              <Heart className="h-3 w-3" style={{ color: `hsl(${colors.primary})`, fill: `hsl(${colors.primary})` }} />
               <span className="truncate max-w-[150px]">{player.favourite_club}</span>
             </div>
           )}
