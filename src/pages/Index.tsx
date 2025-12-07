@@ -86,7 +86,7 @@ export default function Index() {
           <div className="max-w-4xl mx-auto text-center">
             <Badge variant="secondary" className="mb-6 bg-white/10 text-white border-white/20 backdrop-blur-sm px-4 py-1.5 animate-fade-in">
               <Sparkles className="h-3.5 w-3.5 mr-1.5 inline" />
-              India's #1 Amateur Sports Platform
+              India's #1 Grassroots Sports Platform
             </Badge>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground mb-6 leading-tight animate-slide-up">
               Join India's fastest-growing{" "}
