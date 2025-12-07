@@ -184,12 +184,10 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(clip.start_time_seconds);
   const animationRef = useRef<number | null>(null);
-
-  // Create video URL with time fragment
-  const videoSrcWithTime = `${videoUrl}#t=${clip.start_time_seconds},${clip.end_time_seconds}`;
 
   useEffect(() => {
     return () => {
@@ -198,6 +196,14 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
       }
     };
   }, []);
+
+  const seekToStart = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    setIsSeeking(true);
+    video.currentTime = clip.start_time_seconds;
+  };
 
   const handleLoadedMetadata = () => {
     const video = videoRef.current;
@@ -209,13 +215,15 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
       return;
     }
     
-    // Seek to clip start
-    video.currentTime = clip.start_time_seconds;
+    // Seek to clip start position
+    seekToStart();
   };
 
-  const handleCanPlayThrough = () => {
+  const handleSeeked = () => {
+    setIsSeeking(false);
     setIsReady(true);
     setError(null);
+    setCurrentTime(videoRef.current?.currentTime || clip.start_time_seconds);
   };
 
   const handleError = () => {
@@ -334,11 +342,11 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
       <div className="relative aspect-video bg-black rounded overflow-hidden">
         <video
           ref={videoRef}
-          src={videoSrcWithTime}
+          src={videoUrl}
           className="w-full h-full object-contain cursor-pointer"
           preload="metadata"
           onLoadedMetadata={handleLoadedMetadata}
-          onCanPlayThrough={handleCanPlayThrough}
+          onSeeked={handleSeeked}
           onEnded={handleVideoEnded}
           onError={handleError}
           onClick={handleVideoClick}
