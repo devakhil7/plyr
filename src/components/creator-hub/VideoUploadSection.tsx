@@ -18,9 +18,10 @@ interface Match {
 interface VideoUploadSectionProps {
   onUpload: (file: File, matchId?: string) => void;
   isUploading: boolean;
+  uploadProgress?: number;
 }
 
-const VideoUploadSection = ({ onUpload, isUploading }: VideoUploadSectionProps) => {
+const VideoUploadSection = ({ onUpload, isUploading, uploadProgress = 0 }: VideoUploadSectionProps) => {
   const { user } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState<string>("");
@@ -164,7 +165,15 @@ const VideoUploadSection = ({ onUpload, isUploading }: VideoUploadSectionProps) 
               <>
                 <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
                 <p className="text-lg font-medium">Uploading video...</p>
-                <p className="text-sm text-muted-foreground">Please wait</p>
+                <div className="w-full max-w-xs mt-2">
+                  <div className="bg-muted rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="bg-primary h-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">{uploadProgress}% uploaded</p>
+                </div>
               </>
             ) : (
               <>

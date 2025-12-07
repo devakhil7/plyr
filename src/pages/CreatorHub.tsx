@@ -39,6 +39,7 @@ const CreatorHub = () => {
   const [clips, setClips] = useState<HighlightClip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -134,14 +135,44 @@ const CreatorHub = () => {
     if (!user) return;
 
     setIsUploading(true);
+    setUploadProgress(0);
+    
     try {
-      // Upload video to storage
       const fileName = `${user.id}/${Date.now()}_${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('match-videos')
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
+      
+      // Get the upload URL for tracking progress
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      // Use XMLHttpRequest for progress tracking
+      const uploadUrl = `${supabaseUrl}/storage/v1/object/match-videos/${fileName}`;
+      
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(percent);
+          }
+        });
+        
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        });
+        
+        xhr.addEventListener('error', () => reject(new Error('Upload failed')));
+        xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
+        
+        xhr.open('POST', uploadUrl);
+        xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
+        xhr.setRequestHeader('x-upsert', 'true');
+        xhr.send(file);
+      });
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -179,6 +210,7 @@ const CreatorHub = () => {
       });
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -455,7 +487,8 @@ const CreatorHub = () => {
         {(!activeJob || activeJob.status === 'failed') && (
           <VideoUploadSection 
             onUpload={handleVideoUpload} 
-            isUploading={isUploading} 
+            isUploading={isUploading}
+            uploadProgress={uploadProgress}
           />
         )}
 
