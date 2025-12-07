@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { MapPin, Calendar, Clock, Users, ArrowLeft, Play, Upload, Trophy, Target, Percent, CreditCard, CheckCircle, Loader2 } from "lucide-react";
 import { MatchInviteDialog } from "@/components/match/MatchInviteDialog";
 import { MatchShareDialog } from "@/components/match/MatchShareDialog";
+import { FootballPitch } from "@/components/match/FootballPitch";
 
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
   open: "open",
@@ -555,32 +556,26 @@ export default function MatchDetails() {
 
           <TabsContent value="players" className="mt-6">
             <Card>
-              <CardContent className="p-6">
-                {confirmedPlayers.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {confirmedPlayers.map((mp: any) => (
-                      <Link 
-                        key={mp.id} 
-                        to={`/players/${mp.user_id}`}
-                        className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm overflow-hidden">
-                          {mp.profiles?.profile_photo_url ? (
-                            <img src={mp.profiles.profile_photo_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            mp.profiles?.name?.charAt(0) || "P"
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate hover:text-primary">{mp.profiles?.name || "Player"}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{mp.role} • Team {mp.team}</p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-muted-foreground py-8">No players have joined yet</p>
-                )}
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Players on the Pitch
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <FootballPitch
+                  matchId={match.id}
+                  players={confirmedPlayers.map((mp: any) => ({
+                    id: mp.id,
+                    user_id: mp.user_id,
+                    team: mp.team as "A" | "B" | "unassigned",
+                    role: mp.role,
+                    profiles: mp.profiles,
+                  }))}
+                  isHost={!!isHost}
+                  teamAssignmentMode={match.team_assignment_mode || "auto"}
+                  onRefetch={refetch}
+                />
               </CardContent>
             </Card>
           </TabsContent>
