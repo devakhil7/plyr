@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft, User, Camera, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { PlayerCard } from "@/components/player/PlayerCard";
@@ -41,6 +41,9 @@ export default function Profile() {
   const { user, profile, loading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [showCustomClub, setShowCustomClub] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -65,6 +68,7 @@ export default function Profile() {
       const savedClub = (profile as any).favourite_club || "";
       const isCustomClub = savedClub && !TOP_CLUBS.includes(savedClub);
       setShowCustomClub(isCustomClub);
+      setProfilePhotoUrl(profile.profile_photo_url || null);
       setFormData({
         name: profile.name || "",
         city: profile.city || "",
@@ -82,6 +86,62 @@ export default function Profile() {
       });
     }
   }, [user, profile, loading, navigate]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(fileName);
+
+      // Update profile with new photo URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ profile_photo_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setProfilePhotoUrl(publicUrl);
+      await refreshProfile();
+      toast.success('Profile photo updated!');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || 'Failed to upload photo');
+    } finally {
+      setUploadingPhoto(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   // Fetch player stats for the card
   const { data: stats } = useQuery({
@@ -231,7 +291,7 @@ export default function Profile() {
                   name: formData.name || profile?.name || null,
                   position: formData.position || profile?.position || null,
                   city: formData.city || profile?.city || null,
-                  profile_photo_url: profile?.profile_photo_url || null,
+                  profile_photo_url: profilePhotoUrl || profile?.profile_photo_url || null,
                   favourite_club: getFinalClub(),
                 }}
                 stats={{
@@ -256,15 +316,44 @@ export default function Profile() {
           <Card>
             <CardHeader>
               <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={profile?.profile_photo_url || undefined} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-xl">
-                    {profile?.name?.charAt(0) || <User className="h-8 w-8" />}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative group">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={profilePhotoUrl || profile?.profile_photo_url || undefined} />
+                    <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                      {profile?.name?.charAt(0) || <User className="h-8 w-8" />}
+                    </AvatarFallback>
+                  </Avatar>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {uploadingPhoto ? (
+                      <Loader2 className="h-5 w-5 text-white animate-spin" />
+                    ) : (
+                      <Camera className="h-5 w-5 text-white" />
+                    )}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                </div>
                 <div>
                   <CardTitle className="text-2xl">{profile?.name || "Your Profile"}</CardTitle>
                   <CardDescription>{user?.email}</CardDescription>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="text-xs text-primary hover:underline mt-1"
+                  >
+                    {uploadingPhoto ? "Uploading..." : "Change photo"}
+                  </button>
                 </div>
               </div>
             </CardHeader>
