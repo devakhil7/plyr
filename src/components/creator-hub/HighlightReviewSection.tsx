@@ -189,18 +189,27 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
       videoRef.current.currentTime = clip.start_time_seconds;
       videoRef.current.play();
       setIsPlaying(true);
-
-      // Stop at end time
-      const checkTime = () => {
-        if (videoRef.current && videoRef.current.currentTime >= clip.end_time_seconds) {
-          videoRef.current.pause();
-          setIsPlaying(false);
-        } else if (isPlaying) {
-          requestAnimationFrame(checkTime);
-        }
-      };
-      requestAnimationFrame(checkTime);
     }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current && videoRef.current.currentTime >= clip.end_time_seconds) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = clip.start_time_seconds;
+      setIsPlaying(false);
+    }
+  };
+
+  const handlePause = () => {
+    setIsPlaying(false);
+  };
+
+  const handlePlay = () => {
+    // Ensure we start from the correct position when play is triggered
+    if (videoRef.current && videoRef.current.currentTime < clip.start_time_seconds) {
+      videoRef.current.currentTime = clip.start_time_seconds;
+    }
+    setIsPlaying(true);
   };
 
   return (
@@ -235,6 +244,9 @@ const ClipCard = ({ clip, videoUrl, onToggle, onCaptionChange, formatTimestamp }
           ref={videoRef}
           src={videoUrl}
           className="w-full h-full object-contain"
+          onTimeUpdate={handleTimeUpdate}
+          onPause={handlePause}
+          onPlay={handlePlay}
           onEnded={() => setIsPlaying(false)}
         />
         {!isPlaying && (
