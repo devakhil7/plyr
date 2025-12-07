@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Search, Trophy, Target, TrendingUp, Calendar, MapPin, Users, ArrowRight } from "lucide-react";
+import { calculateWinsLosses } from "@/lib/playerStats";
 
 export default function Dashboard() {
   const { user, profile, loading } = useAuth();
@@ -80,18 +81,7 @@ export default function Dashboard() {
         .eq("matches.status", "completed");
 
       const completed = matchData || [];
-      let wins = 0;
-      let losses = 0;
-
-      completed.forEach((mp: any) => {
-        const match = mp.matches;
-        if (match.team_a_score !== null && match.team_b_score !== null) {
-          if (mp.team === "A" && match.team_a_score > match.team_b_score) wins++;
-          else if (mp.team === "B" && match.team_b_score > match.team_a_score) wins++;
-          else if (mp.team === "A" && match.team_a_score < match.team_b_score) losses++;
-          else if (mp.team === "B" && match.team_b_score < match.team_a_score) losses++;
-        }
-      });
+      const { wins, losses } = calculateWinsLosses(completed);
 
       return { total: completed.length, wins, losses };
     },
