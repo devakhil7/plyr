@@ -16,6 +16,7 @@ import { MatchInviteDialog } from "@/components/match/MatchInviteDialog";
 import { MatchShareDialog } from "@/components/match/MatchShareDialog";
 import { FootballPitch } from "@/components/match/FootballPitch";
 import { MatchStatsInput } from "@/components/match/MatchStatsInput";
+import { MatchScorecard } from "@/components/match/MatchScorecard";
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
   open: "open",
   full: "full",
@@ -75,6 +76,20 @@ export default function MatchDetails() {
         `)
         .eq("match_id", id)
         .order("minute", { ascending: true });
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  // Fetch player ratings for this match
+  const { data: playerRatings = [] } = useQuery({
+    queryKey: ["match-player-ratings", id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("player_ratings")
+        .select("rated_user_id, rating")
+        .eq("match_id", id)
+        .eq("moderation_status", "approved");
       return data || [];
     },
     enabled: !!id,
@@ -608,6 +623,31 @@ export default function MatchDetails() {
           <TabsContent value="analytics" className="mt-6">
             {match.status === "completed" ? (
               <div className="space-y-6">
+                {/* Share Scorecard Button */}
+                {match.team_a_score !== null && (
+                  <div className="flex justify-end">
+                    <MatchScorecard
+                      matchId={match.id}
+                      matchName={match.match_name}
+                      matchDate={new Date(match.match_date).toLocaleDateString("en-IN", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                      turfName={match.turfs?.name}
+                      teamAScore={match.team_a_score}
+                      teamBScore={match.team_b_score}
+                      matchEvents={matchEvents}
+                      players={confirmedPlayers.map((mp: any) => ({
+                        user_id: mp.user_id,
+                        team: mp.team,
+                        profiles: mp.profiles,
+                      }))}
+                      playerRatings={playerRatings}
+                    />
+                  </div>
+                )}
+
                 {/* Score Display */}
                 {match.team_a_score !== null && (
                   <Card className="bg-gradient-to-r from-primary/5 to-secondary/5">
