@@ -131,6 +131,50 @@ Return ONLY a valid JSON array:
   return goals;
 }
 
+// Authenticate the user and verify job ownership
+async function authenticateAndVerifyOwnership(
+  req: Request, 
+  jobId: string, 
+  supabaseUrl: string,
+  supabaseServiceKey: string
+): Promise<string> {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  // Get authorization header
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    throw new Error('Unauthorized: No authorization header provided');
+  }
+
+  // Extract and verify the JWT token
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  
+  if (authError || !user) {
+    console.error('Auth error:', authError);
+    throw new Error('Unauthorized: Invalid token');
+  }
+
+  // Verify the user owns this job
+  const { data: job, error: jobError } = await supabase
+    .from('video_analysis_jobs')
+    .select('user_id')
+    .eq('id', jobId)
+    .single();
+
+  if (jobError || !job) {
+    console.error('Job lookup error:', jobError);
+    throw new Error('Job not found');
+  }
+
+  if (job.user_id !== user.id) {
+    console.error(`User ${user.id} attempted to access job owned by ${job.user_id}`);
+    throw new Error('Access denied: You do not own this job');
+  }
+
+  console.log(`User ${user.id} authenticated and verified as owner of job ${jobId}`);
+  return user.id;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -142,11 +186,18 @@ serve(async (req) => {
     const body = await req.json();
     jobId = body.jobId;
     const videoDuration = body.videoDuration || 300;
+
+    if (!jobId) {
+      throw new Error('Missing required parameter: jobId');
+    }
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Authenticate and verify ownership before proceeding
+    await authenticateAndVerifyOwnership(req, jobId, supabaseUrl, supabaseServiceKey);
 
     console.log(`Starting video analysis for job: ${jobId} duration: ${videoDuration} seconds`);
 
@@ -216,7 +267,19 @@ serve(async (req) => {
   } catch (error) {
     console.error('Video analysis error:', error);
 
-    if (jobId) {
+    // Return appropriate status codes based on error type
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    let statusCode = 500;
+    
+    if (errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid token')) {
+      statusCode = 401;
+    } else if (errorMessage.includes('Access denied') || errorMessage.includes('do not own')) {
+      statusCode = 403;
+    } else if (errorMessage.includes('not found')) {
+      statusCode = 404;
+    }
+
+    if (jobId && statusCode === 500) {
       try {
         const supabase = createClient(
           Deno.env.get('SUPABASE_URL')!,
@@ -227,7 +290,7 @@ serve(async (req) => {
           .from('video_analysis_jobs')
           .update({ 
             status: 'failed', 
-            error_message: error instanceof Error ? error.message : 'Unknown error',
+            error_message: errorMessage,
             updated_at: new Date().toISOString() 
           })
           .eq('id', jobId);
@@ -239,10 +302,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: errorMessage
       }),
       { 
-        status: 500, 
+        status: statusCode, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
