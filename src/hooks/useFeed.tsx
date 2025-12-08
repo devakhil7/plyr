@@ -124,33 +124,87 @@ export function useFeed({ tab, filter, userId, userCity }: UseFeedOptions) {
     enabled: tab === "events" || filter === "events",
   });
 
-  // Like mutation
+  // Like mutation with optimistic updates
   const likeMutation = useMutation({
     mutationFn: async (postId: string) => {
       if (!userId) throw new Error("Must be logged in");
       
-      const isLiked = userLikes?.includes(postId);
+      // Check current like status from the server to avoid stale data
+      const { data: existingLike } = await supabase
+        .from("likes")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("feed_post_id", postId)
+        .maybeSingle();
+      
+      const isLiked = !!existingLike;
       
       if (isLiked) {
+        // Unlike: delete the like
         const { error } = await supabase
           .from("likes")
           .delete()
           .eq("user_id", userId)
           .eq("feed_post_id", postId);
         if (error) throw error;
+        
+        // Decrement likes count on post
+        const post = posts?.find((p: any) => p.id === postId);
+        if (post) {
+          await supabase
+            .from("feed_posts")
+            .update({ likes: Math.max(0, (post.likes || 1) - 1) })
+            .eq("id", postId);
+        }
       } else {
+        // Like: insert new like
         const { error } = await supabase
           .from("likes")
           .insert({ user_id: userId, feed_post_id: postId });
         if (error) throw error;
+        
+        // Increment likes count on post
+        const post = posts?.find((p: any) => p.id === postId);
+        if (post) {
+          await supabase
+            .from("feed_posts")
+            .update({ likes: (post.likes || 0) + 1 })
+            .eq("id", postId);
+        }
       }
+      
+      return { postId, isLiked };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
-      queryClient.invalidateQueries({ queryKey: ["user-likes"] });
+    onMutate: async (postId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["user-likes", userId] });
+      await queryClient.cancelQueries({ queryKey: ["feed-posts"] });
+      
+      // Snapshot previous value
+      const previousLikes = queryClient.getQueryData<string[]>(["user-likes", userId]);
+      
+      // Optimistically update likes
+      const isCurrentlyLiked = previousLikes?.includes(postId);
+      queryClient.setQueryData<string[]>(["user-likes", userId], (old) => {
+        if (!old) return isCurrentlyLiked ? [] : [postId];
+        return isCurrentlyLiked 
+          ? old.filter(id => id !== postId)
+          : [...old, postId];
+      });
+      
+      return { previousLikes };
     },
-    onError: () => {
+    onError: (err, postId, context) => {
+      // Rollback on error
+      if (context?.previousLikes) {
+        queryClient.setQueryData(["user-likes", userId], context.previousLikes);
+      }
       toast.error("Failed to update like");
+    },
+    onSettled: () => {
+      // Always refetch after error or success
+      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["user-likes", userId] });
     },
   });
 
