@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MapPin, IndianRupee, ArrowLeft, Calendar, Users, Clock, Phone, Star, CreditCard } from "lucide-react";
+import { MapPin, IndianRupee, ArrowLeft, Calendar, Users, Clock, Phone, Star, CreditCard, ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { TurfBookingDialog } from "@/components/TurfBookingDialog";
 
 export default function TurfDetails() {
@@ -15,6 +15,7 @@ export default function TurfDetails() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [bookingOpen, setBookingOpen] = useState(false);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
   const { data: turf, isLoading } = useQuery({
     queryKey: ["turf", id],
@@ -40,6 +41,33 @@ export default function TurfDetails() {
     },
     enabled: !!id,
   });
+
+  // Separate photos and videos from turf.photos array
+  const { photos, video } = useMemo(() => {
+    const allMedia = turf?.photos || [];
+    const videoExtensions = ['.mp4', '.webm', '.mov'];
+    const videoItem = allMedia.find((url: string) => 
+      videoExtensions.some(ext => url.toLowerCase().includes(ext))
+    );
+    const photoItems = allMedia.filter((url: string) => 
+      !videoExtensions.some(ext => url.toLowerCase().includes(ext))
+    );
+    return { photos: photoItems, video: videoItem || null };
+  }, [turf?.photos]);
+
+  const allMedia = useMemo(() => {
+    const items: { type: 'photo' | 'video'; url: string }[] = photos.map((url: string) => ({ type: 'photo' as const, url }));
+    if (video) items.push({ type: 'video', url: video });
+    return items;
+  }, [photos, video]);
+
+  const nextMedia = () => {
+    setCurrentMediaIndex((prev) => (prev + 1) % allMedia.length);
+  };
+
+  const prevMedia = () => {
+    setCurrentMediaIndex((prev) => (prev - 1 + allMedia.length) % allMedia.length);
+  };
 
   if (isLoading) {
     return (
@@ -75,17 +103,79 @@ export default function TurfDetails() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Hero */}
+            {/* Hero with Media Gallery */}
             <Card className="overflow-hidden">
-              <div className="h-64 bg-gradient-to-br from-primary/20 to-secondary/20 relative flex items-center justify-center">
+              <div className="relative h-72 md:h-80 bg-gradient-to-br from-primary/20 to-secondary/20">
+                {allMedia.length > 0 ? (
+                  <>
+                    {allMedia[currentMediaIndex].type === 'photo' ? (
+                      <img
+                        src={allMedia[currentMediaIndex].url}
+                        alt={`${turf.name} photo`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <video
+                        src={allMedia[currentMediaIndex].url}
+                        controls
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    
+                    {/* Navigation arrows */}
+                    {allMedia.length > 1 && (
+                      <>
+                        <button
+                          onClick={prevMedia}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={nextMedia}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-background/80 backdrop-blur-sm rounded-full hover:bg-background transition-colors"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Thumbnail strip */}
+                    {allMedia.length > 1 && (
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 p-1.5 bg-background/80 backdrop-blur-sm rounded-lg">
+                        {allMedia.map((item, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setCurrentMediaIndex(index)}
+                            className={`relative w-12 h-8 rounded overflow-hidden border-2 transition-all ${
+                              index === currentMediaIndex ? 'border-primary' : 'border-transparent opacity-70 hover:opacity-100'
+                            }`}
+                          >
+                            {item.type === 'photo' ? (
+                              <img src={item.url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-muted flex items-center justify-center">
+                                <Play className="h-3 w-3" />
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-4xl">⚽</span>
+                    </div>
+                  </div>
+                )}
+                
                 {turf.is_featured && (
                   <Badge className="absolute top-4 right-4 bg-amber-500 text-white">
                     <Star className="h-3 w-3 mr-1" /> Featured Venue
                   </Badge>
                 )}
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-4xl">⚽</span>
-                </div>
               </div>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
