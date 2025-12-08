@@ -114,6 +114,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bookmarks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       business_model_sections: {
@@ -181,6 +188,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -265,6 +279,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -440,6 +461,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "events_turf_id_fkey"
             columns: ["turf_id"]
             isOneToOne: false
@@ -529,10 +557,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "feed_posts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "feed_posts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feed_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -619,6 +661,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "follows_followed_player_id_fkey"
+            columns: ["followed_player_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "follows_followed_turf_id_fkey"
             columns: ["followed_turf_id"]
             isOneToOne: false
@@ -630,6 +679,13 @@ export type Database = {
             columns: ["follower_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -722,6 +778,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       match_events: {
@@ -761,6 +824,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_events_assist_user_id_fkey"
+            columns: ["assist_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "match_events_match_id_fkey"
             columns: ["match_id"]
             isOneToOne: false
@@ -772,6 +842,13 @@ export type Database = {
             columns: ["scorer_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_scorer_user_id_fkey"
+            columns: ["scorer_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -820,6 +897,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_players_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -927,6 +1011,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "matches_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "matches_turf_id_fkey"
             columns: ["turf_id"]
             isOneToOne: false
@@ -986,6 +1077,13 @@ export type Database = {
             columns: ["sender_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1294,10 +1392,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "player_ratings_rated_user_id_fkey"
+            columns: ["rated_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "player_ratings_rater_user_id_fkey"
             columns: ["rater_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_ratings_rater_user_id_fkey"
+            columns: ["rater_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1482,6 +1594,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tournament_teams_captain_user_id_fkey"
+            columns: ["captain_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tournament_teams_tournament_id_fkey"
             columns: ["tournament_id"]
             isOneToOne: false
@@ -1578,6 +1697,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tournaments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tournaments_turf_id_fkey"
             columns: ["turf_id"]
             isOneToOne: false
@@ -1655,6 +1781,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "turf_bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1855,6 +1988,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_photos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -1905,6 +2045,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_videos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       video_analysis_jobs: {
@@ -1953,13 +2100,64 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "video_analysis_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          bio: string | null
+          city: string | null
+          created_at: string | null
+          id: string | null
+          name: string | null
+          position: string | null
+          profile_photo_url: string | null
+          skill_level: Database["public"]["Enums"]["skill_level"] | null
+        }
+        Insert: {
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          position?: string | null
+          profile_photo_url?: string | null
+          skill_level?: Database["public"]["Enums"]["skill_level"] | null
+        }
+        Update: {
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          position?: string | null
+          profile_photo_url?: string | null
+          skill_level?: Database["public"]["Enums"]["skill_level"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_public_profile: {
+        Args: { profile_id: string }
+        Returns: {
+          profile_bio: string
+          profile_city: string
+          profile_id: string
+          profile_name: string
+          profile_photo_url: string
+          profile_position: string
+          profile_skill_level: Database["public"]["Enums"]["skill_level"]
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
