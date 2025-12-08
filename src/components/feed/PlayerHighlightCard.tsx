@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Share2, Play, Eye, User, MapPin } from "lucide-react";
+import { Play, Eye, User, MapPin } from "lucide-react";
 import { FeedPostActions } from "./FeedPostActions";
 import { PostCommentsPreview } from "./PostCommentsPreview";
+import { PostOptionsMenu } from "./PostOptionsMenu";
 
 interface Comment {
   id: string;
@@ -27,6 +28,9 @@ interface PlayerHighlightCardProps {
     comments_count: number | null;
     created_at: string | null;
     player_id: string | null;
+    user_id?: string | null;
+    highlight_type?: string | null;
+    match_id?: string | null;
     profiles?: {
       name: string | null;
       profile_photo_url: string | null;
@@ -58,42 +62,58 @@ export function PlayerHighlightCard({
   return (
     <Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm">
       {/* Header */}
-      <Link 
-        to={post.player_id ? `/players/${post.player_id}` : "#"}
-        className="flex items-center gap-3 p-4 border-b border-border/50 hover:bg-accent/50 transition-colors"
-      >
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-lg overflow-hidden">
-          {post.profiles?.profile_photo_url ? (
-            <img 
-              src={post.profiles.profile_photo_url} 
-              alt={post.profiles?.name || "Player"} 
-              className="w-full h-full rounded-full object-cover"
-            />
-          ) : (
-            post.profiles?.name?.charAt(0) || <User className="h-5 w-5" />
-          )}
-        </div>
-        <div className="flex-1">
-          <p className="font-semibold text-foreground hover:text-primary">{post.profiles?.name || "Unknown Player"}</p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {post.profiles?.position && (
-              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                {post.profiles.position}
-              </span>
-            )}
-            {post.profiles?.city && (
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3 w-3" />
-                {post.profiles.city}
-              </span>
+      <div className="flex items-center gap-3 p-4 border-b border-border/50">
+        <Link 
+          to={post.player_id ? `/players/${post.player_id}` : "#"}
+          className="flex items-center gap-3 flex-1 hover:opacity-80 transition-opacity"
+        >
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground font-bold text-lg overflow-hidden">
+            {post.profiles?.profile_photo_url ? (
+              <img 
+                src={post.profiles.profile_photo_url} 
+                alt={post.profiles?.name || "Player"} 
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              post.profiles?.name?.charAt(0) || <User className="h-5 w-5" />
             )}
           </div>
+          <div className="flex-1">
+            <p className="font-semibold text-foreground hover:text-primary">{post.profiles?.name || "Unknown Player"}</p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {post.profiles?.position && (
+                <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                  {post.profiles.position}
+                </span>
+              )}
+              {post.profiles?.city && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {post.profiles.city}
+                </span>
+              )}
+            </div>
+          </div>
+        </Link>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-1 rounded-full">
+            <User className="h-3 w-3" />
+            Player Highlight
+          </div>
+          <PostOptionsMenu
+            post={{
+              id: post.id,
+              user_id: post.user_id || null,
+              caption: post.caption,
+              media_url: post.media_url,
+              highlight_type: post.highlight_type || null,
+              player_id: post.player_id,
+              match_id: post.match_id || null,
+            }}
+            currentUserId={userId}
+          />
         </div>
-        <div className="flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-1 rounded-full">
-          <User className="h-3 w-3" />
-          Player Highlight
-        </div>
-      </Link>
+      </div>
 
       {/* Video/Media */}
       <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 relative group cursor-pointer">

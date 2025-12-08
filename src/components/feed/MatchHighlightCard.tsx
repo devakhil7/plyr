@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Play, Eye, MapPin, Trophy, Calendar, User } from "lucide-react";
 import { FeedPostActions } from "./FeedPostActions";
 import { PostCommentsPreview } from "./PostCommentsPreview";
+import { PostOptionsMenu } from "./PostOptionsMenu";
 import { format } from "date-fns";
 import { formatDistanceToNow } from "date-fns";
 
@@ -29,6 +30,9 @@ interface MatchHighlightCardProps {
     comments_count: number | null;
     created_at: string | null;
     match_id: string | null;
+    user_id?: string | null;
+    highlight_type?: string | null;
+    player_id?: string | null;
     matches?: {
       match_name: string | null;
       team_a_score: number | null;
@@ -93,9 +97,23 @@ export function MatchHighlightCard({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-500/10 px-2 py-1 rounded-full">
-          <Trophy className="h-3 w-3" />
-          Match
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-500/10 px-2 py-1 rounded-full">
+            <Trophy className="h-3 w-3" />
+            Match
+          </div>
+          <PostOptionsMenu
+            post={{
+              id: post.id,
+              user_id: post.user_id || null,
+              caption: post.caption,
+              media_url: post.media_url,
+              highlight_type: post.highlight_type || null,
+              player_id: post.player_id || null,
+              match_id: post.match_id,
+            }}
+            currentUserId={userId}
+          />
         </div>
       </div>
 
