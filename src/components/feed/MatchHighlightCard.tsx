@@ -3,8 +3,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, Eye, MapPin, Trophy, Calendar, User } from "lucide-react";
 import { FeedPostActions } from "./FeedPostActions";
+import { PostCommentsPreview } from "./PostCommentsPreview";
 import { format } from "date-fns";
 import { formatDistanceToNow } from "date-fns";
+
+interface Comment {
+  id: string;
+  text: string;
+  created_at: string;
+  user_id: string;
+  profiles: {
+    name: string | null;
+    profile_photo_url: string | null;
+  } | null;
+}
 
 interface MatchHighlightCardProps {
   post: {
@@ -30,6 +42,7 @@ interface MatchHighlightCardProps {
       name: string | null;
       profile_photo_url: string | null;
     } | null;
+    comments?: Comment[];
   };
   isLiked: boolean;
   onLike: () => void;
@@ -170,6 +183,15 @@ export function MatchHighlightCard({
             </Link>
           )}
         </div>
+
+        {/* Top Comments Preview */}
+        {post.comments && post.comments.length > 0 && (
+          <PostCommentsPreview
+            comments={post.comments.slice(0, 2)}
+            totalCount={post.comments_count || post.comments.length}
+            onViewAll={onComment}
+          />
+        )}
       </CardContent>
     </Card>
   );
