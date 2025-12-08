@@ -29,6 +29,8 @@ import CreatorHub from "./pages/CreatorHub";
 import Leaderboards from "./pages/Leaderboards";
 import PartnerWithUs from "./pages/PartnerWithUs";
 import Install from "./pages/Install";
+import ConnectedApps from "./pages/ConnectedApps";
+import FitnessInsights from "./pages/FitnessInsights";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +67,8 @@ const App = () => (
             <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/partner" element={<PartnerWithUs />} />
             <Route path="/install" element={<Install />} />
+            <Route path="/connected-apps" element={<ConnectedApps />} />
+            <Route path="/fitness-insights" element={<FitnessInsights />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
