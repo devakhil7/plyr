@@ -29,10 +29,49 @@ export function ShareDialog({ open, onOpenChange, postId, caption, onShare }: Sh
     onOpenChange(false);
   };
 
-  const handleInstagramShare = () => {
-    // Instagram doesn't have a direct share URL API, so we copy the link and guide user
-    navigator.clipboard.writeText(postUrl);
-    toast.success("Link copied! Open Instagram and paste in your story or DM.");
+  const handleInstagramShare = async () => {
+    // Try native share API first (works on mobile and can trigger Instagram)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "SPORTIQ Highlight",
+          text: shareText,
+          url: postUrl,
+        });
+        onShare();
+        onOpenChange(false);
+        return;
+      } catch (error) {
+        // User cancelled or share failed, fall back to clipboard
+        if ((error as Error).name !== "AbortError") {
+          console.error("Share failed:", error);
+        }
+      }
+    }
+    
+    // Fallback: Copy link and guide user to Instagram
+    await navigator.clipboard.writeText(postUrl);
+    
+    // Try to open Instagram app with the link
+    const instagramUrl = `instagram://share?text=${encodeURIComponent(`${shareText}\n\n${postUrl}`)}`;
+    
+    // Create a hidden iframe to try opening the app
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = instagramUrl;
+    document.body.appendChild(iframe);
+    
+    // Remove iframe after attempt
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 1000);
+    
+    toast.success("Link copied! Paste in your Instagram story or DM.", {
+      action: {
+        label: "Open Instagram",
+        onClick: () => window.open("https://instagram.com", "_blank"),
+      },
+    });
     onShare();
     onOpenChange(false);
   };

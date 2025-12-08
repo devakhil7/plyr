@@ -47,7 +47,7 @@ export function useFeed({ tab, filter, userId, userCity }: UseFeedOptions) {
     enabled: !!userId,
   });
 
-  // Fetch feed posts
+  // Fetch feed posts with top comments
   const { data: posts, isLoading: postsLoading } = useQuery({
     queryKey: ["feed-posts", tab, filter, userId, userCity],
     queryFn: async () => {
@@ -57,7 +57,8 @@ export function useFeed({ tab, filter, userId, userCity }: UseFeedOptions) {
           *,
           profiles:user_id(name, profile_photo_url, position, city),
           player:player_id(name, profile_photo_url, position, city),
-          matches(match_name, team_a_score, team_b_score, match_date, turf_id, turfs(name, city))
+          matches(match_name, team_a_score, team_b_score, match_date, turf_id, turfs(name, city)),
+          comments(id, text, created_at, user_id, profiles(name, profile_photo_url))
         `)
         .order("created_at", { ascending: false })
         .limit(50);
