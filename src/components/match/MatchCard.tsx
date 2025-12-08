@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, Clock } from "lucide-react";
+import { MapPin, Calendar, Users, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -80,6 +80,22 @@ export function MatchCard({ match }: MatchCardProps) {
     ?.filter((p) => p.join_status === "confirmed" && p.user_id)
     .map((p) => p.user_id) || [];
 
+  // Check if slot is confirmed (paid booking exists)
+  const { data: slotConfirmed } = useQuery({
+    queryKey: ["match-slot-status", match.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("turf_bookings")
+        .select("id, payment_status")
+        .eq("match_id", match.id)
+        .eq("payment_status", "paid")
+        .maybeSingle();
+      
+      return !!data;
+    },
+    staleTime: 60000,
+  });
+
   // Fetch player ratings to determine tiers
   const { data: playerTiers } = useQuery({
     queryKey: ["match-player-tiers", match.id, confirmedPlayerIds],
@@ -150,14 +166,26 @@ export function MatchCard({ match }: MatchCardProps) {
       <Card className="h-full card-hover">
         <CardContent className="p-6">
           <div className="flex items-start justify-between mb-3">
-            <div>
-              <Badge variant="sport" className="mb-2">{match.sport}</Badge>
-              <h3 className="font-semibold text-lg">{match.match_name}</h3>
+            <div className="flex items-center gap-2">
+              <Badge variant="sport">{match.sport}</Badge>
+              {slotConfirmed ? (
+                <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Confirmed
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="bg-amber-500/20 text-amber-400 border-amber-500/30 text-xs">
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Unconfirmed
+                </Badge>
+              )}
             </div>
             <Badge variant={statusVariants[match.status] || "secondary"}>
               {match.status === "in_progress" ? "In Progress" : match.status.charAt(0).toUpperCase() + match.status.slice(1)}
             </Badge>
           </div>
+          
+          <h3 className="font-semibold text-lg mb-3">{match.match_name}</h3>
 
           <div className="space-y-2 text-sm text-muted-foreground mb-4">
             <div className="flex items-center">
