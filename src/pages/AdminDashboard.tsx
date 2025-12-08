@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { 
   Users, MapPin, Trophy, Shield, Plus, Trash2, Star, Search, 
   Calendar, ChevronLeft, ChevronRight, Building, Eye, Power, Edit,
-  CreditCard, Wallet, BarChart3, Settings
+  CreditCard, Wallet, BarChart3, Settings, Presentation
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -303,6 +303,26 @@ export default function AdminDashboard() {
               </button>
             );
           })}
+          
+          {/* External Admin Pages */}
+          <div className="mt-4 pt-4 border-t border-border">
+            <Link to="/admin/tournaments">
+              <button
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Trophy className="h-5 w-5 shrink-0" />
+                {!sidebarCollapsed && <span>Tournaments</span>}
+              </button>
+            </Link>
+            <Link to="/admin/business-model">
+              <button
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Presentation className="h-5 w-5 shrink-0" />
+                {!sidebarCollapsed && <span>Business Model</span>}
+              </button>
+            </Link>
+          </div>
         </nav>
         <div className="absolute bottom-4 left-0 right-0 px-4">
           <Link to="/dashboard">
