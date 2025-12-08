@@ -155,6 +155,54 @@ export type Database = {
           },
         ]
       }
+      connected_providers: {
+        Row: {
+          access_token: string | null
+          connected_at: string
+          created_at: string
+          expires_at: string | null
+          external_user_id: string | null
+          id: string
+          last_synced_at: string | null
+          provider: string
+          refresh_token: string | null
+          scopes: Json | null
+          sync_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          connected_at?: string
+          created_at?: string
+          expires_at?: string | null
+          external_user_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          provider: string
+          refresh_token?: string | null
+          scopes?: Json | null
+          sync_status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          connected_at?: string
+          created_at?: string
+          expires_at?: string | null
+          external_user_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          provider?: string
+          refresh_token?: string | null
+          scopes?: Json | null
+          sync_status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -206,6 +254,54 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      daily_metrics: {
+        Row: {
+          active_minutes: number | null
+          calories_burned: number | null
+          created_at: string
+          date: string
+          hrv: number | null
+          id: string
+          provider: string
+          raw_metadata: Json | null
+          recovery_score: number | null
+          resting_hr: number | null
+          sleep_hours: number | null
+          steps: number | null
+          user_id: string
+        }
+        Insert: {
+          active_minutes?: number | null
+          calories_burned?: number | null
+          created_at?: string
+          date: string
+          hrv?: number | null
+          id?: string
+          provider: string
+          raw_metadata?: Json | null
+          recovery_score?: number | null
+          resting_hr?: number | null
+          sleep_hours?: number | null
+          steps?: number | null
+          user_id: string
+        }
+        Update: {
+          active_minutes?: number | null
+          calories_burned?: number | null
+          created_at?: string
+          date?: string
+          hrv?: number | null
+          id?: string
+          provider?: string
+          raw_metadata?: Json | null
+          recovery_score?: number | null
+          resting_hr?: number | null
+          sleep_hours?: number | null
+          steps?: number | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -407,6 +503,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      fitness_sessions: {
+        Row: {
+          avg_hr: number | null
+          calories: number | null
+          created_at: string
+          distance_meters: number | null
+          duration_seconds: number | null
+          end_time: string | null
+          external_activity_id: string | null
+          id: string
+          max_hr: number | null
+          provider: string
+          raw_metadata: Json | null
+          start_time: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          avg_hr?: number | null
+          calories?: number | null
+          created_at?: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          end_time?: string | null
+          external_activity_id?: string | null
+          id?: string
+          max_hr?: number | null
+          provider: string
+          raw_metadata?: Json | null
+          start_time: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          avg_hr?: number | null
+          calories?: number | null
+          created_at?: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          end_time?: string | null
+          external_activity_id?: string | null
+          id?: string
+          max_hr?: number | null
+          provider?: string
+          raw_metadata?: Json | null
+          start_time?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       follows: {
         Row: {

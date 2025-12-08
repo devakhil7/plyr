@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X, User, LogOut, LayoutDashboard, Shield, Building, MessageSquare } from "lucide-react";
+import { Menu, X, User, LogOut, LayoutDashboard, Shield, Building, MessageSquare, Activity } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { NotificationsDropdown } from "./NotificationsDropdown";
@@ -120,6 +120,12 @@ export function Navbar() {
                     <Link to="/profile" className="flex items-center cursor-pointer rounded-lg">
                       <User className="mr-2 h-4 w-4" />
                       Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/connected-apps" className="flex items-center cursor-pointer rounded-lg">
+                      <Activity className="mr-2 h-4 w-4" />
+                      Connected Apps
                     </Link>
                   </DropdownMenuItem>
                   {isAdmin && (
