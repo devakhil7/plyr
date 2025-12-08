@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Save, Image, X } from "lucide-react";
+import { Save, Image, X, Upload, Video, Loader2, Trash2 } from "lucide-react";
 
 const AMENITIES_OPTIONS = [
   "Parking", "Washroom", "Floodlights", "Drinking Water", 
@@ -23,8 +23,18 @@ interface TurfListingTabProps {
   onUpdate: () => void;
 }
 
+const MAX_PHOTOS = 7;
+const MAX_VIDEO = 1;
+
 export function TurfListingTab({ turfId, turf, onUpdate }: TurfListingTabProps) {
   const queryClient = useQueryClient();
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  
   const [form, setForm] = useState({
     name: "",
     location: "",
@@ -54,8 +64,156 @@ export function TurfListingTab({ turfId, turf, onUpdate }: TurfListingTabProps) 
         refund_policy: turf.refund_policy || "",
         active: turf.active !== false,
       });
+      setPhotos(turf.photos || []);
+      // Extract video from photos array if it exists (videos stored as last item or separate field)
+      const existingVideos = (turf.photos || []).filter((url: string) => 
+        url.includes('.mp4') || url.includes('.webm') || url.includes('.mov')
+      );
+      if (existingVideos.length > 0) {
+        setVideoUrl(existingVideos[0]);
+        setPhotos((turf.photos || []).filter((url: string) => 
+          !url.includes('.mp4') && !url.includes('.webm') && !url.includes('.mov')
+        ));
+      }
     }
   }, [turf]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingSlots = MAX_PHOTOS - photos.length;
+    if (remainingSlots <= 0) {
+      toast.error(`Maximum ${MAX_PHOTOS} photos allowed`);
+      return;
+    }
+
+    const filesToUpload = Array.from(files).slice(0, remainingSlots);
+    setUploadingPhoto(true);
+
+    try {
+      const uploadedUrls: string[] = [];
+      
+      for (const file of filesToUpload) {
+        if (!file.type.startsWith('image/')) {
+          toast.error(`${file.name} is not an image`);
+          continue;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name} exceeds 10MB limit`);
+          continue;
+        }
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${turfId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('profile-photos')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('profile-photos')
+          .getPublicUrl(fileName);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      const newPhotos = [...photos, ...uploadedUrls];
+      setPhotos(newPhotos);
+      
+      // Save to database
+      const allMedia = videoUrl ? [...newPhotos, videoUrl] : newPhotos;
+      await supabase.from('turfs').update({ photos: allMedia }).eq('id', turfId);
+      
+      toast.success(`${uploadedUrls.length} photo(s) uploaded`);
+      onUpdate();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload photos");
+    } finally {
+      setUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (videoUrl) {
+      toast.error("Only 1 video allowed. Delete existing video first.");
+      return;
+    }
+
+    if (!file.type.startsWith('video/')) {
+      toast.error("Please select a video file");
+      return;
+    }
+
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error("Video must be under 100MB");
+      return;
+    }
+
+    setUploadingVideo(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${turfId}/video-${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('match-videos')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('match-videos')
+        .getPublicUrl(fileName);
+
+      setVideoUrl(publicUrl);
+      
+      // Save to database
+      const allMedia = [...photos, publicUrl];
+      await supabase.from('turfs').update({ photos: allMedia }).eq('id', turfId);
+      
+      toast.success("Video uploaded successfully");
+      onUpdate();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to upload video");
+    } finally {
+      setUploadingVideo(false);
+      if (videoInputRef.current) videoInputRef.current.value = '';
+    }
+  };
+
+  const handleDeletePhoto = async (photoUrl: string) => {
+    try {
+      const newPhotos = photos.filter(p => p !== photoUrl);
+      setPhotos(newPhotos);
+      
+      const allMedia = videoUrl ? [...newPhotos, videoUrl] : newPhotos;
+      await supabase.from('turfs').update({ photos: allMedia }).eq('id', turfId);
+      
+      toast.success("Photo removed");
+      onUpdate();
+    } catch (error: any) {
+      toast.error("Failed to remove photo");
+    }
+  };
+
+  const handleDeleteVideo = async () => {
+    try {
+      setVideoUrl(null);
+      await supabase.from('turfs').update({ photos }).eq('id', turfId);
+      
+      toast.success("Video removed");
+      onUpdate();
+    } catch (error: any) {
+      toast.error("Failed to remove video");
+    }
+  };
 
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -240,17 +398,119 @@ export function TurfListingTab({ turfId, turf, onUpdate }: TurfListingTabProps) 
       {/* Photos Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Photos</CardTitle>
-          <CardDescription>Upload photos of your turf (coming soon)</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Image className="h-5 w-5" />
+            Photos
+          </CardTitle>
+          <CardDescription>Upload up to {MAX_PHOTOS} photos of your turf</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="border-2 border-dashed border-muted rounded-lg p-8 text-center">
-            <Image className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Photo upload feature coming soon</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Current photos: {turf?.photos?.length || 0}
-            </p>
-          </div>
+        <CardContent className="space-y-4">
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handlePhotoUpload}
+            className="hidden"
+          />
+          
+          {photos.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {photos.map((photo, index) => (
+                <div key={index} className="relative group aspect-video rounded-lg overflow-hidden border">
+                  <img 
+                    src={photo} 
+                    alt={`Turf photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    onClick={() => handleDeletePhoto(photo)}
+                    className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {photos.length < MAX_PHOTOS && (
+            <div 
+              onClick={() => !uploadingPhoto && photoInputRef.current?.click()}
+              className="border-2 border-dashed border-muted rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+            >
+              {uploadingPhoto ? (
+                <>
+                  <Loader2 className="h-12 w-12 mx-auto text-primary animate-spin mb-4" />
+                  <p className="text-muted-foreground">Uploading...</p>
+                </>
+              ) : (
+                <>
+                  <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Click to upload photos</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {photos.length}/{MAX_PHOTOS} photos uploaded
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Video Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Video className="h-5 w-5" />
+            Video
+          </CardTitle>
+          <CardDescription>Upload 1 promotional video of your turf (max 100MB)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            onChange={handleVideoUpload}
+            className="hidden"
+          />
+
+          {videoUrl && (
+            <div className="relative group rounded-lg overflow-hidden border">
+              <video 
+                src={videoUrl}
+                controls
+                className="w-full max-h-[300px]"
+              />
+              <button
+                onClick={handleDeleteVideo}
+                className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+
+          {!videoUrl && (
+            <div 
+              onClick={() => !uploadingVideo && videoInputRef.current?.click()}
+              className="border-2 border-dashed border-muted rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+            >
+              {uploadingVideo ? (
+                <>
+                  <Loader2 className="h-12 w-12 mx-auto text-primary animate-spin mb-4" />
+                  <p className="text-muted-foreground">Uploading video...</p>
+                </>
+              ) : (
+                <>
+                  <Video className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Click to upload video</p>
+                  <p className="text-sm text-muted-foreground mt-1">MP4, WebM, MOV supported</p>
+                </>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
