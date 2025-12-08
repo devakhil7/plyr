@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Eye, User, MapPin } from "lucide-react";
+import { Play, Eye, User, MapPin, Pencil } from "lucide-react";
 import { FeedPostActions } from "./FeedPostActions";
 import { PostCommentsPreview } from "./PostCommentsPreview";
 import { PostOptionsMenu } from "./PostOptionsMenu";
+import { formatDistanceToNow } from "date-fns";
 
 interface Comment {
   id: string;
@@ -27,6 +28,7 @@ interface PlayerHighlightCardProps {
     shares: number | null;
     comments_count: number | null;
     created_at: string | null;
+    updated_at?: string | null;
     player_id: string | null;
     user_id?: string | null;
     highlight_type?: string | null;
@@ -90,6 +92,17 @@ export function PlayerHighlightCard({
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
                   {post.profiles.city}
+                </span>
+              )}
+              {post.created_at && (
+                <span>
+                  {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                </span>
+              )}
+              {post.updated_at && post.created_at && new Date(post.updated_at).getTime() - new Date(post.created_at).getTime() > 60000 && (
+                <span className="flex items-center gap-1 text-muted-foreground">
+                  <Pencil className="h-3 w-3" />
+                  edited
                 </span>
               )}
             </div>
