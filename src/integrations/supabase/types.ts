@@ -434,6 +434,7 @@ export type Database = {
           post_type: Database["public"]["Enums"]["post_type"] | null
           shares: number | null
           trending_score: number | null
+          updated_at: string | null
           user_id: string | null
           views: number | null
         }
@@ -452,6 +453,7 @@ export type Database = {
           post_type?: Database["public"]["Enums"]["post_type"] | null
           shares?: number | null
           trending_score?: number | null
+          updated_at?: string | null
           user_id?: string | null
           views?: number | null
         }
@@ -470,6 +472,7 @@ export type Database = {
           post_type?: Database["public"]["Enums"]["post_type"] | null
           shares?: number | null
           trending_score?: number | null
+          updated_at?: string | null
           user_id?: string | null
           views?: number | null
         }
