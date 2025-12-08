@@ -439,3 +439,58 @@
   background: hsl(260 70% 50% / 0.4);
   color: hsl(0 0% 100%);
 }
+
+/* Print styles for PDF export */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide navigation and UI controls during print */
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Ensure colors print correctly */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Page break handling */
+  section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Ensure gradients and backgrounds print */
+  .bg-gradient-to-br,
+  .bg-gradient-to-r {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Remove backdrop blur for cleaner print */
+  .backdrop-blur-xl,
+  .backdrop-blur-lg,
+  .backdrop-blur-md,
+  .backdrop-blur {
+    backdrop-filter: none !important;
+  }
+
+  /* Remove fixed positioning for print */
+  .fixed {
+    position: static !important;
+  }
+
+  /* Ensure content fills the page */
+  main {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+}
