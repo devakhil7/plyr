@@ -36,6 +36,7 @@ import {
   Trophy,
   Smartphone,
   CheckCircle,
+  Download,
 } from "lucide-react";
 
 const DEFAULT_SLIDES = [
@@ -306,15 +307,26 @@ export default function AdminBusinessModel() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-muted/50 rounded-lg px-4 py-2">
-            <Label htmlFor="edit-mode" className="text-sm font-medium">
-              Edit Mode
-            </Label>
-            <Switch
-              id="edit-mode"
-              checked={editMode}
-              onCheckedChange={setEditMode}
-            />
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.print()}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download PDF
+            </Button>
+            <div className="flex items-center gap-3 bg-muted/50 rounded-lg px-4 py-2">
+              <Label htmlFor="edit-mode" className="text-sm font-medium">
+                Edit Mode
+              </Label>
+              <Switch
+                id="edit-mode"
+                checked={editMode}
+                onCheckedChange={setEditMode}
+              />
+            </div>
           </div>
         </div>
       </header>
