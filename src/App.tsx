@@ -24,6 +24,7 @@ import Tournaments from "./pages/Tournaments";
 import TournamentDetails from "./pages/TournamentDetails";
 import AdminTournaments from "./pages/AdminTournaments";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminBusinessModel from "./pages/AdminBusinessModel";
 import TurfDashboard from "./pages/TurfDashboard";
 import CreatorHub from "./pages/CreatorHub";
 import Leaderboards from "./pages/Leaderboards";
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/tournaments/:id" element={<TournamentDetails />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/tournaments" element={<AdminTournaments />} />
+            <Route path="/admin/business-model" element={<AdminBusinessModel />} />
             <Route path="/turf-dashboard" element={<TurfDashboard />} />
             <Route path="/creator-hub" element={<CreatorHub />} />
             <Route path="/leaderboards" element={<Leaderboards />} />

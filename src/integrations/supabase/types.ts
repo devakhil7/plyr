@@ -116,6 +116,36 @@ export type Database = {
           },
         ]
       }
+      business_model_sections: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          slide_number: number
+          title: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          slide_number: number
+          title: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          slide_number?: number
+          title?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       comments: {
         Row: {
           created_at: string | null
