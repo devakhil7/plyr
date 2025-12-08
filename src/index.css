@@ -444,7 +444,6 @@
 @media print {
   body {
     background: white !important;
-    color: black !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -462,10 +461,35 @@
     print-color-adjust: exact !important;
   }
 
-  /* Page break handling */
+  /* Remove page breaks - let content flow seamlessly */
   section {
-    page-break-inside: avoid;
-    break-inside: avoid;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    margin-bottom: 1rem !important;
+  }
+
+  /* Reduce spacing between sections for seamless cascade */
+  .mb-16 {
+    margin-bottom: 1.5rem !important;
+  }
+
+  .mb-12 {
+    margin-bottom: 1rem !important;
+  }
+
+  .py-12 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+
+  .p-8,
+  .p-10,
+  .p-12 {
+    padding: 1.5rem !important;
+  }
+
+  .gap-8 {
+    gap: 1rem !important;
   }
 
   /* Ensure gradients and backgrounds print */
@@ -486,11 +510,45 @@
   /* Remove fixed positioning for print */
   .fixed {
     position: static !important;
+    display: none !important;
   }
 
   /* Ensure content fills the page */
   main {
-    padding: 0 !important;
+    padding: 0.5rem !important;
     max-width: 100% !important;
+  }
+
+  /* Remove decorative background elements */
+  .pointer-events-none {
+    display: none !important;
+  }
+
+  /* Compact card content for print */
+  [class*="CardContent"] {
+    padding: 1rem !important;
+  }
+
+  /* Reduce text sizes slightly for better fit */
+  .text-5xl,
+  .text-6xl,
+  .text-7xl {
+    font-size: 2rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .text-4xl {
+    font-size: 1.5rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .text-3xl {
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .text-2xl {
+    font-size: 1.1rem !important;
+    line-height: 1.3 !important;
   }
 }
