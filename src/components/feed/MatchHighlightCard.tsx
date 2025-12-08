@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, Eye, MapPin, Trophy, Calendar, User } from "lucide-react";
+import { Play, Eye, MapPin, Trophy, Calendar, User, Pencil } from "lucide-react";
 import { FeedPostActions } from "./FeedPostActions";
 import { PostCommentsPreview } from "./PostCommentsPreview";
 import { PostOptionsMenu } from "./PostOptionsMenu";
@@ -29,6 +29,7 @@ interface MatchHighlightCardProps {
     shares: number | null;
     comments_count: number | null;
     created_at: string | null;
+    updated_at?: string | null;
     match_id: string | null;
     user_id?: string | null;
     highlight_type?: string | null;
@@ -93,6 +94,12 @@ export function MatchHighlightCard({
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
                 {format(new Date(post.matches.match_date), "MMM d")}
+              </span>
+            )}
+            {post.updated_at && post.created_at && new Date(post.updated_at).getTime() - new Date(post.created_at).getTime() > 60000 && (
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <Pencil className="h-3 w-3" />
+                edited
               </span>
             )}
           </div>
