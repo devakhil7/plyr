@@ -1712,6 +1712,95 @@ export type Database = {
           },
         ]
       }
+      training_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          name: string
+          sport: string
+          type: Database["public"]["Enums"]["training_category_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          name: string
+          sport?: string
+          type: Database["public"]["Enums"]["training_category_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          name?: string
+          sport?: string
+          type?: Database["public"]["Enums"]["training_category_type"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      training_lessons: {
+        Row: {
+          category_id: string
+          common_mistakes: string[] | null
+          created_at: string | null
+          difficulty: Database["public"]["Enums"]["training_difficulty"] | null
+          display_order: number | null
+          drills: Json | null
+          id: string
+          key_responsibilities: string[] | null
+          overview: string | null
+          title: string
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          category_id: string
+          common_mistakes?: string[] | null
+          created_at?: string | null
+          difficulty?: Database["public"]["Enums"]["training_difficulty"] | null
+          display_order?: number | null
+          drills?: Json | null
+          id?: string
+          key_responsibilities?: string[] | null
+          overview?: string | null
+          title: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          category_id?: string
+          common_mistakes?: string[] | null
+          created_at?: string | null
+          difficulty?: Database["public"]["Enums"]["training_difficulty"] | null
+          display_order?: number | null
+          drills?: Json | null
+          id?: string
+          key_responsibilities?: string[] | null
+          overview?: string | null
+          title?: string
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_lessons_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "training_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       turf_bookings: {
         Row: {
           amount_paid: number
@@ -2188,6 +2277,8 @@ export type Database = {
       skill_level: "beginner" | "intermediate" | "advanced"
       team_assignment_mode: "auto" | "manual"
       team_type: "A" | "B" | "unassigned"
+      training_category_type: "position" | "skill"
+      training_difficulty: "beginner" | "intermediate" | "advanced"
       visibility_type: "public" | "private"
     }
     CompositeTypes: {
@@ -2325,6 +2416,8 @@ export const Constants = {
       skill_level: ["beginner", "intermediate", "advanced"],
       team_assignment_mode: ["auto", "manual"],
       team_type: ["A", "B", "unassigned"],
+      training_category_type: ["position", "skill"],
+      training_difficulty: ["beginner", "intermediate", "advanced"],
       visibility_type: ["public", "private"],
     },
   },
