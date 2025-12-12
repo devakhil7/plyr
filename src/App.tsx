@@ -1,4 +1,5 @@
 import React from "react";
+import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -38,47 +39,49 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/admin-login" element={<AdminLogin />} />
-            <Route path="/turf-login" element={<TurfOwnerLogin />} />
-            <Route path="/complete-profile" element={<CompleteProfile />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/matches" element={<BrowseMatches />} />
-            <Route path="/matches/:id" element={<MatchDetails />} />
-            <Route path="/host-match" element={<HostMatch />} />
-            <Route path="/turfs" element={<Turfs />} />
-            <Route path="/turfs/:id" element={<TurfDetails />} />
-            <Route path="/feed" element={<Feed />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/players/:id" element={<PlayerProfile />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/tournaments" element={<Tournaments />} />
-            <Route path="/tournaments/:id" element={<TournamentDetails />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/tournaments" element={<AdminTournaments />} />
-            <Route path="/admin/business-model" element={<AdminBusinessModel />} />
-            <Route path="/turf-dashboard" element={<TurfDashboard />} />
-            <Route path="/creator-hub" element={<CreatorHub />} />
-            <Route path="/leaderboards" element={<Leaderboards />} />
-            <Route path="/partner" element={<PartnerWithUs />} />
-            <Route path="/install" element={<Install />} />
-            <Route path="/connected-apps" element={<ConnectedApps />} />
-            <Route path="/fitness-insights" element={<FitnessInsights />} />
-            <Route path="/improve/football" element={<ImproveFootball />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/turf-login" element={<TurfOwnerLogin />} />
+              <Route path="/complete-profile" element={<CompleteProfile />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/matches" element={<BrowseMatches />} />
+              <Route path="/matches/:id" element={<MatchDetails />} />
+              <Route path="/host-match" element={<HostMatch />} />
+              <Route path="/turfs" element={<Turfs />} />
+              <Route path="/turfs/:id" element={<TurfDetails />} />
+              <Route path="/feed" element={<Feed />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/players/:id" element={<PlayerProfile />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/tournaments" element={<Tournaments />} />
+              <Route path="/tournaments/:id" element={<TournamentDetails />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/tournaments" element={<AdminTournaments />} />
+              <Route path="/admin/business-model" element={<AdminBusinessModel />} />
+              <Route path="/turf-dashboard" element={<TurfDashboard />} />
+              <Route path="/creator-hub" element={<CreatorHub />} />
+              <Route path="/leaderboards" element={<Leaderboards />} />
+              <Route path="/partner" element={<PartnerWithUs />} />
+              <Route path="/install" element={<Install />} />
+              <Route path="/connected-apps" element={<ConnectedApps />} />
+              <Route path="/fitness-insights" element={<FitnessInsights />} />
+              <Route path="/improve/football" element={<ImproveFootball />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
