@@ -23,7 +23,11 @@ import PlayerProfile from "./pages/PlayerProfile";
 import Messages from "./pages/Messages";
 import Tournaments from "./pages/Tournaments";
 import TournamentDetails from "./pages/TournamentDetails";
+import TournamentRegister from "./pages/TournamentRegister";
+import TournamentRoster from "./pages/TournamentRoster";
+import TournamentInvite from "./pages/TournamentInvite";
 import AdminTournaments from "./pages/AdminTournaments";
+import AdminTournamentTeams from "./pages/AdminTournamentTeams";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminBusinessModel from "./pages/AdminBusinessModel";
 import TurfDashboard from "./pages/TurfDashboard";
@@ -64,8 +68,12 @@ const App = () => (
               <Route path="/messages" element={<Messages />} />
               <Route path="/tournaments" element={<Tournaments />} />
               <Route path="/tournaments/:id" element={<TournamentDetails />} />
+              <Route path="/tournaments/:id/register" element={<TournamentRegister />} />
+              <Route path="/tournaments/:id/register/roster" element={<TournamentRoster />} />
+              <Route path="/invite" element={<TournamentInvite />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/tournaments" element={<AdminTournaments />} />
+              <Route path="/admin/tournaments/:tournamentId/teams" element={<AdminTournamentTeams />} />
               <Route path="/admin/business-model" element={<AdminBusinessModel />} />
               <Route path="/turf-dashboard" element={<TurfDashboard />} />
               <Route path="/creator-hub" element={<CreatorHub />} />
