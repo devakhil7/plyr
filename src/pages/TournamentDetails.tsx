@@ -9,7 +9,6 @@ import { Layout } from "@/components/layout/Layout";
 import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowLeft, FileText, CreditCard } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
-import { TournamentRegistrationDialog } from "@/components/tournaments/TournamentRegistrationDialog";
 import { PayBalanceDialog } from "@/components/tournaments/PayBalanceDialog";
 
 export default function TournamentDetails() {
@@ -147,7 +146,12 @@ export default function TournamentDetails() {
            (!tournament.registration_deadline || !isPast(new Date(tournament.registration_deadline))) && 
            user && (
             <div className="mt-6">
-              <TournamentRegistrationDialog tournament={tournament as any} />
+              <Link to={`/tournaments/${id}/register`}>
+                <Button>
+                  <Users className="h-4 w-4 mr-2" />
+                  Register Your Team
+                </Button>
+              </Link>
             </div>
           )}
         </div>
