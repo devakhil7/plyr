@@ -1483,23 +1483,41 @@ export type Database = {
       tournament_matches: {
         Row: {
           created_at: string | null
+          group_name: string | null
           id: string
           match_id: string
+          match_order: number | null
           round: string
+          slot_a: string | null
+          slot_b: string | null
+          team_a_id: string | null
+          team_b_id: string | null
           tournament_id: string
         }
         Insert: {
           created_at?: string | null
+          group_name?: string | null
           id?: string
           match_id: string
+          match_order?: number | null
           round: string
+          slot_a?: string | null
+          slot_b?: string | null
+          team_a_id?: string | null
+          team_b_id?: string | null
           tournament_id: string
         }
         Update: {
           created_at?: string | null
+          group_name?: string | null
           id?: string
           match_id?: string
+          match_order?: number | null
           round?: string
+          slot_a?: string | null
+          slot_b?: string | null
+          team_a_id?: string | null
+          team_b_id?: string | null
           tournament_id?: string
         }
         Relationships: [
@@ -1508,6 +1526,20 @@ export type Database = {
             columns: ["match_id"]
             isOneToOne: false
             referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_team_a_id_fkey"
+            columns: ["team_a_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_team_b_id_fkey"
+            columns: ["team_b_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
             referencedColumns: ["id"]
           },
           {
@@ -1700,12 +1732,14 @@ export type Database = {
           description: string | null
           end_datetime: string
           entry_fee: number | null
+          format: string | null
           id: string
           max_players_per_team: number | null
           max_playing_players: number | null
           max_subs: number | null
           min_players_per_team: number | null
           name: string
+          num_teams: number | null
           prize_details: string | null
           registration_deadline: string | null
           registration_open: boolean | null
@@ -1726,12 +1760,14 @@ export type Database = {
           description?: string | null
           end_datetime: string
           entry_fee?: number | null
+          format?: string | null
           id?: string
           max_players_per_team?: number | null
           max_playing_players?: number | null
           max_subs?: number | null
           min_players_per_team?: number | null
           name: string
+          num_teams?: number | null
           prize_details?: string | null
           registration_deadline?: string | null
           registration_open?: boolean | null
@@ -1752,12 +1788,14 @@ export type Database = {
           description?: string | null
           end_datetime?: string
           entry_fee?: number | null
+          format?: string | null
           id?: string
           max_players_per_team?: number | null
           max_playing_players?: number | null
           max_subs?: number | null
           min_players_per_team?: number | null
           name?: string
+          num_teams?: number | null
           prize_details?: string | null
           registration_deadline?: string | null
           registration_open?: boolean | null

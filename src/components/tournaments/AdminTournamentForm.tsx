@@ -40,7 +40,17 @@ interface TournamentFormData {
   prize_details: string;
   rules: string;
   status: string;
+  format: "knockout" | "league" | "group_knockout";
+  num_teams: number;
 }
+
+const FORMAT_OPTIONS = [
+  { value: "knockout", label: "Knockout", description: "Single elimination bracket" },
+  { value: "league", label: "League", description: "Round robin - all teams play each other" },
+  { value: "group_knockout", label: "Group Stage + Knockout", description: "Groups then elimination" },
+];
+
+const TEAM_COUNT_OPTIONS = [2, 4, 8, 16, 32, 64];
 
 interface AdminTournamentFormProps {
   tournamentId?: string;
@@ -75,11 +85,14 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
       prize_details: "",
       rules: "",
       status: "upcoming",
+      format: "knockout",
+      num_teams: 8,
     },
   });
 
   const allowPartPayment = watch("allow_part_payment");
   const advanceType = watch("advance_type");
+  const selectedFormat = watch("format");
 
   // Fetch existing tournament if editing
   const { data: existingTournament } = useQuery({
@@ -120,6 +133,8 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
         prize_details: existingTournament.prize_details || "",
         rules: existingTournament.rules || "",
         status: existingTournament.status || "upcoming",
+        format: (existingTournament.format as "knockout" | "league" | "group_knockout") || "knockout",
+        num_teams: existingTournament.num_teams || 8,
       });
     }
   }, [existingTournament, reset]);
@@ -159,6 +174,8 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
         prize_details: data.prize_details || null,
         rules: data.rules || null,
         status: data.status,
+        format: data.format,
+        num_teams: data.num_teams,
       };
 
       if (isEditing) {
@@ -321,6 +338,80 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
               rows={3}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Tournament Format */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Tournament Format</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Format *</Label>
+              <Select
+                value={selectedFormat}
+                onValueChange={(val) => setValue("format", val as "knockout" | "league" | "group_knockout")}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FORMAT_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {FORMAT_OPTIONS.find((f) => f.value === selectedFormat)?.description}
+              </p>
+            </div>
+
+            <div>
+              <Label>Number of Teams *</Label>
+              <Select
+                value={watch("num_teams").toString()}
+                onValueChange={(val) => setValue("num_teams", parseInt(val))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TEAM_COUNT_OPTIONS.map((count) => (
+                    <SelectItem key={count} value={count.toString()}>
+                      {count} Teams
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {selectedFormat === "knockout" && `${watch("num_teams") - 1} matches total`}
+                {selectedFormat === "league" && `${(watch("num_teams") * (watch("num_teams") - 1)) / 2} matches total`}
+                {selectedFormat === "group_knockout" && `Groups + knockout rounds`}
+              </p>
+            </div>
+          </div>
+
+          {selectedFormat === "league" && (
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>League Format:</strong> Match schedule will be available after all teams register. 
+                Each team plays against every other team once.
+              </p>
+            </div>
+          )}
+
+          {selectedFormat === "group_knockout" && (
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>Group Stage + Knockout:</strong> Teams will be divided into groups. 
+                Top teams from each group advance to knockout rounds.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
