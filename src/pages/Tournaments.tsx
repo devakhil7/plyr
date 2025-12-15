@@ -152,7 +152,7 @@ export default function Tournaments() {
                   <div className="flex items-center gap-4 text-sm">
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>{tournament.tournament_teams?.length || 0} teams</span>
+                      <span>{tournament.tournament_teams?.length || 0} teams requested</span>
                     </div>
                     {tournament.entry_fee > 0 && (
                       <div className="flex items-center gap-1">
