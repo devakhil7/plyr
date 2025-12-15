@@ -24,7 +24,7 @@ export default function TournamentDetails() {
           *,
           turfs (id, name, city, location),
           tournament_teams (
-            id, team_name, captain_user_id, payment_status, total_fee, total_paid,
+            id, team_name, captain_user_id, payment_status, total_fee, total_paid, verification_notes,
             profiles:captain_user_id (id, name, profile_photo_url)
           ),
           tournament_matches (
@@ -40,9 +40,12 @@ export default function TournamentDetails() {
     enabled: !!id,
   });
 
-  // Filter teams to only show those who have paid (full or partial with confirmed status)
-  const paidTeams = tournament?.tournament_teams?.filter(
-    (team: any) => team.payment_status === 'paid' || team.payment_status === 'partial'
+  // Filter teams to show paid, partial, or "pay at ground" teams
+  const registeredTeams = tournament?.tournament_teams?.filter(
+    (team: any) => 
+      team.payment_status === 'paid' || 
+      team.payment_status === 'partial' ||
+      team.verification_notes === 'Pay at ground'
   ) || [];
 
   const statusColors: Record<string, string> = {
@@ -119,7 +122,7 @@ export default function TournamentDetails() {
               <Users className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Teams</p>
-                <p className="font-medium">{paidTeams.length} registered</p>
+                <p className="font-medium">{registeredTeams.length} registered</p>
               </div>
             </div>
 
@@ -160,7 +163,7 @@ export default function TournamentDetails() {
         <Tabs defaultValue="overview">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="teams">Teams ({paidTeams.length})</TabsTrigger>
+            <TabsTrigger value="teams">Teams ({registeredTeams.length})</TabsTrigger>
             <TabsTrigger value="matches">Matches</TabsTrigger>
           </TabsList>
 
@@ -235,9 +238,9 @@ export default function TournamentDetails() {
           <TabsContent value="teams" className="mt-6">
             <Card>
               <CardContent className="p-6">
-                {paidTeams.length > 0 ? (
+                {registeredTeams.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {paidTeams.map((team: any) => (
+                    {registeredTeams.map((team: any) => (
                       <div key={team.id} className="p-4 border rounded-lg">
                         <div className="flex items-center justify-between mb-1">
                           <p className="font-semibold">{team.team_name}</p>
@@ -245,7 +248,7 @@ export default function TournamentDetails() {
                             variant={team.payment_status === 'paid' ? 'default' : 'secondary'}
                             className="text-xs"
                           >
-                            {team.payment_status === 'paid' ? 'Paid' : 'Partial'}
+                            {team.payment_status === 'paid' ? 'Paid' : team.verification_notes === 'Pay at ground' ? 'Pay at Ground' : 'Partial'}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
