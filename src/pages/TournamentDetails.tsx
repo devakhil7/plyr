@@ -3,17 +3,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
-import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowLeft, FileText, CreditCard } from "lucide-react";
+import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowLeft, FileText, Plus, Shuffle } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
-import { PayBalanceDialog } from "@/components/tournaments/PayBalanceDialog";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { toast } from "sonner";
+import {
+  generateGroupKnockoutSchedule,
+  generateKnockoutSchedule,
+  getSlotLabel,
+  shuffleArray,
+  type ScheduleSlot,
+} from "@/lib/tournamentSchedule";
 
 export default function TournamentDetails() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+
+  const queryClient = useQueryClient();
+  const { isAdmin } = useUserRoles();
 
   const { data: tournament, isLoading } = useQuery({
     queryKey: ["tournament", id],
@@ -28,7 +39,7 @@ export default function TournamentDetails() {
             profiles:captain_user_id (id, name, profile_photo_url)
           ),
           tournament_matches (
-            id, round, match_id,
+            id, round, match_id, slot_a, slot_b, team_a_id, team_b_id, match_order, group_name,
             matches (id, match_name, match_date, match_time, team_a_score, team_b_score, status)
           ),
           profiles:created_by (id, name)
@@ -58,6 +69,129 @@ export default function TournamentDetails() {
     completed: "bg-gray-500/10 text-gray-600 border-gray-500/20",
     cancelled: "bg-red-500/10 text-red-600 border-red-500/20",
   };
+
+  const tournamentMatches = (tournament?.tournament_matches || []) as any[];
+  const tournamentFormat = (tournament as any)?.format || "knockout";
+  const tournamentNumTeams = Number((tournament as any)?.num_teams || 8);
+
+  const ROUND_LABELS: Record<string, string> = {
+    group: "Group Stage",
+    "round-of-64": "Round of 64",
+    "round-of-32": "Round of 32",
+    "round-of-16": "Round of 16",
+    "quarter-final": "Quarter Final",
+    "semi-final": "Semi Final",
+    "third-place": "Third Place",
+    final: "Final",
+  };
+
+  const generateSlots = (): ScheduleSlot[] => {
+    if (tournamentFormat === "knockout") return generateKnockoutSchedule(tournamentNumTeams);
+    if (tournamentFormat === "group_knockout") return generateGroupKnockoutSchedule(tournamentNumTeams);
+    throw new Error("League format schedule is not available yet");
+  };
+
+  const generateSchedule = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error("Not authenticated");
+      if (!id) throw new Error("Missing tournament id");
+      if (tournamentMatches.length > 0) return;
+
+      const schedule = generateSlots();
+
+      for (const slot of schedule) {
+        const roundLabel = ROUND_LABELS[slot.round] || slot.round;
+        const matchName = slot.groupName
+          ? `${tournament.name} - ${slot.groupName} - ${slot.slotA} vs ${slot.slotB}`
+          : `${tournament.name} - ${roundLabel} - ${slot.slotA} vs ${slot.slotB}`;
+
+        const { data: match, error: matchError } = await supabase
+          .from("matches")
+          .insert({
+            match_name: matchName,
+            match_date: new Date(tournament.start_datetime).toISOString().split("T")[0],
+            match_time: "18:00",
+            host_id: user.id,
+            turf_id: tournament.turf_id,
+            sport: tournament.sport,
+            status: "open",
+            visibility: "public",
+            total_slots: 22,
+            notes: `Tournament: ${tournament.name}`,
+          })
+          .select()
+          .single();
+
+        if (matchError) throw matchError;
+
+        const { error: linkError } = await supabase.from("tournament_matches").insert({
+          tournament_id: id,
+          match_id: match.id,
+          round: slot.round,
+          slot_a: slot.slotA,
+          slot_b: slot.slotB,
+          match_order: slot.matchOrder,
+          group_name: slot.groupName || null,
+        });
+
+        if (linkError) throw linkError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tournament", id] });
+      toast.success("Match schedule generated");
+    },
+    onError: (e) => {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : "Failed to generate schedule");
+    },
+  });
+
+  const randomizeTeams = useMutation({
+    mutationFn: async () => {
+      if (!id) throw new Error("Missing tournament id");
+      if (registeredTeams.length === 0) throw new Error("No teams registered yet");
+      if (tournamentMatches.length === 0) throw new Error("Generate schedule first");
+
+      const shuffled = shuffleArray(registeredTeams).slice(0, tournamentNumTeams);
+      const slotToTeam = new Map<string, { id: string; name: string }>();
+      shuffled.forEach((team: any, index: number) => {
+        slotToTeam.set(getSlotLabel(index), { id: team.id, name: team.team_name });
+      });
+
+      for (const tm of tournamentMatches) {
+        const teamA = slotToTeam.get(tm.slot_a || "");
+        const teamB = slotToTeam.get(tm.slot_b || "");
+
+        if (!teamA && !teamB) continue;
+
+        await supabase
+          .from("tournament_matches")
+          .update({
+            team_a_id: teamA?.id || null,
+            team_b_id: teamB?.id || null,
+          })
+          .eq("id", tm.id);
+
+        const teamAName = teamA?.name || tm.slot_a || "TBD";
+        const teamBName = teamB?.name || tm.slot_b || "TBD";
+        const roundLabel = ROUND_LABELS[tm.round] || tm.round;
+
+        await supabase
+          .from("matches")
+          .update({ match_name: `${teamAName} vs ${teamBName} - ${roundLabel}` })
+          .eq("id", tm.match_id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tournament", id] });
+      toast.success("Teams randomized");
+    },
+    onError: (e) => {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : "Failed to randomize teams");
+    },
+  });
 
   if (isLoading) {
     return (
@@ -304,29 +438,81 @@ export default function TournamentDetails() {
           <TabsContent value="matches" className="mt-6">
             <Card>
               <CardContent className="p-6">
-                {tournament.tournament_matches?.length > 0 ? (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+                  <div>
+                    <h2 className="text-lg font-semibold">Match Schedule</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {tournamentMatches.length} matches • {registeredTeams.length}/{tournamentNumTeams} teams registered
+                    </p>
+                  </div>
+
+                  {isAdmin && (
+                    <div className="flex gap-2">
+                      {tournamentMatches.length === 0 ? (
+                        <Button
+                          onClick={() => generateSchedule.mutate()}
+                          disabled={generateSchedule.isPending || tournamentFormat === "league"}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Generate Schedule
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          onClick={() => randomizeTeams.mutate()}
+                          disabled={randomizeTeams.isPending || registeredTeams.length === 0}
+                        >
+                          <Shuffle className="h-4 w-4 mr-2" />
+                          Randomize Teams
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {tournamentFormat === "league" ? (
+                  <p className="text-center text-muted-foreground py-8">League schedule not yet available</p>
+                ) : tournamentMatches.length > 0 ? (
                   <div className="space-y-4">
-                    {tournament.tournament_matches.map((tm: any) => (
-                      <div key={tm.id} className="p-4 border rounded-lg flex items-center justify-between">
-                        <div>
-                          <Badge variant="outline" className="mb-2">{tm.round}</Badge>
-                          <p className="font-medium">{tm.matches?.match_name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {tm.matches?.match_date} at {tm.matches?.match_time?.slice(0, 5)}
-                          </p>
-                        </div>
-                        {tm.matches?.team_a_score !== null && (
-                          <div className="text-center">
-                            <p className="text-2xl font-bold">
-                              {tm.matches?.team_a_score} - {tm.matches?.team_b_score}
-                            </p>
+                    {tournamentMatches
+                      .slice()
+                      .sort((a, b) => (a.match_order ?? 0) - (b.match_order ?? 0))
+                      .map((tm: any) => {
+                        const teamAName = tm.team_a_id
+                          ? registeredTeams.find((t: any) => t.id === tm.team_a_id)?.team_name
+                          : tm.slot_a;
+                        const teamBName = tm.team_b_id
+                          ? registeredTeams.find((t: any) => t.id === tm.team_b_id)?.team_name
+                          : tm.slot_b;
+
+                        return (
+                          <div key={tm.id} className="p-4 border rounded-lg flex items-center justify-between gap-4">
+                            <div>
+                              <Badge variant="outline" className="mb-2">
+                                {ROUND_LABELS[tm.round] || tm.round}
+                                {tm.group_name ? ` • ${tm.group_name}` : ""}
+                              </Badge>
+                              <p className="font-medium">{teamAName} vs {teamBName}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {tm.matches?.match_date} at {tm.matches?.match_time?.slice(0, 5)}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              {tm.matches?.team_a_score !== null && (
+                                <div className="text-center">
+                                  <p className="text-2xl font-bold">
+                                    {tm.matches?.team_a_score} - {tm.matches?.team_b_score}
+                                  </p>
+                                </div>
+                              )}
+                              <Link to={`/matches/${tm.match_id}`}>
+                                <Button variant="outline" size="sm">View</Button>
+                              </Link>
+                            </div>
                           </div>
-                        )}
-                        <Link to={`/matches/${tm.match_id}`}>
-                          <Button variant="outline" size="sm">View</Button>
-                        </Link>
-                      </div>
-                    ))}
+                        );
+                      })}
                   </div>
                 ) : (
                   <p className="text-center text-muted-foreground py-8">
