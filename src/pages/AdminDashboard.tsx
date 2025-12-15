@@ -28,8 +28,9 @@ import { AdminReportsTab } from "@/components/admin/AdminReportsTab";
 import { AdminSettingsTab } from "@/components/admin/AdminSettingsTab";
 import { AdminCommissionsTab } from "@/components/admin/AdminCommissionsTab";
 import AdminPartnershipInbox from "@/components/admin/AdminPartnershipInbox";
+import { AdminTournamentsTab } from "@/components/admin/AdminTournamentsTab";
 
-const TABS = ["overview", "turfs", "partnerships", "commissions", "users", "matches", "payments", "payouts", "reports", "settings"] as const;
+const TABS = ["overview", "turfs", "tournaments", "partnerships", "commissions", "users", "matches", "payments", "payouts", "reports", "settings"] as const;
 type TabType = typeof TABS[number];
 
 export default function AdminDashboard() {
@@ -277,6 +278,7 @@ export default function AdminDashboard() {
             const icons: Record<string, any> = { 
               overview: Trophy, 
               turfs: MapPin, 
+              tournaments: Trophy,
               partnerships: Building,
               commissions: Wallet,
               users: Users, 
@@ -306,14 +308,6 @@ export default function AdminDashboard() {
           
           {/* External Admin Pages */}
           <div className="mt-4 pt-4 border-t border-border">
-            <Link to="/admin/tournaments">
-              <button
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <Trophy className="h-5 w-5 shrink-0" />
-                {!sidebarCollapsed && <span>Tournaments</span>}
-              </button>
-            </Link>
             <Link to="/admin/business-model">
               <button
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -643,6 +637,8 @@ export default function AdminDashboard() {
         {activeTab === "payouts" && <AdminPayoutsTab />}
 
         {activeTab === "partnerships" && <AdminPartnershipInbox />}
+
+        {activeTab === "tournaments" && <AdminTournamentsTab />}
 
         {activeTab === "reports" && <AdminReportsTab />}
 
