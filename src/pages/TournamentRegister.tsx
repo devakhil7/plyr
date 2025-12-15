@@ -247,23 +247,24 @@ export default function TournamentRegister() {
     mutationFn: async () => {
       if (!user || !createdTeamId || !tournament) throw new Error("Invalid state");
 
-      // Update team status to "pay_at_ground"
+      // Update team status - use 'unpaid' as payment_status (allowed value)
       const { error: updateError } = await supabase
         .from("tournament_teams")
         .update({
           total_paid: 0,
-          payment_status: "pay_at_ground",
+          payment_status: "unpaid",
           team_status: "pending_payment",
           registration_status: "confirmed",
+          verification_notes: "Pay at ground",
         })
         .eq("id", createdTeamId);
 
       if (updateError) throw updateError;
 
-      return { paymentStatus: "pay_at_ground", teamStatus: "pending_payment" };
+      return { paymentStatus: "unpaid", teamStatus: "pending_payment", payAtGround: true };
     },
     onSuccess: (result) => {
-      setPaymentStatus(result.paymentStatus);
+      setPaymentStatus("pay_at_ground"); // For UI display only
       setStep("success");
       queryClient.invalidateQueries({ queryKey: ["tournament", tournament?.id] });
       toast.success("Registration confirmed! Pay at the ground.");
