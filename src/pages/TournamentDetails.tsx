@@ -255,22 +255,42 @@ export default function TournamentDetails() {
               <CardContent className="p-6">
                 {registeredTeams.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {registeredTeams.map((team: any) => (
-                      <div key={team.id} className="p-4 border rounded-lg">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="font-semibold">{team.team_name}</p>
-                          <Badge 
-                            variant={team.payment_status === 'paid' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {team.payment_status === 'paid' ? 'Paid' : team.verification_notes === 'Pay at ground' ? 'Pay at Ground' : 'Partial'}
-                          </Badge>
+                    {registeredTeams.map((team: any) => {
+                      const isMyTeam = team.captain_user_id === user?.id;
+                      const cardContent = (
+                        <>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="font-semibold">{team.team_name}</p>
+                            <Badge 
+                              variant={team.payment_status === 'paid' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {team.payment_status === 'paid' ? 'Paid' : team.verification_notes === 'Pay at ground' ? 'Pay at Ground' : 'Partial'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Captain: {team.profiles?.name || "Unknown"}
+                          </p>
+                          {isMyTeam && (
+                            <p className="text-xs text-primary mt-2">Click to manage roster →</p>
+                          )}
+                        </>
+                      );
+
+                      return isMyTeam ? (
+                        <Link 
+                          key={team.id} 
+                          to={`/tournaments/${id}/register/roster?team=${team.id}`}
+                          className="p-4 border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer block"
+                        >
+                          {cardContent}
+                        </Link>
+                      ) : (
+                        <div key={team.id} className="p-4 border rounded-lg">
+                          {cardContent}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Captain: {team.profiles?.name || "Unknown"}
-                        </p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-center text-muted-foreground py-8">
