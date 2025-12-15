@@ -109,11 +109,14 @@ export default function TournamentRoster() {
 
   const isLoading = tournamentLoading || teamLoading;
 
+  const minPlayers = tournament?.min_players_per_team ?? 5;
+  const maxPlayers = tournament?.max_players_per_team ?? 11;
+
   // Check if current user is the captain
   const isCaptain = team?.captain_user_id === user?.id;
 
   const addPlayer = () => {
-    if (tournament && players.length < tournament.max_players_per_team) {
+    if (tournament && players.length < maxPlayers) {
       setPlayers([...players, {
         player_name: "",
         phone: "",
@@ -215,7 +218,7 @@ export default function TournamentRoster() {
 
       // Update team status if minimum players met
       const validPlayers = players.filter(p => p.player_name.trim());
-      if (tournament && validPlayers.length >= tournament.min_players_per_team) {
+       if (tournament && validPlayers.length >= minPlayers) {
         await supabase
           .from("tournament_teams")
           .update({ team_status: "pending_verification" })
@@ -338,7 +341,7 @@ export default function TournamentRoster() {
   }
 
   const validPlayers = players.filter(p => p.player_name.trim());
-  const canSubmit = validPlayers.length >= tournament.min_players_per_team && 
+  const canSubmit = validPlayers.length >= minPlayers &&
                     team.team_status === "pending_roster";
 
   return (
@@ -354,7 +357,7 @@ export default function TournamentRoster() {
             <Badge variant="sport" className="mb-2">{tournament.sport}</Badge>
             <h1 className="text-2xl font-bold">{team.team_name} - Player Roster</h1>
             <p className="text-muted-foreground">
-              {validPlayers.length} of {tournament.min_players_per_team}-{tournament.max_players_per_team} players
+              {validPlayers.length} of {minPlayers}-{maxPlayers} players
             </p>
           </div>
           <Badge variant={team.team_status === "approved" ? "default" : "secondary"}>
@@ -394,7 +397,7 @@ export default function TournamentRoster() {
               variant="outline"
               size="sm"
               onClick={addPlayer}
-              disabled={players.length >= tournament.max_players_per_team}
+              disabled={players.length >= maxPlayers}
             >
               <UserPlus className="h-4 w-4 mr-2" />
               Add Player
@@ -516,9 +519,9 @@ export default function TournamentRoster() {
           )}
         </div>
 
-        {validPlayers.length < tournament.min_players_per_team && (
+        {validPlayers.length < minPlayers && (
           <p className="text-sm text-muted-foreground text-center mt-4">
-            Add at least {tournament.min_players_per_team - validPlayers.length} more player(s) to submit roster
+            Add at least {minPlayers - validPlayers.length} more player(s) to submit roster
           </p>
         )}
       </div>

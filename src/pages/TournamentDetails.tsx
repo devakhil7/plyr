@@ -42,11 +42,15 @@ export default function TournamentDetails() {
 
   // Filter teams to show paid, partial, or "pay at ground" teams
   const registeredTeams = tournament?.tournament_teams?.filter(
-    (team: any) => 
-      team.payment_status === 'paid' || 
-      team.payment_status === 'partial' ||
-      team.verification_notes === 'Pay at ground'
+    (team: any) =>
+      team.payment_status === "paid" ||
+      team.payment_status === "partial" ||
+      team.verification_notes === "Pay at ground"
   ) || [];
+
+  const myTeam = tournament?.tournament_teams?.find(
+    (team: any) => team.captain_user_id === user?.id
+  );
 
   const statusColors: Record<string, string> = {
     upcoming: "bg-blue-500/10 text-blue-600 border-blue-500/20",
@@ -144,18 +148,29 @@ export default function TournamentDetails() {
             </div>
           </div>
 
-          {/* Registration Button */}
-          {tournament.registration_open && 
-           (!tournament.registration_deadline || !isPast(new Date(tournament.registration_deadline))) && 
-           user && (
-            <div className="mt-6">
-              <Link to={`/tournaments/${id}/register`}>
+          {/* Registration / Roster Button */}
+          {user && myTeam ? (
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <Link to={`/tournaments/${id}/register/roster?team=${myTeam.id}`}>
                 <Button>
                   <Users className="h-4 w-4 mr-2" />
-                  Register Your Team
+                  Manage Team Roster
                 </Button>
               </Link>
             </div>
+          ) : (
+            tournament.registration_open &&
+            (!tournament.registration_deadline || !isPast(new Date(tournament.registration_deadline))) &&
+            user && (
+              <div className="mt-6">
+                <Link to={`/tournaments/${id}/register`}>
+                  <Button>
+                    <Users className="h-4 w-4 mr-2" />
+                    Register Your Team
+                  </Button>
+                </Link>
+              </div>
+            )
           )}
         </div>
 
