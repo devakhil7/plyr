@@ -52,12 +52,12 @@ export default function TournamentDetails() {
     enabled: !!id,
   });
 
-  // Filter teams to show paid, partial, or "pay at ground" teams
+  // Total teams requested (all registrations regardless of approval)
+  const teamsRequested = tournament?.tournament_teams?.length || 0;
+
+  // Only show teams that have been approved by admin
   const registeredTeams = tournament?.tournament_teams?.filter(
-    (team: any) =>
-      team.payment_status === "paid" ||
-      team.payment_status === "partial" ||
-      team.verification_notes === "Pay at ground"
+    (team: any) => team.team_status === "approved"
   ) || [];
 
   const myTeam = tournament?.tournament_teams?.find(
@@ -261,7 +261,8 @@ export default function TournamentDetails() {
               <Users className="h-5 w-5 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Teams</p>
-                <p className="font-medium">{registeredTeams.length} registered</p>
+                <p className="font-medium">{registeredTeams.length} approved</p>
+                <p className="text-xs text-muted-foreground">{teamsRequested} requested</p>
               </div>
             </div>
 
@@ -313,7 +314,7 @@ export default function TournamentDetails() {
         <Tabs defaultValue="overview">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="teams">Teams ({registeredTeams.length})</TabsTrigger>
+            <TabsTrigger value="teams">Teams ({registeredTeams.length}/{teamsRequested})</TabsTrigger>
             <TabsTrigger value="matches">Matches</TabsTrigger>
           </TabsList>
 
@@ -429,7 +430,9 @@ export default function TournamentDetails() {
                   </div>
                 ) : (
                   <p className="text-center text-muted-foreground py-8">
-                    No teams registered yet
+                    {teamsRequested > 0 
+                      ? `${teamsRequested} team(s) pending approval`
+                      : "No teams registered yet"}
                   </p>
                 )}
               </CardContent>
