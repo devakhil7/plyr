@@ -91,9 +91,7 @@ export function TournamentStatsSection({ tournamentId, tournamentMatches }: Tour
     .sort((a, b) => b.assists - a.assists)
     .slice(0, 5);
 
-  if (completedMatches.length === 0 && (!matchEvents || matchEvents.length === 0)) {
-    return null;
-  }
+  // Always show stats section with placeholders
 
   // Get top scorer
   const topScorer = topScorers[0] || null;
