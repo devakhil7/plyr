@@ -43,7 +43,7 @@ export default function TournamentRegister() {
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [paymentOption, setPaymentOption] = useState<"full" | "advance">("full");
-  const [paymentMethod, setPaymentMethod] = useState<"online" | "manual">("online");
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "ground">("online");
   const [createdTeamId, setCreatedTeamId] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
 
@@ -156,60 +156,121 @@ export default function TournamentRegister() {
     },
   });
 
-  // Process payment mutation
-  const processPayment = useMutation({
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  // Handle Razorpay payment
+  const handleRazorpayPayment = async () => {
+    if (!user || !createdTeamId || !tournament) {
+      toast.error("Invalid state");
+      return;
+    }
+
+    try {
+      // Create Razorpay order via edge function
+      const { data: orderData, error: orderError } = await supabase.functions.invoke(
+        "create-tournament-razorpay-order",
+        {
+          body: {
+            tournamentId: tournament.id,
+            teamId: createdTeamId,
+            amount: amountToPay,
+            isAdvance: paymentOption === "advance",
+          },
+        }
+      );
+
+      if (orderError) throw orderError;
+
+      const options = {
+        key: orderData.razorpayKeyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "SPORTIQ",
+        description: `Tournament Entry: ${tournament.name}`,
+        order_id: orderData.orderId,
+        handler: async function (response: any) {
+          // Verify payment
+          const { error: verifyError } = await supabase.functions.invoke(
+            "verify-tournament-razorpay-payment",
+            {
+              body: {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                teamId: createdTeamId,
+                tournamentId: tournament.id,
+                amount: amountToPay,
+                isAdvance: paymentOption === "advance",
+              },
+            }
+          );
+
+          if (verifyError) {
+            toast.error("Payment verification failed");
+            return;
+          }
+
+          setPaymentStatus(amountToPay >= tournament.entry_fee ? "paid" : "partial");
+          setStep("success");
+          queryClient.invalidateQueries({ queryKey: ["tournament", tournament?.id] });
+          toast.success("Payment successful!");
+        },
+        prefill: {
+          name: profile?.name || "",
+          email: contactEmail,
+          contact: contactPhone,
+        },
+        theme: {
+          color: "#7c3aed",
+        },
+      };
+
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+    } catch (error: any) {
+      console.error("Razorpay error:", error);
+      toast.error(error.message || "Failed to initiate payment");
+    }
+  };
+
+  // Process payment at ground
+  const processPayAtGround = useMutation({
     mutationFn: async () => {
       if (!user || !createdTeamId || !tournament) throw new Error("Invalid state");
 
-      if (paymentMethod === "online") {
-        // For online payment, we would integrate Razorpay here
-        // For now, simulating successful payment
-        const { error: paymentError } = await supabase.from("payments").insert({
-          payer_id: user.id,
-          tournament_id: tournament.id,
-          tournament_team_id: createdTeamId,
-          amount_total: amountToPay,
-          currency: "INR",
-          payment_method: "razorpay",
-          payment_purpose: paymentOption === "advance" ? "tournament_entry_advance" : "tournament_entry_full",
-          is_advance: paymentOption === "advance",
-          status: "paid",
-          paid_at: new Date().toISOString(),
-          turf_id: tournament.turf_id || null,
-          platform_fee: 0,
-          turf_amount: 0,
-        });
-
-        if (paymentError) throw paymentError;
-      }
-
-      // Update team status
-      const newTotalPaid = paymentMethod === "online" ? amountToPay : 0;
-      const newPaymentStatus = paymentMethod === "manual" ? "unpaid" : (newTotalPaid >= tournament.entry_fee ? "paid" : "partial");
-      const newTeamStatus = paymentMethod === "manual" ? "pending_payment" : "pending_roster";
-
+      // Update team status to "pay_at_ground"
       const { error: updateError } = await supabase
         .from("tournament_teams")
         .update({
-          total_paid: newTotalPaid,
-          payment_status: newPaymentStatus,
-          team_status: newTeamStatus,
-          registration_status: paymentMethod === "online" ? "confirmed" : "pending",
+          total_paid: 0,
+          payment_status: "pay_at_ground",
+          team_status: "pending_payment",
+          registration_status: "confirmed",
         })
         .eq("id", createdTeamId);
 
       if (updateError) throw updateError;
 
-      return { paymentStatus: newPaymentStatus, teamStatus: newTeamStatus };
+      return { paymentStatus: "pay_at_ground", teamStatus: "pending_payment" };
     },
     onSuccess: (result) => {
       setPaymentStatus(result.paymentStatus);
       setStep("success");
       queryClient.invalidateQueries({ queryKey: ["tournament", tournament?.id] });
+      toast.success("Registration confirmed! Pay at the ground.");
     },
     onError: (error: any) => {
-      console.error("Payment error:", error);
-      toast.error(error.message || "Payment failed. Please try again.");
+      console.error("Registration error:", error);
+      toast.error(error.message || "Registration failed. Please try again.");
     },
   });
 
@@ -485,7 +546,7 @@ export default function TournamentRegister() {
               <CardContent>
                 <RadioGroup
                   value={paymentMethod}
-                  onValueChange={(v) => setPaymentMethod(v as "online" | "manual")}
+                  onValueChange={(v) => setPaymentMethod(v as "online" | "ground")}
                   className="space-y-3"
                 >
                   <label
@@ -495,25 +556,27 @@ export default function TournamentRegister() {
                   >
                     <RadioGroupItem value="online" />
                     <div className="flex-1">
-                      <p className="font-medium">Pay Online (UPI/Card)</p>
+                      <p className="font-medium">Pay Online</p>
                       <p className="text-sm text-muted-foreground">
-                        Instant confirmation via Razorpay
+                        Pay now via UPI, Card, or Net Banking (Razorpay)
                       </p>
                     </div>
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
                   </label>
 
                   <label
                     className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                      paymentMethod === "manual" ? "border-primary bg-primary/5" : "border-border"
+                      paymentMethod === "ground" ? "border-primary bg-primary/5" : "border-border"
                     }`}
                   >
-                    <RadioGroupItem value="manual" />
+                    <RadioGroupItem value="ground" />
                     <div className="flex-1">
-                      <p className="font-medium">Pay Later (Cash/Bank Transfer)</p>
+                      <p className="font-medium">Pay at Ground</p>
                       <p className="text-sm text-muted-foreground">
-                        Admin will confirm payment manually
+                        Pay in cash when you arrive at the venue
                       </p>
                     </div>
+                    <IndianRupee className="h-5 w-5 text-muted-foreground" />
                   </label>
                 </RadioGroup>
               </CardContent>
@@ -522,11 +585,18 @@ export default function TournamentRegister() {
             <Card className="bg-primary/5 border-primary/20">
               <CardContent className="p-4">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Amount to Pay</span>
+                  <span className="font-medium">
+                    {paymentMethod === "ground" ? "Amount Due at Ground" : "Amount to Pay Now"}
+                  </span>
                   <span className="text-xl font-bold text-primary">
-                    {paymentMethod === "manual" ? "Pay Later" : `₹${amountToPay.toLocaleString()}`}
+                    ₹{amountToPay.toLocaleString()}
                   </span>
                 </div>
+                {paymentMethod === "ground" && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Please pay this amount when you arrive at the venue
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -536,11 +606,17 @@ export default function TournamentRegister() {
               </Button>
               <Button 
                 className="flex-1" 
-                onClick={() => processPayment.mutate()}
-                disabled={processPayment.isPending}
+                onClick={() => {
+                  if (paymentMethod === "online") {
+                    handleRazorpayPayment();
+                  } else {
+                    processPayAtGround.mutate();
+                  }
+                }}
+                disabled={processPayAtGround.isPending}
               >
-                {processPayment.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {paymentMethod === "online" ? `Pay ₹${amountToPay.toLocaleString()}` : "Submit Registration"}
+                {processPayAtGround.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {paymentMethod === "online" ? `Pay ₹${amountToPay.toLocaleString()}` : "Confirm Registration"}
               </Button>
             </div>
           </div>
@@ -568,11 +644,11 @@ export default function TournamentRegister() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Payment Status</span>
-                  <Badge variant={paymentMethod === "manual" ? "secondary" : (paymentStatus === "paid" ? "default" : "outline")}>
-                    {paymentMethod === "manual" ? "Pending Confirmation" : (paymentStatus === "paid" ? "Paid" : "Partial")}
+                  <Badge variant={paymentMethod === "ground" ? "secondary" : (paymentStatus === "paid" ? "default" : "outline")}>
+                    {paymentMethod === "ground" ? "Pay at Ground" : (paymentStatus === "paid" ? "Paid" : "Partial")}
                   </Badge>
                 </div>
-                {paymentMethod === "online" && (
+                {paymentMethod === "online" && paymentStatus !== "pay_at_ground" && (
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Amount Paid</span>
                     <span className="font-medium">₹{amountToPay.toLocaleString()}</span>
