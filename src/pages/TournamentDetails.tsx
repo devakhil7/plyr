@@ -20,6 +20,7 @@ import {
 } from "@/lib/tournamentSchedule";
 import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
 import { TournamentShareDialog } from "@/components/tournaments/TournamentShareDialog";
+import { TournamentStatsSection } from "@/components/tournaments/TournamentStatsSection";
 
 export default function TournamentDetails() {
   const { id } = useParams<{ id: string }>();
@@ -322,6 +323,7 @@ export default function TournamentDetails() {
         <Tabs defaultValue="overview">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="stats">Stats</TabsTrigger>
             <TabsTrigger value="teams">Teams ({registeredTeams.length})</TabsTrigger>
             <TabsTrigger value="matches">Matches</TabsTrigger>
           </TabsList>
@@ -392,6 +394,13 @@ export default function TournamentDetails() {
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="stats" className="mt-6">
+            <TournamentStatsSection 
+              tournamentId={id!} 
+              tournamentMatches={tournamentMatches}
+            />
           </TabsContent>
 
           <TabsContent value="teams" className="mt-6">
