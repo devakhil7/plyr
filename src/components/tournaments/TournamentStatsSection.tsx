@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trophy, Target, Users2, Swords } from "lucide-react";
+import { Trophy, Target, Users2, Swords, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 interface TournamentStatsSectionProps {
   tournamentId: string;
@@ -16,6 +18,100 @@ interface TournamentStatsSectionProps {
       status: string | null;
     } | null;
   }>;
+}
+
+interface PlayerStat {
+  player: { id: string; name: string | null; profile_photo_url: string | null };
+  count: number;
+}
+
+function ExpandableStatCard({
+  title,
+  icon,
+  iconColor,
+  topPlayer,
+  allPlayers,
+  statLabel,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  iconColor: string;
+  topPlayer: PlayerStat | null;
+  allPlayers: PlayerStat[];
+  statLabel: string;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <Card className="text-center">
+      <CardHeader 
+        className="pb-2 cursor-pointer hover:bg-muted/30 transition-colors rounded-t-lg"
+        onClick={() => allPlayers.length > 0 && setIsExpanded(!isExpanded)}
+      >
+        <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
+          {icon}
+          {title}
+          {allPlayers.length > 0 && (
+            isExpanded ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {!isExpanded ? (
+          topPlayer ? (
+            <Link to={`/players/${topPlayer.player.id}`} className="block hover:opacity-80 transition-opacity">
+              <Avatar className={cn("h-16 w-16 mx-auto mb-2 ring-2", iconColor)}>
+                <AvatarImage src={topPlayer.player.profile_photo_url || undefined} />
+                <AvatarFallback>{topPlayer.player.name?.charAt(0) || "?"}</AvatarFallback>
+              </Avatar>
+              <p className="font-semibold truncate">{topPlayer.player.name || "Unknown"}</p>
+              <p className="text-lg font-bold text-primary">{topPlayer.count} {statLabel}</p>
+            </Link>
+          ) : (
+            <div className="py-4">
+              <div className="h-16 w-16 mx-auto mb-2 rounded-full bg-muted/50 flex items-center justify-center">
+                {icon}
+              </div>
+              <p className="text-sm text-muted-foreground">TBD</p>
+            </div>
+          )
+        ) : (
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {allPlayers.map((player, index) => (
+              <Link
+                key={player.player.id}
+                to={`/players/${player.player.id}`}
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                <span className={cn(
+                  "text-sm font-bold w-6 text-center",
+                  index === 0 && "text-yellow-500",
+                  index === 1 && "text-gray-400",
+                  index === 2 && "text-amber-600"
+                )}>
+                  {index + 1}
+                </span>
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={player.player.profile_photo_url || undefined} />
+                  <AvatarFallback>{player.player.name?.charAt(0) || "?"}</AvatarFallback>
+                </Avatar>
+                <span className="flex-1 font-medium truncate text-left text-sm">
+                  {player.player.name || "Unknown"}
+                </span>
+                <span className="font-bold text-primary text-sm">
+                  {player.count}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 export function TournamentStatsSection({ tournamentId, tournamentMatches }: TournamentStatsSectionProps) {
@@ -60,108 +156,60 @@ export function TournamentStatsSection({ tournamentId, tournamentMatches }: Tour
   }, 0);
 
   // Calculate top scorers
-  const scorerMap = new Map<string, { player: any; goals: number }>();
+  const scorerMap = new Map<string, PlayerStat>();
   matchEvents?.forEach((event: any) => {
     if (event.scorer_user_id && event.scorer) {
       const existing = scorerMap.get(event.scorer_user_id);
       if (existing) {
-        existing.goals += 1;
+        existing.count += 1;
       } else {
-        scorerMap.set(event.scorer_user_id, { player: event.scorer, goals: 1 });
+        scorerMap.set(event.scorer_user_id, { player: event.scorer, count: 1 });
       }
     }
   });
   const topScorers = Array.from(scorerMap.values())
-    .sort((a, b) => b.goals - a.goals)
-    .slice(0, 5);
+    .sort((a, b) => b.count - a.count);
 
   // Calculate top assisters
-  const assisterMap = new Map<string, { player: any; assists: number }>();
+  const assisterMap = new Map<string, PlayerStat>();
   matchEvents?.forEach((event: any) => {
     if (event.assist_user_id && event.assister) {
       const existing = assisterMap.get(event.assist_user_id);
       if (existing) {
-        existing.assists += 1;
+        existing.count += 1;
       } else {
-        assisterMap.set(event.assist_user_id, { player: event.assister, assists: 1 });
+        assisterMap.set(event.assist_user_id, { player: event.assister, count: 1 });
       }
     }
   });
   const topAssisters = Array.from(assisterMap.values())
-    .sort((a, b) => b.assists - a.assists)
-    .slice(0, 5);
+    .sort((a, b) => b.count - a.count);
 
   // Always show stats section with placeholders
-
-  // Get top scorer
-  const topScorer = topScorers[0] || null;
-  
-  // Get top assister
-  const topAssister = topAssisters[0] || null;
 
   return (
     <div className="space-y-6">
       {/* Award Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Top Goal Scorer */}
-        <Card className="text-center">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
-              <Target className="h-4 w-4 text-yellow-500" />
-              Top Goal Scorer
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {topScorer ? (
-              <Link to={`/players/${topScorer.player.id}`} className="block hover:opacity-80 transition-opacity">
-                <Avatar className="h-16 w-16 mx-auto mb-2 ring-2 ring-yellow-500/50">
-                  <AvatarImage src={topScorer.player.profile_photo_url} />
-                  <AvatarFallback>{topScorer.player.name?.charAt(0) || "?"}</AvatarFallback>
-                </Avatar>
-                <p className="font-semibold truncate">{topScorer.player.name || "Unknown"}</p>
-                <p className="text-lg font-bold text-primary">{topScorer.goals} goals</p>
-              </Link>
-            ) : (
-              <div className="py-4">
-                <div className="h-16 w-16 mx-auto mb-2 rounded-full bg-muted/50 flex items-center justify-center">
-                  <Target className="h-8 w-8 text-muted-foreground/30" />
-                </div>
-                <p className="text-sm text-muted-foreground">TBD</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ExpandableStatCard
+          title="Top Goal Scorer"
+          icon={<Target className="h-4 w-4 text-yellow-500" />}
+          iconColor="ring-yellow-500/50"
+          topPlayer={topScorers[0] || null}
+          allPlayers={topScorers}
+          statLabel="goals"
+        />
 
-        {/* Top Assists */}
-        <Card className="text-center">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
-              <Users2 className="h-4 w-4 text-green-500" />
-              Top Assists
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {topAssister ? (
-              <Link to={`/players/${topAssister.player.id}`} className="block hover:opacity-80 transition-opacity">
-                <Avatar className="h-16 w-16 mx-auto mb-2 ring-2 ring-green-500/50">
-                  <AvatarImage src={topAssister.player.profile_photo_url} />
-                  <AvatarFallback>{topAssister.player.name?.charAt(0) || "?"}</AvatarFallback>
-                </Avatar>
-                <p className="font-semibold truncate">{topAssister.player.name || "Unknown"}</p>
-                <p className="text-lg font-bold text-primary">{topAssister.assists} assists</p>
-              </Link>
-            ) : (
-              <div className="py-4">
-                <div className="h-16 w-16 mx-auto mb-2 rounded-full bg-muted/50 flex items-center justify-center">
-                  <Users2 className="h-8 w-8 text-muted-foreground/30" />
-                </div>
-                <p className="text-sm text-muted-foreground">TBD</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ExpandableStatCard
+          title="Top Assists"
+          icon={<Users2 className="h-4 w-4 text-green-500" />}
+          iconColor="ring-green-500/50"
+          topPlayer={topAssisters[0] || null}
+          allPlayers={topAssisters}
+          statLabel="assists"
+        />
 
-        {/* Most POTM */}
+        {/* Most POTM - Placeholder for now */}
         <Card className="text-center">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
@@ -179,7 +227,7 @@ export function TournamentStatsSection({ tournamentId, tournamentMatches }: Tour
           </CardContent>
         </Card>
 
-        {/* Player of the Tournament */}
+        {/* Player of the Tournament - Placeholder for now */}
         <Card className="text-center">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
