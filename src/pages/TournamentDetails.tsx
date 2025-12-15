@@ -262,7 +262,6 @@ export default function TournamentDetails() {
               <div>
                 <p className="text-sm text-muted-foreground">Teams</p>
                 <p className="font-medium">{registeredTeams.length} approved</p>
-                <p className="text-xs text-muted-foreground">{teamsRequested} requested</p>
               </div>
             </div>
 
@@ -314,7 +313,7 @@ export default function TournamentDetails() {
         <Tabs defaultValue="overview">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="teams">Teams ({registeredTeams.length}/{teamsRequested})</TabsTrigger>
+            <TabsTrigger value="teams">Teams ({registeredTeams.length})</TabsTrigger>
             <TabsTrigger value="matches">Matches</TabsTrigger>
           </TabsList>
 
@@ -430,9 +429,7 @@ export default function TournamentDetails() {
                   </div>
                 ) : (
                   <p className="text-center text-muted-foreground py-8">
-                    {teamsRequested > 0 
-                      ? `${teamsRequested} team(s) pending approval`
-                      : "No teams registered yet"}
+                    No approved teams yet
                   </p>
                 )}
               </CardContent>
