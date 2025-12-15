@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Trophy, Save } from "lucide-react";
+import { Loader2, Trophy, Save, Upload, X, ImageIcon } from "lucide-react";
 
 interface TournamentFormData {
   name: string;
@@ -62,6 +62,8 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isEditing = !!tournamentId;
+  const [posterUrl, setPosterUrl] = useState<string | null>(null);
+  const [isUploadingPoster, setIsUploadingPoster] = useState(false);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<TournamentFormData>({
     defaultValues: {
@@ -136,8 +138,53 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
         format: (existingTournament.format as "knockout" | "league" | "group_knockout") || "knockout",
         num_teams: existingTournament.num_teams || 8,
       });
+      setPosterUrl(existingTournament.cover_image_url || null);
     }
   }, [existingTournament, reset]);
+
+  const handlePosterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    setIsUploadingPoster(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `tournament-${Date.now()}.${fileExt}`;
+      const filePath = `tournament-posters/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("team-logos")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("team-logos")
+        .getPublicUrl(filePath);
+
+      setPosterUrl(publicUrl);
+      toast.success("Poster uploaded!");
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload poster");
+    } finally {
+      setIsUploadingPoster(false);
+    }
+  };
+
+  const removePoster = () => {
+    setPosterUrl(null);
+  };
 
   const { data: turfs = [] } = useQuery({
     queryKey: ["turfs-for-tournament"],
@@ -176,6 +223,7 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
         status: data.status,
         format: data.format,
         num_teams: data.num_teams,
+        cover_image_url: posterUrl,
       };
 
       if (isEditing) {
@@ -337,6 +385,50 @@ export function AdminTournamentForm({ tournamentId, onSuccess, onCancel }: Admin
               placeholder="Describe your tournament..."
               rows={3}
             />
+          </div>
+
+          {/* Tournament Poster Upload */}
+          <div className="md:col-span-2">
+            <Label>Tournament Poster</Label>
+            <div className="mt-2">
+              {posterUrl ? (
+                <div className="relative inline-block">
+                  <img
+                    src={posterUrl}
+                    alt="Tournament Poster"
+                    className="w-48 h-32 object-cover rounded-lg border"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6"
+                    onClick={removePoster}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-48 h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePosterUpload}
+                    disabled={isUploadingPoster}
+                  />
+                  {isUploadingPoster ? (
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  ) : (
+                    <>
+                      <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
+                      <span className="text-sm text-muted-foreground">Upload Poster</span>
+                    </>
+                  )}
+                </label>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">Recommended: 1200x630px, max 5MB</p>
+            </div>
           </div>
         </CardContent>
       </Card>
