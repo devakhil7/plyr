@@ -95,18 +95,121 @@ export function TournamentStatsSection({ tournamentId, tournamentMatches }: Tour
     return null;
   }
 
+  // Get top scorer
+  const topScorer = topScorers[0] || null;
+  
+  // Get top assister
+  const topAssister = topAssisters[0] || null;
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Overview Stats */}
+    <div className="space-y-6">
+      {/* Award Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Top Goal Scorer */}
+        <Card className="text-center">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
+              <Target className="h-4 w-4 text-yellow-500" />
+              Top Goal Scorer
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topScorer ? (
+              <Link to={`/players/${topScorer.player.id}`} className="block hover:opacity-80 transition-opacity">
+                <Avatar className="h-16 w-16 mx-auto mb-2 ring-2 ring-yellow-500/50">
+                  <AvatarImage src={topScorer.player.profile_photo_url} />
+                  <AvatarFallback>{topScorer.player.name?.charAt(0) || "?"}</AvatarFallback>
+                </Avatar>
+                <p className="font-semibold truncate">{topScorer.player.name || "Unknown"}</p>
+                <p className="text-lg font-bold text-primary">{topScorer.goals} goals</p>
+              </Link>
+            ) : (
+              <div className="py-4">
+                <div className="h-16 w-16 mx-auto mb-2 rounded-full bg-muted/50 flex items-center justify-center">
+                  <Target className="h-8 w-8 text-muted-foreground/30" />
+                </div>
+                <p className="text-sm text-muted-foreground">TBD</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top Assists */}
+        <Card className="text-center">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
+              <Users2 className="h-4 w-4 text-green-500" />
+              Top Assists
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topAssister ? (
+              <Link to={`/players/${topAssister.player.id}`} className="block hover:opacity-80 transition-opacity">
+                <Avatar className="h-16 w-16 mx-auto mb-2 ring-2 ring-green-500/50">
+                  <AvatarImage src={topAssister.player.profile_photo_url} />
+                  <AvatarFallback>{topAssister.player.name?.charAt(0) || "?"}</AvatarFallback>
+                </Avatar>
+                <p className="font-semibold truncate">{topAssister.player.name || "Unknown"}</p>
+                <p className="text-lg font-bold text-primary">{topAssister.assists} assists</p>
+              </Link>
+            ) : (
+              <div className="py-4">
+                <div className="h-16 w-16 mx-auto mb-2 rounded-full bg-muted/50 flex items-center justify-center">
+                  <Users2 className="h-8 w-8 text-muted-foreground/30" />
+                </div>
+                <p className="text-sm text-muted-foreground">TBD</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Most POTM */}
+        <Card className="text-center">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
+              <Swords className="h-4 w-4 text-orange-500" />
+              Most POTM
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="py-4">
+              <div className="h-16 w-16 mx-auto mb-2 rounded-full bg-muted/50 flex items-center justify-center">
+                <Swords className="h-8 w-8 text-muted-foreground/30" />
+              </div>
+              <p className="text-sm text-muted-foreground">TBD</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Player of the Tournament */}
+        <Card className="text-center">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
+              <Trophy className="h-4 w-4 text-primary" />
+              Player of Tournament
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="py-4">
+              <div className="h-16 w-16 mx-auto mb-2 rounded-full bg-muted/50 flex items-center justify-center">
+                <Trophy className="h-8 w-8 text-muted-foreground/30" />
+              </div>
+              <p className="text-sm text-muted-foreground">TBD</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tournament Overview Stats */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Trophy className="h-5 w-5 text-primary" />
-            Tournament Stats
+            Tournament Overview
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-muted/50 text-center">
               <Swords className="h-6 w-6 mx-auto mb-2 text-primary" />
               <p className="text-2xl font-bold">{completedMatches.length}</p>
@@ -117,103 +220,14 @@ export function TournamentStatsSection({ tournamentId, tournamentMatches }: Tour
               <p className="text-2xl font-bold">{totalGoals}</p>
               <p className="text-sm text-muted-foreground">Total Goals</p>
             </div>
-          </div>
-          {completedMatches.length > 0 && (
-            <div className="text-center p-3 rounded-lg bg-primary/10">
-              <p className="text-lg font-semibold text-primary">
-                {(totalGoals / completedMatches.length).toFixed(1)}
+            <div className="p-4 rounded-lg bg-muted/50 text-center">
+              <Target className="h-6 w-6 mx-auto mb-2 text-primary" />
+              <p className="text-2xl font-bold">
+                {completedMatches.length > 0 ? (totalGoals / completedMatches.length).toFixed(1) : "0"}
               </p>
-              <p className="text-xs text-muted-foreground">Goals per Match</p>
+              <p className="text-sm text-muted-foreground">Goals per Match</p>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Top Scorers */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Target className="h-5 w-5 text-yellow-500" />
-            Top Scorers
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {topScorers.length > 0 ? (
-            <div className="space-y-3">
-              {topScorers.map((scorer, index) => (
-                <Link
-                  key={scorer.player.id}
-                  to={`/players/${scorer.player.id}`}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <span className="text-lg font-bold text-muted-foreground w-6">
-                    {index + 1}
-                  </span>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={scorer.player.profile_photo_url} />
-                    <AvatarFallback>
-                      {scorer.player.name?.charAt(0) || "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="flex-1 font-medium truncate">
-                    {scorer.player.name || "Unknown"}
-                  </span>
-                  <span className="font-bold text-primary">
-                    {scorer.goals} {scorer.goals === 1 ? "goal" : "goals"}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-4">
-              No goals recorded yet
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Top Assisters */}
-      <Card className="md:col-span-2">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Users2 className="h-5 w-5 text-green-500" />
-            Top Assist Providers
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {topAssisters.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-              {topAssisters.map((assister, index) => (
-                <Link
-                  key={assister.player.id}
-                  to={`/players/${assister.player.id}`}
-                  className="flex items-center gap-3 p-3 rounded-lg border hover:border-primary hover:bg-primary/5 transition-colors"
-                >
-                  <span className="text-lg font-bold text-muted-foreground">
-                    {index + 1}
-                  </span>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={assister.player.profile_photo_url} />
-                    <AvatarFallback>
-                      {assister.player.name?.charAt(0) || "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate text-sm">
-                      {assister.player.name || "Unknown"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {assister.assists} {assister.assists === 1 ? "assist" : "assists"}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-4">
-              No assists recorded yet
-            </p>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>
