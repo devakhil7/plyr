@@ -673,7 +673,7 @@ export default function TournamentRegister() {
                 View Tournament
               </Button>
               <Button 
-                onClick={() => navigate(`/tournament/${id}/register/roster?team=${createdTeamId}`)}
+                onClick={() => navigate(`/tournaments/${id}/register/roster?team=${createdTeamId}`)}
                 className="flex-1"
               >
                 Add Players
