@@ -18,6 +18,7 @@ import {
   shuffleArray,
   type ScheduleSlot,
 } from "@/lib/tournamentSchedule";
+import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
 
 export default function TournamentDetails() {
   const { id } = useParams<{ id: string }>();
@@ -472,52 +473,12 @@ export default function TournamentDetails() {
 
                 {tournamentFormat === "league" ? (
                   <p className="text-center text-muted-foreground py-8">League schedule not yet available</p>
-                ) : tournamentMatches.length > 0 ? (
-                  <div className="space-y-4">
-                    {tournamentMatches
-                      .slice()
-                      .sort((a, b) => (a.match_order ?? 0) - (b.match_order ?? 0))
-                      .map((tm: any) => {
-                        const teamAName = tm.team_a_id
-                          ? registeredTeams.find((t: any) => t.id === tm.team_a_id)?.team_name
-                          : tm.slot_a;
-                        const teamBName = tm.team_b_id
-                          ? registeredTeams.find((t: any) => t.id === tm.team_b_id)?.team_name
-                          : tm.slot_b;
-
-                        return (
-                          <div key={tm.id} className="p-4 border rounded-lg flex items-center justify-between gap-4">
-                            <div>
-                              <Badge variant="outline" className="mb-2">
-                                {ROUND_LABELS[tm.round] || tm.round}
-                                {tm.group_name ? ` • ${tm.group_name}` : ""}
-                              </Badge>
-                              <p className="font-medium">{teamAName} vs {teamBName}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {tm.matches?.match_date} at {tm.matches?.match_time?.slice(0, 5)}
-                              </p>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                              {tm.matches?.team_a_score !== null && (
-                                <div className="text-center">
-                                  <p className="text-2xl font-bold">
-                                    {tm.matches?.team_a_score} - {tm.matches?.team_b_score}
-                                  </p>
-                                </div>
-                              )}
-                              <Link to={`/matches/${tm.match_id}`}>
-                                <Button variant="outline" size="sm">View</Button>
-                              </Link>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
                 ) : (
-                  <p className="text-center text-muted-foreground py-8">
-                    Match schedule not yet available
-                  </p>
+                  <TournamentBracket 
+                    matches={tournamentMatches}
+                    teams={registeredTeams.map((t: any) => ({ id: t.id, team_name: t.team_name }))}
+                    format={tournamentFormat}
+                  />
                 )}
               </CardContent>
             </Card>
