@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,10 +53,16 @@ const POSITIONS = [
 export default function TournamentRoster() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
-  const teamId = searchParams.get("team");
+  const teamIdParam = searchParams.get("team");
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  const [teamId, setTeamId] = useState<string | null>(teamIdParam);
+
+  useEffect(() => {
+    setTeamId(teamIdParam);
+  }, [teamIdParam]);
 
   const [players, setPlayers] = useState<Player[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
@@ -75,6 +81,24 @@ export default function TournamentRoster() {
     },
     enabled: !!id,
   });
+
+
+  useEffect(() => {
+    (async () => {
+      if (!id || !user || teamId) return;
+      const { data } = await supabase
+        .from("tournament_teams")
+        .select("id")
+        .eq("tournament_id", id)
+        .eq("captain_user_id", user.id)
+        .maybeSingle();
+
+      if (data?.id) {
+        setTeamId(data.id);
+        navigate(`/tournaments/${id}/register/roster?team=${data.id}`, { replace: true });
+      }
+    })();
+  }, [id, user, teamId, navigate]);
 
   const { data: team, isLoading: teamLoading } = useQuery({
     queryKey: ["tournament-team", teamId],
@@ -171,18 +195,17 @@ export default function TournamentRoster() {
       for (const player of players) {
         if (!player.player_name.trim()) continue;
 
-        // Check if user exists with this phone or email
+        // Link to an existing user if email matches
         let linkedUserId: string | null = null;
-        if (player.phone || player.email) {
+        const email = player.email?.trim();
+        if (email) {
           const { data: existingUser } = await supabase
             .from("profiles")
             .select("id")
-            .or(`email.eq.${player.email}`)
+            .eq("email", email)
             .maybeSingle();
-          
-          if (existingUser) {
-            linkedUserId = existingUser.id;
-          }
+
+          if (existingUser?.id) linkedUserId = existingUser.id;
         }
 
         if (player.id) {
