@@ -19,6 +19,7 @@ import {
   type ScheduleSlot,
 } from "@/lib/tournamentSchedule";
 import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
+import { TournamentShareDialog } from "@/components/tournaments/TournamentShareDialog";
 
 export default function TournamentDetails() {
   const { id } = useParams<{ id: string }>();
@@ -284,29 +285,37 @@ export default function TournamentDetails() {
           </div>
 
           {/* Registration / Roster Button */}
-          {user && myTeam ? (
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            {user && myTeam ? (
               <Link to={`/tournaments/${id}/register/roster?team=${myTeam.id}`}>
                 <Button>
                   <Users className="h-4 w-4 mr-2" />
                   Manage Team Roster
                 </Button>
               </Link>
-            </div>
-          ) : (
-            tournament.registration_open &&
-            (!tournament.registration_deadline || !isPast(new Date(tournament.registration_deadline))) &&
-            user && (
-              <div className="mt-6">
+            ) : (
+              tournament.registration_open &&
+              (!tournament.registration_deadline || !isPast(new Date(tournament.registration_deadline))) &&
+              user && (
                 <Link to={`/tournaments/${id}/register`}>
                   <Button>
                     <Users className="h-4 w-4 mr-2" />
                     Register Your Team
                   </Button>
                 </Link>
-              </div>
-            )
-          )}
+              )
+            )}
+            
+            <TournamentShareDialog
+              tournamentId={tournament.id}
+              tournamentName={tournament.name}
+              startDate={tournament.start_datetime}
+              endDate={tournament.end_datetime}
+              city={tournament.city}
+              entryFee={tournament.entry_fee}
+              prizeDetails={tournament.prize_details}
+            />
+          </div>
         </div>
 
         {/* Tabs */}
