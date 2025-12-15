@@ -178,6 +178,8 @@ export default function AdminTournaments() {
                 tournamentName={schedulingMatchesFor.name}
                 turfId={schedulingMatchesFor.turf_id}
                 sport={schedulingMatchesFor.sport}
+                format={schedulingMatchesFor.format || "knockout"}
+                numTeams={schedulingMatchesFor.num_teams || 8}
               />
             )}
           </DialogContent>
