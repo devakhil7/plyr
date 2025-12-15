@@ -64,8 +64,8 @@ export function generateKnockoutSchedule(numTeams: number): ScheduleSlot[] {
     schedule.push({
       round: 'third-place',
       matchOrder: matchOrder++,
-      slotA: 'Loser Semi 1',
-      slotB: 'Loser Semi 2',
+      slotA: 'Runners Up Semi 1',
+      slotB: 'Runners Up Semi 2',
     });
   }
   
@@ -138,8 +138,8 @@ export function generateGroupKnockoutSchedule(numTeams: number): ScheduleSlot[] 
   schedule.push({
     round: 'third-place',
     matchOrder: matchOrder++,
-    slotA: 'Loser SF 1',
-    slotB: 'Loser SF 2',
+    slotA: 'Runners Up SF 1',
+    slotB: 'Runners Up SF 2',
   });
   
   // Final
