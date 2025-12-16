@@ -19,7 +19,7 @@ import { VideoHighlightEvents } from "@/components/match/VideoHighlightEvents";
 
 const GetAnalytics = () => {
   const { user } = useAuth();
-  const { isAdmin, isTurfOwner } = useUserRoles();
+  const { isAdmin, isTurfOwner, loading: rolesLoading } = useUserRoles();
   const queryClient = useQueryClient();
   const canManage = isAdmin || isTurfOwner;
 
@@ -233,11 +233,11 @@ const GetAnalytics = () => {
           </p>
         </div>
 
-        <Tabs defaultValue={canManage ? "manage" : "submit"} className="w-full">
+        <Tabs defaultValue="submit" key={rolesLoading ? "loading" : canManage ? "admin" : "user"} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="submit">Submit Video</TabsTrigger>
             {canManage ? (
-              <TabsTrigger value="manage">Manage Submissions</TabsTrigger>
+              <TabsTrigger value="manage">Admin Panel</TabsTrigger>
             ) : (
               <TabsTrigger value="my-submissions">My Submissions</TabsTrigger>
             )}
