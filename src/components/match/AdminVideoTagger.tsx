@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,6 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
 interface Player {
   id: string;
@@ -47,11 +47,11 @@ interface VideoEvent {
 }
 
 interface AdminVideoTaggerProps {
-  matchId: string;
+  matchId?: string;
+  videoAnalysisJobId?: string;
   videoUrl: string | null;
-  players: Player[];
-  existingEvents: VideoEvent[];
-  onEventsChange: () => void;
+  matchPlayers?: Player[];
+  onEventAdded?: () => void;
 }
 
 const EVENT_TYPES = [
@@ -65,10 +65,10 @@ const PLAYBACK_SPEEDS = [0.5, 1, 1.5, 2];
 
 export function AdminVideoTagger({ 
   matchId, 
+  videoAnalysisJobId,
   videoUrl, 
-  players, 
-  existingEvents,
-  onEventsChange 
+  matchPlayers = [],
+  onEventAdded 
 }: AdminVideoTaggerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const queryClient = useQueryClient();
@@ -87,6 +87,27 @@ export function AdminVideoTagger({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [generatingClip, setGeneratingClip] = useState<string | null>(null);
+
+  // Fetch existing events
+  const { data: existingEvents = [], refetch: refetchEvents } = useQuery({
+    queryKey: ["video-events", matchId, videoAnalysisJobId],
+    queryFn: async () => {
+      let query = supabase.from("match_video_events").select("*");
+      
+      if (matchId) {
+        query = query.eq("match_id", matchId);
+      } else if (videoAnalysisJobId) {
+        query = query.eq("video_analysis_job_id", videoAnalysisJobId);
+      } else {
+        return [];
+      }
+      
+      const { data, error } = await query.order("timestamp_seconds", { ascending: true });
+      if (error) throw error;
+      return data as VideoEvent[];
+    },
+    enabled: !!(matchId || videoAnalysisJobId),
+  });
 
   useEffect(() => {
     const video = videoRef.current;
@@ -146,7 +167,7 @@ export function AdminVideoTagger({
 
   const handlePlayerSelect = (playerId: string) => {
     setSelectedPlayerId(playerId);
-    const player = players.find(p => p.user_id === playerId || p.profiles?.id === playerId);
+    const player = matchPlayers.find(p => p.user_id === playerId || p.profiles?.id === playerId);
     if (player) {
       setPlayerName(player.profiles?.name || player.offline_player_name || "");
     }
@@ -158,13 +179,17 @@ export function AdminVideoTagger({
       return;
     }
 
+    if (!matchId && !videoAnalysisJobId) {
+      toast.error("Missing match or video analysis job reference");
+      return;
+    }
+
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("match_video_events").insert({
-        match_id: matchId,
+      const insertData: any = {
         event_type: eventType,
         timestamp_seconds: Math.floor(currentTime),
         player_id: selectedPlayerId || null,
@@ -173,7 +198,16 @@ export function AdminVideoTagger({
         generate_highlight: generateHighlight,
         notes: notes || null,
         created_by: user.id,
-      });
+      };
+
+      if (matchId) {
+        insertData.match_id = matchId;
+      }
+      if (videoAnalysisJobId) {
+        insertData.video_analysis_job_id = videoAnalysisJobId;
+      }
+
+      const { error } = await supabase.from("match_video_events").insert(insertData);
 
       if (error) throw error;
 
@@ -187,7 +221,8 @@ export function AdminVideoTagger({
       setGenerateHighlight(false);
       setNotes("");
       
-      onEventsChange();
+      refetchEvents();
+      onEventAdded?.();
     } catch (err: any) {
       console.error("Error tagging event:", err);
       toast.error(err.message || "Failed to tag event");
@@ -206,7 +241,8 @@ export function AdminVideoTagger({
       if (error) throw error;
       
       toast.success("Event deleted");
-      onEventsChange();
+      refetchEvents();
+      onEventAdded?.();
     } catch (err: any) {
       toast.error("Failed to delete event");
     }
@@ -216,17 +252,13 @@ export function AdminVideoTagger({
     setGeneratingClip(event.id);
     
     try {
-      // For now, we'll just mark it as needing a clip
-      // In production, this would trigger actual video processing
       const clipStart = Math.max(0, event.timestamp_seconds - 10);
       const clipEnd = event.timestamp_seconds + 5;
       
-      // Update the event to mark generate_highlight as true
       const { error } = await supabase
         .from("match_video_events")
         .update({ 
           generate_highlight: true,
-          // In a real implementation, clip_url would be set after processing
           notes: `${event.notes || ''}\nClip: ${formatTime(clipStart)} - ${formatTime(clipEnd)}`.trim()
         })
         .eq("id", event.id);
@@ -234,7 +266,8 @@ export function AdminVideoTagger({
       if (error) throw error;
       
       toast.success(`Highlight clip marked for generation (${formatTime(clipStart)} - ${formatTime(clipEnd)})`);
-      onEventsChange();
+      refetchEvents();
+      onEventAdded?.();
     } catch (err: any) {
       toast.error("Failed to generate clip");
     } finally {
@@ -264,7 +297,7 @@ export function AdminVideoTagger({
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-center py-8">
-            No video uploaded for this match. Upload a video first to tag events.
+            No video uploaded. Upload a video first to tag events.
           </p>
         </CardContent>
       </Card>
@@ -368,24 +401,26 @@ export function AdminVideoTagger({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Player (from match)</Label>
-              <Select value={selectedPlayerId} onValueChange={handlePlayerSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select player" />
-                </SelectTrigger>
-                <SelectContent>
-                  {players.map((player) => (
-                    <SelectItem 
-                      key={player.id} 
-                      value={player.user_id || player.profiles?.id || player.id}
-                    >
-                      {player.profiles?.name || player.offline_player_name || "Unknown Player"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {matchPlayers.length > 0 && (
+              <div className="space-y-2">
+                <Label>Player (from match)</Label>
+                <Select value={selectedPlayerId} onValueChange={handlePlayerSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select player" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {matchPlayers.map((player) => (
+                      <SelectItem 
+                        key={player.id} 
+                        value={player.user_id || player.profiles?.id || player.id}
+                      >
+                        {player.profiles?.name || player.offline_player_name || "Unknown Player"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label>Player Name (manual)</Label>
