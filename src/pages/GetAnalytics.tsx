@@ -19,9 +19,8 @@ import { VideoHighlightEvents } from "@/components/match/VideoHighlightEvents";
 
 const GetAnalytics = () => {
   const { user } = useAuth();
-  const { isAdmin, isTurfOwner, loading: rolesLoading } = useUserRoles();
+  const { isAdmin, loading: rolesLoading } = useUserRoles();
   const queryClient = useQueryClient();
-  const canManage = isAdmin || isTurfOwner;
 
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [title, setTitle] = useState("");
@@ -60,7 +59,7 @@ const GetAnalytics = () => {
       if (error) throw error;
       return data;
     },
-    enabled: canManage,
+    enabled: isAdmin,
   });
 
   // Fetch events for viewing
@@ -199,7 +198,7 @@ const GetAnalytics = () => {
                   <Play className="h-3 w-3" />
                 </Button>
               )}
-              {(job.status === "completed" || canManage) && (
+              {(job.status === "completed" || isAdmin) && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -208,7 +207,7 @@ const GetAnalytics = () => {
                   <Eye className="h-3 w-3" />
                 </Button>
               )}
-              {canManage && job.status !== "completed" && (
+              {isAdmin && job.status !== "completed" && (
                 <Button
                   size="sm"
                   onClick={() => setSelectedJob(job)}
@@ -233,10 +232,10 @@ const GetAnalytics = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="submit" key={rolesLoading ? "loading" : canManage ? "admin" : "user"} className="w-full">
+        <Tabs defaultValue="submit" key={rolesLoading ? "loading" : isAdmin ? "admin" : "user"} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="submit">Submit Video</TabsTrigger>
-            {canManage ? (
+            {isAdmin ? (
               <TabsTrigger value="manage">Admin Panel</TabsTrigger>
             ) : (
               <TabsTrigger value="my-submissions">My Submissions</TabsTrigger>
@@ -329,7 +328,7 @@ const GetAnalytics = () => {
             </Card>
 
             {/* My Submissions in Submit Tab */}
-            {!canManage && mySubmissions && mySubmissions.length > 0 && (
+            {!isAdmin && mySubmissions && mySubmissions.length > 0 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Your Submissions</h3>
                 <div className="space-y-3">
@@ -365,7 +364,7 @@ const GetAnalytics = () => {
             )}
           </TabsContent>
 
-          {canManage && (
+          {isAdmin && (
             <TabsContent value="manage" className="space-y-4 mt-6">
               {loadingAll ? (
                 <div className="text-center py-8">
