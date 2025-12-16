@@ -38,7 +38,7 @@ export default function TournamentDetails() {
           *,
           turfs (id, name, city, location),
           tournament_teams (
-            id, team_name, captain_user_id, payment_status, total_fee, total_paid, verification_notes,
+            id, team_name, captain_user_id, payment_status, total_fee, total_paid, verification_notes, team_status,
             profiles:captain_user_id (id, name, profile_photo_url)
           ),
           tournament_matches (
