@@ -380,28 +380,28 @@ export function AdminTournamentsTab() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {team.team_status === "pending_verification" && (
-                              <>
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() => updateTeamStatus.mutate({ teamId: team.id, status: "approved" })}
-                                  disabled={updateTeamStatus.isPending}
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedTeam(team);
-                                    setVerificationNotes("");
-                                  }}
-                                  disabled={updateTeamStatus.isPending}
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                </Button>
-                              </>
+                            {team.team_status !== "approved" && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => updateTeamStatus.mutate({ teamId: team.id, status: "approved" })}
+                                disabled={updateTeamStatus.isPending}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {team.team_status !== "rejected" && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedTeam(team);
+                                  setVerificationNotes("");
+                                }}
+                                disabled={updateTeamStatus.isPending}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
                             )}
                           </div>
                         </TableCell>
