@@ -802,14 +802,13 @@ export default function MatchDetails() {
                   <AdminVideoTagger
                     matchId={match.id}
                     videoUrl={match.video_url}
-                    players={confirmedPlayers.map((mp: any) => ({
+                    matchPlayers={confirmedPlayers.map((mp: any) => ({
                       id: mp.id,
                       user_id: mp.user_id,
                       offline_player_name: mp.offline_player_name,
                       profiles: mp.profiles,
                     }))}
-                    existingEvents={videoEvents}
-                    onEventsChange={refetchVideoEvents}
+                    onEventAdded={() => refetchVideoEvents()}
                   />
                 )}
 

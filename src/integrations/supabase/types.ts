@@ -917,12 +917,13 @@ export type Database = {
           generate_highlight: boolean | null
           id: string
           jersey_number: number | null
-          match_id: string
+          match_id: string | null
           notes: string | null
           player_id: string | null
           player_name: string | null
           timestamp_seconds: number
           updated_at: string
+          video_analysis_job_id: string | null
         }
         Insert: {
           clip_url?: string | null
@@ -932,12 +933,13 @@ export type Database = {
           generate_highlight?: boolean | null
           id?: string
           jersey_number?: number | null
-          match_id: string
+          match_id?: string | null
           notes?: string | null
           player_id?: string | null
           player_name?: string | null
           timestamp_seconds: number
           updated_at?: string
+          video_analysis_job_id?: string | null
         }
         Update: {
           clip_url?: string | null
@@ -947,12 +949,13 @@ export type Database = {
           generate_highlight?: boolean | null
           id?: string
           jersey_number?: number | null
-          match_id?: string
+          match_id?: string | null
           notes?: string | null
           player_id?: string | null
           player_name?: string | null
           timestamp_seconds?: number
           updated_at?: string
+          video_analysis_job_id?: string | null
         }
         Relationships: [
           {
@@ -974,6 +977,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_video_events_video_analysis_job_id_fkey"
+            columns: ["video_analysis_job_id"]
+            isOneToOne: false
+            referencedRelation: "video_analysis_jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -2332,6 +2342,7 @@ export type Database = {
       }
       video_analysis_jobs: {
         Row: {
+          admin_notes: string | null
           analysis_metadata: Json | null
           created_at: string
           error_message: string | null
@@ -2341,11 +2352,13 @@ export type Database = {
           passes_count: number | null
           shots_count: number | null
           status: string
+          title: string | null
           updated_at: string
           user_id: string
           video_url: string
         }
         Insert: {
+          admin_notes?: string | null
           analysis_metadata?: Json | null
           created_at?: string
           error_message?: string | null
@@ -2355,11 +2368,13 @@ export type Database = {
           passes_count?: number | null
           shots_count?: number | null
           status?: string
+          title?: string | null
           updated_at?: string
           user_id: string
           video_url: string
         }
         Update: {
+          admin_notes?: string | null
           analysis_metadata?: Json | null
           created_at?: string
           error_message?: string | null
@@ -2369,6 +2384,7 @@ export type Database = {
           passes_count?: number | null
           shots_count?: number | null
           status?: string
+          title?: string | null
           updated_at?: string
           user_id?: string
           video_url?: string

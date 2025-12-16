@@ -38,6 +38,7 @@ import Install from "./pages/Install";
 import ConnectedApps from "./pages/ConnectedApps";
 import FitnessInsights from "./pages/FitnessInsights";
 import ImproveFootball from "./pages/ImproveFootball";
+import GetAnalytics from "./pages/GetAnalytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,6 +84,7 @@ const App = () => (
               <Route path="/connected-apps" element={<ConnectedApps />} />
               <Route path="/fitness-insights" element={<FitnessInsights />} />
               <Route path="/improve/football" element={<ImproveFootball />} />
+              <Route path="/get-analytics" element={<GetAnalytics />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

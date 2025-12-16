@@ -24,7 +24,7 @@ const navigation = [
   { name: "Tournaments", href: "/tournaments" },
   { name: "Leaderboards", href: "/leaderboards" },
   { name: "Improve", href: "/improve/football" },
-  { name: "Creator Hub", href: "/creator-hub" },
+  { name: "Get Analytics", href: "/get-analytics" },
 ];
 
 export function Navbar() {
