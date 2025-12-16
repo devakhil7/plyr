@@ -46,6 +46,35 @@ export default function TournamentRegister() {
   const [paymentMethod, setPaymentMethod] = useState<"online" | "ground">("online");
   const [createdTeamId, setCreatedTeamId] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [teamNameError, setTeamNameError] = useState<string | null>(null);
+
+  // Check for duplicate team name
+  const checkDuplicateTeamName = async (name: string) => {
+    if (!id || !name.trim()) {
+      setTeamNameError(null);
+      return;
+    }
+    
+    const { data: existingTeams } = await supabase
+      .from("tournament_teams")
+      .select("id, team_name")
+      .eq("tournament_id", id)
+      .ilike("team_name", name.trim());
+    
+    if (existingTeams && existingTeams.length > 0) {
+      setTeamNameError("A team with this name already exists in this tournament");
+    } else {
+      setTeamNameError(null);
+    }
+  };
+
+  // Debounced team name check
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      checkDuplicateTeamName(teamName);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [teamName, id]);
 
   // Fetch tournament details
   const { data: tournament, isLoading } = useQuery({
@@ -98,7 +127,7 @@ export default function TournamentRegister() {
   const advanceAmount = calculateAdvanceAmount();
   const amountToPay = paymentOption === "advance" ? advanceAmount : (tournament?.entry_fee || 0);
 
-  const isTeamValid = teamName.trim().length > 0 && contactPhone.trim().length > 0 && contactEmail.trim().length > 0;
+  const isTeamValid = teamName.trim().length > 0 && contactPhone.trim().length > 0 && contactEmail.trim().length > 0 && !teamNameError;
 
   // Register team mutation
   const registerTeam = useMutation({
@@ -368,7 +397,11 @@ export default function TournamentRegister() {
                     value={teamName}
                     onChange={(e) => setTeamName(e.target.value)}
                     placeholder="Enter your team name"
+                    className={teamNameError ? "border-destructive" : ""}
                   />
+                  {teamNameError && (
+                    <p className="text-sm text-destructive mt-1">{teamNameError}</p>
+                  )}
                 </div>
 
                 <div>

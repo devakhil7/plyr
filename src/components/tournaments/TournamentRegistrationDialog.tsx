@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,6 +51,35 @@ export function TournamentRegistrationDialog({ tournament, trigger }: Tournament
   const [paymentOption, setPaymentOption] = useState<"full" | "advance">("full");
   const [createdTeamId, setCreatedTeamId] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [teamNameError, setTeamNameError] = useState<string | null>(null);
+
+  // Check for duplicate team name
+  const checkDuplicateTeamName = async (name: string) => {
+    if (!name.trim()) {
+      setTeamNameError(null);
+      return;
+    }
+    
+    const { data: existingTeams } = await supabase
+      .from("tournament_teams")
+      .select("id, team_name")
+      .eq("tournament_id", tournament.id)
+      .ilike("team_name", name.trim());
+    
+    if (existingTeams && existingTeams.length > 0) {
+      setTeamNameError("A team with this name already exists in this tournament");
+    } else {
+      setTeamNameError(null);
+    }
+  };
+
+  // Debounced team name check
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      checkDuplicateTeamName(teamName);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [teamName, tournament.id]);
 
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -76,6 +105,7 @@ export function TournamentRegistrationDialog({ tournament, trigger }: Tournament
     setPaymentOption("full");
     setCreatedTeamId(null);
     setPaymentStatus(null);
+    setTeamNameError(null);
   };
 
   const addPlayer = () => {
@@ -97,7 +127,7 @@ export function TournamentRegistrationDialog({ tournament, trigger }: Tournament
   };
 
   // Step 1: Validate team name
-  const isTeamValid = teamName.trim().length > 0;
+  const isTeamValid = teamName.trim().length > 0 && !teamNameError;
 
   // Step 2: Validate players
   const isPlayersValid = 
@@ -258,7 +288,11 @@ export function TournamentRegistrationDialog({ tournament, trigger }: Tournament
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
                 placeholder="Enter your team name"
+                className={teamNameError ? "border-destructive" : ""}
               />
+              {teamNameError && (
+                <p className="text-sm text-destructive mt-1">{teamNameError}</p>
+              )}
             </div>
 
             <div className="flex justify-end">
