@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,18 +12,13 @@ import {
   User,
   Scissors,
   Share2,
-  MessageCircle,
   Copy,
-  Send
+  Pause,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { ShareDialog } from "@/components/feed/ShareDialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { HighlightShareDialog } from "./HighlightShareDialog";
 import { toast } from "sonner";
 
 interface VideoEvent {
@@ -82,8 +77,11 @@ const formatTime = (seconds: number) => {
 export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: VideoHighlightEventsProps) {
   const params = useParams();
   const effectiveMatchId = matchId || params.id;
-  const [shareHighlightOpen, setShareHighlightOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedHighlight, setSelectedHighlight] = useState<VideoEvent | null>(null);
+  const [playingClipId, setPlayingClipId] = useState<string | null>(null);
+  const [mutedClips, setMutedClips] = useState<Set<string>>(new Set());
+  const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
 
   if (events.length === 0) {
     return null;
@@ -114,7 +112,7 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
 
   const handleShareHighlight = (event: VideoEvent) => {
     setSelectedHighlight(event);
-    setShareHighlightOpen(true);
+    setShareDialogOpen(true);
   };
 
   const handleCopyHighlightLink = (event: VideoEvent) => {
@@ -123,11 +121,33 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
     toast.success("Highlight link copied!");
   };
 
-  const handleShareToFeed = async (event: VideoEvent) => {
-    // This would typically open a create post dialog with the highlight pre-filled
-    toast.success("Opening share to feed...");
-    // Navigate to feed with share intent
-    window.open(`/feed?share_highlight=${event.id}&match=${effectiveMatchId}`, "_blank");
+  const togglePlayClip = (eventId: string) => {
+    const video = videoRefs.current.get(eventId);
+    if (!video) return;
+
+    if (playingClipId === eventId) {
+      video.pause();
+      setPlayingClipId(null);
+    } else {
+      // Pause other videos
+      videoRefs.current.forEach((v, id) => {
+        if (id !== eventId) v.pause();
+      });
+      video.play();
+      setPlayingClipId(eventId);
+    }
+  };
+
+  const toggleMuteClip = (eventId: string) => {
+    setMutedClips(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId);
+      } else {
+        newSet.add(eventId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -272,66 +292,112 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
               <Play className="h-4 w-4" />
               Highlight Clips ({highlightEvents.length})
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {highlightEvents.map((event, index) => {
                 const config = EVENT_CONFIGS[event.event_type as keyof typeof EVENT_CONFIGS];
                 const clipStart = Math.max(0, event.timestamp_seconds - 10);
                 const clipEnd = event.timestamp_seconds + 5;
+                const hasClip = !!event.clip_url || !!videoUrl;
+                const isPlaying = playingClipId === event.id;
+                const isMuted = mutedClips.has(event.id);
                 
                 return (
                   <div
                     key={event.id}
-                    className="p-3 bg-muted/50 rounded-lg border"
+                    className="bg-muted/50 rounded-lg border overflow-hidden"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium">Highlight {index + 1}</span>
-                      <div className="flex items-center gap-2">
-                        {event.team && (
-                          <Badge variant={event.team === "A" ? "default" : "secondary"} className="text-xs">
-                            Team {event.team}
-                          </Badge>
-                        )}
-                        <Badge className={config?.color || "bg-gray-500"} variant="secondary">
-                          {config?.label || event.event_type}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {formatTime(clipStart)} - {formatTime(clipEnd)}
-                      </div>
-                      {event.player_name && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <User className="h-3 w-3" />
-                          {event.player_name}
-                          {event.jersey_number && ` (#${event.jersey_number})`}
+                    {/* Video Player */}
+                    {hasClip && (
+                      <div className="relative aspect-video bg-black">
+                        <video
+                          ref={(el) => {
+                            if (el) videoRefs.current.set(event.id, el);
+                          }}
+                          src={event.clip_url || videoUrl || ""}
+                          className="w-full h-full object-contain"
+                          muted={isMuted}
+                          playsInline
+                          onEnded={() => setPlayingClipId(null)}
+                        />
+                        {/* Play/Pause Overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-12 w-12 rounded-full bg-black/50 hover:bg-black/70"
+                            onClick={() => togglePlayClip(event.id)}
+                          >
+                            {isPlaying ? (
+                              <Pause className="h-6 w-6 text-white" />
+                            ) : (
+                              <Play className="h-6 w-6 text-white" />
+                            )}
+                          </Button>
                         </div>
-                      )}
-                    </div>
-                    
-                    {/* Action buttons */}
-                    <div className="flex gap-2 mt-3">
-                      {event.clip_url && (
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Play className="h-3 w-3 mr-1" />
-                          Watch
+                        {/* Mute Button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute bottom-2 right-2 h-8 w-8 bg-black/50 hover:bg-black/70"
+                          onClick={() => toggleMuteClip(event.id)}
+                        >
+                          {isMuted ? (
+                            <VolumeX className="h-4 w-4 text-white" />
+                          ) : (
+                            <Volume2 className="h-4 w-4 text-white" />
+                          )}
                         </Button>
-                      )}
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleCopyHighlightLink(event)}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleShareHighlight(event)}
-                      >
-                        <Share2 className="h-3 w-3" />
-                      </Button>
+                      </div>
+                    )}
+                    
+                    {/* Info Section */}
+                    <div className="p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">Highlight {index + 1}</span>
+                        <div className="flex items-center gap-2">
+                          {event.team && (
+                            <Badge variant={event.team === "A" ? "default" : "secondary"} className="text-xs">
+                              Team {event.team}
+                            </Badge>
+                          )}
+                          <Badge className={config?.color || "bg-gray-500"} variant="secondary">
+                            {config?.label || event.event_type}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatTime(clipStart)} - {formatTime(clipEnd)}
+                        </div>
+                        {event.player_name && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <User className="h-3 w-3" />
+                            {event.player_name}
+                            {event.jersey_number && ` (#${event.jersey_number})`}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Action buttons */}
+                      <div className="flex gap-2 mt-3">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => handleShareHighlight(event)}
+                        >
+                          <Share2 className="h-3 w-3 mr-1" />
+                          Share
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleCopyHighlightLink(event)}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -342,59 +408,14 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
       </CardContent>
 
       {/* Share Highlight Dialog */}
-      <Dialog open={shareHighlightOpen} onOpenChange={setShareHighlightOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center">Share Highlight</DialogTitle>
-          </DialogHeader>
-          {selectedHighlight && (
-            <div className="space-y-4 py-4">
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-medium">
-                  {EVENT_CONFIGS[selectedHighlight.event_type as keyof typeof EVENT_CONFIGS]?.label || selectedHighlight.event_type}
-                  {selectedHighlight.player_name && ` by ${selectedHighlight.player_name}`}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  at {formatTime(selectedHighlight.timestamp_seconds)}
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  className="flex flex-col items-center gap-2 h-auto py-4"
-                  onClick={() => handleShareToFeed(selectedHighlight)}
-                >
-                  <Send className="h-5 w-5" />
-                  <span className="text-sm">Share to Feed</span>
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  className="flex flex-col items-center gap-2 h-auto py-4"
-                  onClick={() => {
-                    const url = `${window.location.origin}/messages?share_highlight=${selectedHighlight.id}`;
-                    window.open(url, "_blank");
-                    setShareHighlightOpen(false);
-                  }}
-                >
-                  <MessageCircle className="h-5 w-5" />
-                  <span className="text-sm">Send as DM</span>
-                </Button>
-              </div>
-              
-              <Button
-                variant="secondary"
-                className="w-full"
-                onClick={() => handleCopyHighlightLink(selectedHighlight)}
-              >
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Link
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <HighlightShareDialog
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        highlight={selectedHighlight}
+        matchId={effectiveMatchId}
+        matchName={matchName}
+        videoUrl={videoUrl}
+      />
     </Card>
   );
 }
