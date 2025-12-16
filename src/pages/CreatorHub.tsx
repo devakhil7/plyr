@@ -10,6 +10,9 @@ import { Loader2, Upload, Video, Sparkles, CheckCircle, XCircle, Film, Send, Lay
 import VideoUploadSection from "@/components/creator-hub/VideoUploadSection";
 import AnalysisStatusCard from "@/components/creator-hub/AnalysisStatusCard";
 import HighlightReviewSection from "@/components/creator-hub/HighlightReviewSection";
+import EventMetricsCard from "@/components/creator-hub/EventMetricsCard";
+import { useVideoFrameExtractor } from "@/hooks/useVideoFrameExtractor";
+import { Progress } from "@/components/ui/progress";
 
 interface AnalysisJob {
   id: string;
@@ -18,6 +21,9 @@ interface AnalysisJob {
   error_message: string | null;
   match_id: string | null;
   created_at: string;
+  goals_count?: number;
+  shots_count?: number;
+  passes_count?: number;
 }
 
 interface HighlightClip {
@@ -34,6 +40,7 @@ const CreatorHub = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { extractFrames, isExtracting, progress: extractionProgress } = useVideoFrameExtractor();
   
   const [activeJob, setActiveJob] = useState<AnalysisJob | null>(null);
   const [clips, setClips] = useState<HighlightClip[]>([]);
@@ -203,11 +210,11 @@ const CreatorHub = () => {
   };
 
   const handleAnalyze = async () => {
-    if (!activeJob) return;
+    if (!activeJob || !videoRef.current) return;
 
     setIsAnalyzing(true);
     try {
-      // Update status to analyzing
+      // Update status to uploading (extracting frames)
       await supabase
         .from('video_analysis_jobs')
         .update({ status: 'uploading' })
@@ -215,15 +222,35 @@ const CreatorHub = () => {
 
       setActiveJob({ ...activeJob, status: 'uploading' });
 
-      // Call the edge function with video duration
-      const { error } = await supabase.functions.invoke('analyze-video', {
+      toast({
+        title: "Extracting Frames",
+        description: "Extracting video frames for AI analysis...",
+      });
+
+      // Extract frames from video
+      const frames = await extractFrames(videoRef.current, 15);
+      console.log(`Extracted ${frames.length} frames for analysis`);
+
+      // Call the edge function with frames
+      const { data, error } = await supabase.functions.invoke('analyze-video', {
         body: { 
           jobId: activeJob.id,
-          videoDuration: videoDuration || 600 // Pass actual duration or default to 10 min
+          videoDuration: videoDuration || videoRef.current.duration || 600,
+          frames: frames
         },
       });
 
       if (error) throw error;
+
+      // Update local state with results if returned
+      if (data?.analysis) {
+        setActiveJob(prev => prev ? {
+          ...prev,
+          goals_count: data.analysis.goals_count,
+          shots_count: data.analysis.shots_count,
+          passes_count: data.analysis.passes_count
+        } : null);
+      }
 
     } catch (error) {
       console.error("Analysis error:", error);
@@ -444,8 +471,24 @@ const CreatorHub = () => {
           </p>
         </div>
 
+        {/* Frame Extraction Progress */}
+        {isExtracting && (
+          <Card className="border-primary/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span className="font-medium">Extracting video frames...</span>
+              </div>
+              <Progress value={extractionProgress} className="h-2" />
+              <p className="text-sm text-muted-foreground mt-2">
+                {extractionProgress}% - Preparing frames for AI analysis
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Status Card when job is in progress */}
-        {activeJob && ['uploading', 'analyzing', 'processing'].includes(activeJob.status) && (
+        {activeJob && ['uploading', 'analyzing', 'processing'].includes(activeJob.status) && !isExtracting && (
           <AnalysisStatusCard 
             status={activeJob.status} 
             onCancel={handleCancelAnalysis}
@@ -526,18 +569,25 @@ const CreatorHub = () => {
           </Card>
         )}
 
-        {/* Completed State - Review Highlights */}
+        {/* Completed State - Show Metrics and Review Highlights */}
         {activeJob && activeJob.status === 'completed' && (
-          <HighlightReviewSection
-            clips={clips}
-            videoUrl={activeJob.video_url}
-            onClipToggle={handleClipToggle}
-            onCaptionChange={handleCaptionChange}
-            onPublishIndividual={handlePublishIndividual}
-            onPublishReel={handlePublishReel}
-            onNewAnalysis={handleNewAnalysis}
-            isPublishing={isPublishing}
-          />
+          <>
+            <EventMetricsCard
+              goalsCount={activeJob.goals_count || 0}
+              shotsCount={activeJob.shots_count || 0}
+              passesCount={activeJob.passes_count || 0}
+            />
+            <HighlightReviewSection
+              clips={clips}
+              videoUrl={activeJob.video_url}
+              onClipToggle={handleClipToggle}
+              onCaptionChange={handleCaptionChange}
+              onPublishIndividual={handlePublishIndividual}
+              onPublishReel={handlePublishReel}
+              onNewAnalysis={handleNewAnalysis}
+              isPublishing={isPublishing}
+            />
+          </>
         )}
       </div>
     </Layout>

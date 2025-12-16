@@ -2262,30 +2262,42 @@ export type Database = {
       }
       video_analysis_jobs: {
         Row: {
+          analysis_metadata: Json | null
           created_at: string
           error_message: string | null
+          goals_count: number | null
           id: string
           match_id: string | null
+          passes_count: number | null
+          shots_count: number | null
           status: string
           updated_at: string
           user_id: string
           video_url: string
         }
         Insert: {
+          analysis_metadata?: Json | null
           created_at?: string
           error_message?: string | null
+          goals_count?: number | null
           id?: string
           match_id?: string | null
+          passes_count?: number | null
+          shots_count?: number | null
           status?: string
           updated_at?: string
           user_id: string
           video_url: string
         }
         Update: {
+          analysis_metadata?: Json | null
           created_at?: string
           error_message?: string | null
+          goals_count?: number | null
           id?: string
           match_id?: string | null
+          passes_count?: number | null
+          shots_count?: number | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -2311,6 +2323,44 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_events: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          timestamp_seconds: number
+          video_analysis_job_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          timestamp_seconds: number
+          video_analysis_job_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          timestamp_seconds?: number
+          video_analysis_job_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_events_video_analysis_job_id_fkey"
+            columns: ["video_analysis_job_id"]
+            isOneToOne: false
+            referencedRelation: "video_analysis_jobs"
             referencedColumns: ["id"]
           },
         ]
