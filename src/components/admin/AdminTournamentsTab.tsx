@@ -100,7 +100,7 @@ export function AdminTournamentsTab() {
 
   // Update team status mutation
   const updateTeamStatus = useMutation({
-    mutationFn: async ({ teamId, status, notes }: { teamId: string; status: string; notes?: string }) => {
+    mutationFn: async ({ teamId, status, notes, team }: { teamId: string; status: string; notes?: string; team?: any }) => {
       const { error } = await supabase
         .from("tournament_teams")
         .update({
@@ -111,6 +111,51 @@ export function AdminTournamentsTab() {
         .eq("id", teamId);
 
       if (error) throw error;
+
+      // Send notification to captain
+      if (team?.captain_user_id && (status === "approved" || status === "rejected")) {
+        const tournamentName = team.tournaments?.name || "Tournament";
+        const teamName = team.team_name || "Your team";
+        
+        // Create a conversation if needed and send message
+        const { data: existingConversation } = await supabase
+          .from("conversation_participants")
+          .select("conversation_id")
+          .eq("user_id", team.captain_user_id)
+          .limit(1)
+          .maybeSingle();
+
+        let conversationId = existingConversation?.conversation_id;
+        
+        if (!conversationId) {
+          const { data: newConversation } = await supabase
+            .from("conversations")
+            .insert({ created_by: team.captain_user_id })
+            .select()
+            .single();
+          
+          if (newConversation) {
+            conversationId = newConversation.id;
+            await supabase.from("conversation_participants").insert({
+              conversation_id: conversationId,
+              user_id: team.captain_user_id,
+            });
+          }
+        }
+
+        if (conversationId) {
+          const messageContent = status === "approved"
+            ? `🎉 Great news! Your team "${teamName}" has been approved for ${tournamentName}. Get ready to compete!`
+            : `Your team "${teamName}" registration for ${tournamentName} was not approved.${notes ? ` Reason: ${notes}` : ""} Please contact the organizer for more details.`;
+
+          await supabase.from("messages").insert({
+            conversation_id: conversationId,
+            sender_id: team.captain_user_id,
+            content: messageContent,
+            message_type: "system",
+          });
+        }
+      }
     },
     onSuccess: () => {
       toast.success("Team status updated!");
@@ -384,7 +429,7 @@ export function AdminTournamentsTab() {
                               <Button
                                 variant="default"
                                 size="sm"
-                                onClick={() => updateTeamStatus.mutate({ teamId: team.id, status: "approved" })}
+                                onClick={() => updateTeamStatus.mutate({ teamId: team.id, status: "approved", team })}
                                 disabled={updateTeamStatus.isPending}
                               >
                                 <CheckCircle className="h-4 w-4" />
@@ -545,38 +590,40 @@ export function AdminTournamentsTab() {
                 <Button variant="outline" onClick={() => setSelectedTeam(null)}>
                   Close
                 </Button>
-                {selectedTeam.team_status === "pending_verification" && (
-                  <>
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        if (!verificationNotes.trim()) {
-                          toast.error("Please add a reason for rejection");
-                          return;
-                        }
-                        updateTeamStatus.mutate({ 
-                          teamId: selectedTeam.id, 
-                          status: "rejected",
-                          notes: verificationNotes 
-                        });
-                      }}
-                      disabled={updateTeamStatus.isPending}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Reject
-                    </Button>
-                    <Button
-                      onClick={() => updateTeamStatus.mutate({ 
+                {selectedTeam.team_status !== "rejected" && (
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      if (!verificationNotes.trim()) {
+                        toast.error("Please add a reason for rejection");
+                        return;
+                      }
+                      updateTeamStatus.mutate({ 
                         teamId: selectedTeam.id, 
-                        status: "approved",
-                        notes: verificationNotes || undefined
-                      })}
-                      disabled={updateTeamStatus.isPending}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Approve
-                    </Button>
-                  </>
+                        status: "rejected",
+                        notes: verificationNotes,
+                        team: selectedTeam
+                      });
+                    }}
+                    disabled={updateTeamStatus.isPending}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
+                )}
+                {selectedTeam.team_status !== "approved" && (
+                  <Button
+                    onClick={() => updateTeamStatus.mutate({ 
+                      teamId: selectedTeam.id, 
+                      status: "approved",
+                      notes: verificationNotes || undefined,
+                      team: selectedTeam
+                    })}
+                    disabled={updateTeamStatus.isPending}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
                 )}
               </DialogFooter>
             </div>
