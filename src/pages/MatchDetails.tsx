@@ -746,6 +746,8 @@ export default function MatchDetails() {
                 <VideoHighlightEvents 
                   events={videoEvents}
                   videoUrl={match.video_url}
+                  matchId={match.id}
+                  matchName={match.match_name}
                 />
 
                 {/* Analytics */}

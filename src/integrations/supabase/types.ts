@@ -921,6 +921,7 @@ export type Database = {
           notes: string | null
           player_id: string | null
           player_name: string | null
+          team: string | null
           timestamp_seconds: number
           updated_at: string
           video_analysis_job_id: string | null
@@ -937,6 +938,7 @@ export type Database = {
           notes?: string | null
           player_id?: string | null
           player_name?: string | null
+          team?: string | null
           timestamp_seconds: number
           updated_at?: string
           video_analysis_job_id?: string | null
@@ -953,6 +955,7 @@ export type Database = {
           notes?: string | null
           player_id?: string | null
           player_name?: string | null
+          team?: string | null
           timestamp_seconds?: number
           updated_at?: string
           video_analysis_job_id?: string | null
