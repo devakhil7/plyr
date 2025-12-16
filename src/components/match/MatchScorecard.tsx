@@ -1,9 +1,9 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Share2, Download, Copy, Trophy, Star, Target } from "lucide-react";
+import { Share2, Copy, Trophy, Star, Target, MessageCircle, Instagram, Link } from "lucide-react";
 import { toast } from "sonner";
 
 interface MatchEvent {
@@ -381,15 +381,58 @@ export function MatchScorecard({
         </div>
 
         {/* Share Actions */}
-        <div className="flex gap-2 mt-2">
-          <Button variant="outline" className="flex-1" onClick={handleCopyLink}>
-            <Copy className="h-4 w-4 mr-2" />
-            Copy Link
-          </Button>
-          <Button className="flex-1" onClick={handleShare}>
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
+        <div className="space-y-3 mt-2">
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-1 h-auto py-3"
+              onClick={() => {
+                const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+                  `${matchName} - Final Score: ${teamAScore} - ${teamBScore}${motm ? ` | MOTM: ${motm.name}` : ""}\n\n${window.location.origin}/matches/${matchId}`
+                )}`;
+                window.location.href = whatsappUrl;
+              }}
+            >
+              <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                <MessageCircle className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-xs">WhatsApp</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-1 h-auto py-3"
+              onClick={handleShare}
+            >
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
+                <Instagram className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-xs">Instagram</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-1 h-auto py-3"
+              onClick={handleCopyLink}
+            >
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                <Link className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <span className="text-xs">Copy Link</span>
+            </Button>
+          </div>
+          
+          <div className="flex items-center gap-2 p-2 bg-muted rounded-lg">
+            <input
+              type="text"
+              value={`${window.location.origin}/matches/${matchId}`}
+              readOnly
+              className="flex-1 bg-transparent text-xs text-muted-foreground outline-none truncate"
+            />
+            <Button size="sm" variant="ghost" onClick={handleCopyLink}>
+              <Copy className="h-3 w-3" />
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

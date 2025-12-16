@@ -44,6 +44,7 @@ interface VideoEvent {
   generate_highlight: boolean;
   clip_url: string | null;
   notes: string | null;
+  team: string | null;
 }
 
 interface AdminVideoTaggerProps {
@@ -83,6 +84,7 @@ export function AdminVideoTagger({
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("");
   const [playerName, setPlayerName] = useState("");
   const [jerseyNumber, setJerseyNumber] = useState("");
+  const [team, setTeam] = useState<string>("");
   const [generateHighlight, setGenerateHighlight] = useState(false);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -195,6 +197,7 @@ export function AdminVideoTagger({
         player_id: selectedPlayerId || null,
         player_name: playerName || null,
         jersey_number: jerseyNumber ? parseInt(jerseyNumber) : null,
+        team: team || null,
         generate_highlight: generateHighlight,
         notes: notes || null,
         created_by: user.id,
@@ -218,6 +221,7 @@ export function AdminVideoTagger({
       setSelectedPlayerId("");
       setPlayerName("");
       setJerseyNumber("");
+      setTeam("");
       setGenerateHighlight(false);
       setNotes("");
       
@@ -432,6 +436,19 @@ export function AdminVideoTagger({
             </div>
 
             <div className="space-y-2">
+              <Label>Team</Label>
+              <Select value={team} onValueChange={setTeam}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select team" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A">Team A</SelectItem>
+                  <SelectItem value="B">Team B</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label>Jersey Number (optional)</Label>
               <Input
                 type="number"
@@ -506,6 +523,11 @@ export function AdminVideoTagger({
                           {formatTime(event.timestamp_seconds)}
                         </Button>
                         <Badge className={config.color}>{config.label}</Badge>
+                        {event.team && (
+                          <Badge variant={event.team === "A" ? "default" : "secondary"}>
+                            Team {event.team}
+                          </Badge>
+                        )}
                         {event.player_name && (
                           <span className="text-sm">
                             {event.player_name}

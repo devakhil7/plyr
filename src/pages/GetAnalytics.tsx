@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Upload, Video, Clock, CheckCircle, XCircle, Play, Eye, Film, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -27,6 +29,7 @@ const GetAnalytics = () => {
   const [notes, setNotes] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [selectedMatchId, setSelectedMatchId] = useState<string>("");
   const [viewingJob, setViewingJob] = useState<any>(null);
 
   // Fetch user's submissions
@@ -76,6 +79,22 @@ const GetAnalytics = () => {
       return data;
     },
     enabled: !!viewingJob?.id,
+  });
+
+  // Fetch completed matches for linking
+  const { data: completedMatches = [] } = useQuery({
+    queryKey: ["completed-matches-for-linking"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("matches")
+        .select("id, match_name, match_date, turfs(name)")
+        .eq("status", "completed")
+        .order("match_date", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin,
   });
 
   const uploadMutation = useMutation({
@@ -389,16 +408,42 @@ const GetAnalytics = () => {
         </Tabs>
 
         {/* Admin Tagging Dialog */}
-        <Dialog open={!!selectedJob} onOpenChange={() => setSelectedJob(null)}>
+        <Dialog open={!!selectedJob} onOpenChange={() => {
+          setSelectedJob(null);
+          setSelectedMatchId("");
+        }}>
           <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Tag Video Events - {selectedJob?.title}</DialogTitle>
             </DialogHeader>
             {selectedJob && (
               <div className="space-y-4">
+                {/* Match Linking */}
+                <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                  <Label>Link to Match (optional)</Label>
+                  <Select value={selectedMatchId} onValueChange={setSelectedMatchId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a match to link events" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No match linked</SelectItem>
+                      {completedMatches.map((match: any) => (
+                        <SelectItem key={match.id} value={match.id}>
+                          {match.match_name} - {format(new Date(match.match_date), "PP")} 
+                          {match.turfs?.name && ` @ ${match.turfs.name}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Linking to a match makes highlights visible on the match details page for users
+                  </p>
+                </div>
+
                 <AdminVideoTagger
                   videoUrl={selectedJob.video_url}
                   videoAnalysisJobId={selectedJob.id}
+                  matchId={selectedMatchId && selectedMatchId !== "none" ? selectedMatchId : undefined}
                   matchPlayers={[]}
                   onEventAdded={() => {
                     queryClient.invalidateQueries({ queryKey: ["job-events", selectedJob.id] });
