@@ -6,47 +6,81 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface GoalDetection {
+interface VideoEvent {
+  event_type: 'goal' | 'shot' | 'pass';
   timestamp_seconds: number;
+  confidence: number;
   description: string;
-  confidence: string;
 }
 
-// AI-based goal simulation using Lovable AI
-async function analyzeWithAI(videoDuration: number): Promise<GoalDetection[]> {
+interface AnalysisResult {
+  goals: VideoEvent[];
+  shots: VideoEvent[];
+  passes: VideoEvent[];
+  goals_count: number;
+  shots_count: number;
+  passes_count: number;
+}
+
+// Analyze video frames using Gemini Vision
+async function analyzeFramesWithGemini(
+  frames: { timestamp: number; data: string }[],
+  videoDuration: number
+): Promise<AnalysisResult> {
   const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
   
   if (!LOVABLE_API_KEY) {
     throw new Error("LOVABLE_API_KEY is not configured");
   }
 
-  const durationMinutes = Math.floor(videoDuration / 60);
-  const minTimestamp = 15;
-  const maxTimestamp = Math.max(30, videoDuration - 10);
+  console.log(`Analyzing ${frames.length} frames from ${videoDuration}s video...`);
 
-  const analysisPrompt = `You are simulating a football/soccer video analysis system for a ${durationMinutes} minute (${Math.round(videoDuration)} second) match video.
+  // Build the message with all frames
+  const frameDescriptions = frames.map((f, i) => 
+    `Frame ${i + 1} at ${f.timestamp.toFixed(1)}s`
+  ).join(', ');
 
-Based on typical football match patterns, generate realistic highlight timestamps for this video. Consider:
-- This is a ${durationMinutes}-minute video
-- Highlights include goals, near-misses, great saves, skillful plays, and exciting moments
-- For a video this length, generate 5-7 highlights
-- Space highlights at least 20-40 seconds apart
+  const content: any[] = [
+    {
+      type: "text",
+      text: `You are an expert football/soccer video analyst. Analyze these ${frames.length} frames from a ${Math.round(videoDuration)} second match video.
 
-RULES:
-- All timestamps MUST be between ${minTimestamp} and ${maxTimestamp} seconds
-- Generate exactly 5-7 highlight timestamps
-- Each highlight needs a unique description (e.g., "Powerful strike from distance", "Skillful dribble past defenders", "Diving save by goalkeeper", "Close-range header", "Through ball creates chance")
+FRAMES TIMELINE: ${frameDescriptions}
 
-Return ONLY a valid JSON array:
-[
-  {
-    "timestamp_seconds": <number between ${minTimestamp} and ${maxTimestamp}>,
-    "description": "Brief description of the highlight",
-    "confidence": "high"
+For each frame, carefully look for:
+1. GOALS: Ball crossing the goal line into the net, goalkeeper beaten, celebration scenes
+2. SHOTS: Player striking the ball towards goal (shooting motion, ball trajectory towards goal)
+3. PASSES: Ball being passed between players (controlled ball movement from one player to another)
+
+IMPORTANT RULES:
+- Only report events you can ACTUALLY SEE in the frames
+- Each event must have a specific timestamp (use the nearest frame's timestamp)
+- Be conservative - only report events with high confidence
+- A goal implies a shot happened, but count them separately
+- Look for visual cues: ball position, player postures, goalkeeper movement
+
+Return ONLY a valid JSON object with this exact structure:
+{
+  "goals": [{"timestamp_seconds": <number>, "confidence": <0.0-1.0>, "description": "<what you see>"}],
+  "shots": [{"timestamp_seconds": <number>, "confidence": <0.0-1.0>, "description": "<what you see>"}],
+  "passes": [{"timestamp_seconds": <number>, "confidence": <0.0-1.0>, "description": "<what you see>"}]
+}
+
+If you cannot detect any events of a type, use an empty array [].`
+    }
+  ];
+
+  // Add each frame as an image
+  for (const frame of frames) {
+    content.push({
+      type: "image_url",
+      image_url: {
+        url: frame.data.startsWith('data:') ? frame.data : `data:image/jpeg;base64,${frame.data}`
+      }
+    });
   }
-]`;
 
-  console.log("Calling AI for goal simulation...");
+  console.log("Calling Gemini Vision for frame analysis...");
 
   const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
@@ -59,11 +93,11 @@ Return ONLY a valid JSON array:
       messages: [
         {
           role: 'system',
-          content: 'You are a football video analysis simulator. Generate realistic highlight timestamps. Always respond with valid JSON only.'
+          content: 'You are an expert football video analyst. Analyze the provided video frames and identify specific events. Always respond with valid JSON only.'
         },
         {
           role: 'user',
-          content: analysisPrompt
+          content: content
         }
       ],
     }),
@@ -71,7 +105,7 @@ Return ONLY a valid JSON array:
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error("AI error:", response.status, errorText);
+    console.error("Gemini error:", response.status, errorText);
     
     if (response.status === 429) {
       throw new Error("Rate limit exceeded. Please try again later.");
@@ -90,10 +124,10 @@ Return ONLY a valid JSON array:
     throw new Error("No response from AI");
   }
 
-  console.log("AI Response:", responseContent);
+  console.log("Gemini Response:", responseContent);
 
   // Parse the JSON response
-  let goals: GoalDetection[];
+  let analysis: { goals: any[]; shots: any[]; passes: any[] };
   try {
     let cleanedContent = responseContent.trim();
     if (cleanedContent.startsWith('```json')) {
@@ -105,30 +139,42 @@ Return ONLY a valid JSON array:
     if (cleanedContent.endsWith('```')) {
       cleanedContent = cleanedContent.slice(0, -3);
     }
-    goals = JSON.parse(cleanedContent.trim());
+    analysis = JSON.parse(cleanedContent.trim());
     
-    if (!Array.isArray(goals)) {
-      goals = [];
-    }
+    if (!analysis.goals) analysis.goals = [];
+    if (!analysis.shots) analysis.shots = [];
+    if (!analysis.passes) analysis.passes = [];
   } catch (parseError) {
     console.error("Failed to parse AI response:", responseContent);
-    throw new Error("Failed to parse goal detection response");
+    // Return empty results if parsing fails
+    analysis = { goals: [], shots: [], passes: [] };
   }
 
-  // Validate and clamp timestamps
-  goals = goals
-    .filter(goal => 
-      typeof goal.timestamp_seconds === 'number' && 
-      goal.timestamp_seconds >= minTimestamp && 
-      goal.timestamp_seconds <= maxTimestamp
-    )
-    .map(goal => ({
-      ...goal,
-      timestamp_seconds: Math.round(goal.timestamp_seconds),
-      confidence: goal.confidence || 'high'
-    }));
+  // Validate and format events
+  const formatEvents = (events: any[], type: 'goal' | 'shot' | 'pass'): VideoEvent[] => {
+    if (!Array.isArray(events)) return [];
+    return events
+      .filter(e => typeof e.timestamp_seconds === 'number')
+      .map(e => ({
+        event_type: type,
+        timestamp_seconds: Math.round(e.timestamp_seconds),
+        confidence: typeof e.confidence === 'number' ? e.confidence : 0.8,
+        description: e.description || `${type} detected`
+      }));
+  };
 
-  return goals;
+  const goals = formatEvents(analysis.goals, 'goal');
+  const shots = formatEvents(analysis.shots, 'shot');
+  const passes = formatEvents(analysis.passes, 'pass');
+
+  return {
+    goals,
+    shots,
+    passes,
+    goals_count: goals.length,
+    shots_count: shots.length,
+    passes_count: passes.length
+  };
 }
 
 // Authenticate the user and verify job ownership
@@ -139,13 +185,11 @@ async function authenticateAndVerifyOwnership(
   supabaseServiceKey: string
 ): Promise<string> {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  // Get authorization header
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
     throw new Error('Unauthorized: No authorization header provided');
   }
 
-  // Extract and verify the JWT token
   const token = authHeader.replace('Bearer ', '');
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   
@@ -154,7 +198,6 @@ async function authenticateAndVerifyOwnership(
     throw new Error('Unauthorized: Invalid token');
   }
 
-  // Verify the user owns this job
   const { data: job, error: jobError } = await supabase
     .from('video_analysis_jobs')
     .select('user_id')
@@ -186,9 +229,14 @@ serve(async (req) => {
     const body = await req.json();
     jobId = body.jobId;
     const videoDuration = body.videoDuration || 300;
+    const frames = body.frames || []; // Array of { timestamp: number, data: string (base64) }
 
     if (!jobId) {
       throw new Error('Missing required parameter: jobId');
+    }
+
+    if (!frames || frames.length === 0) {
+      throw new Error('Missing required parameter: frames. Please provide video frames for analysis.');
     }
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -199,7 +247,7 @@ serve(async (req) => {
     // Authenticate and verify ownership before proceeding
     await authenticateAndVerifyOwnership(req, jobId, supabaseUrl, supabaseServiceKey);
 
-    console.log(`Starting video analysis for job: ${jobId} duration: ${videoDuration} seconds`);
+    console.log(`Starting video analysis for job: ${jobId} with ${frames.length} frames`);
 
     const { data: job, error: jobError } = await supabase
       .from('video_analysis_jobs')
@@ -216,22 +264,43 @@ serve(async (req) => {
       .update({ status: 'analyzing', updated_at: new Date().toISOString() })
       .eq('id', jobId);
 
-    // Use AI-based analysis
-    const highlights = await analyzeWithAI(videoDuration);
-    console.log(`Generated ${highlights.length} highlights:`, highlights);
+    // Analyze frames with Gemini Vision
+    const analysis = await analyzeFramesWithGemini(frames, videoDuration);
+    console.log(`Analysis complete: ${analysis.goals_count} goals, ${analysis.shots_count} shots, ${analysis.passes_count} passes`);
 
     await supabase
       .from('video_analysis_jobs')
       .update({ status: 'processing', updated_at: new Date().toISOString() })
       .eq('id', jobId);
 
-    const clips = highlights.map((highlight, index) => ({
+    // Store video events
+    const allEvents = [...analysis.goals, ...analysis.shots, ...analysis.passes];
+    if (allEvents.length > 0) {
+      const eventsToInsert = allEvents.map(event => ({
+        video_analysis_job_id: jobId,
+        event_type: event.event_type,
+        timestamp_seconds: event.timestamp_seconds,
+        confidence: event.confidence,
+        description: event.description,
+      }));
+
+      const { error: eventsError } = await supabase
+        .from('video_events')
+        .insert(eventsToInsert);
+
+      if (eventsError) {
+        console.error("Error storing events:", eventsError);
+      }
+    }
+
+    // Create highlight clips for goals (as before, for backward compatibility)
+    const clips = analysis.goals.map((goal, index) => ({
       video_analysis_job_id: jobId,
       match_id: job.match_id,
-      goal_timestamp_seconds: highlight.timestamp_seconds,
-      start_time_seconds: Math.max(0, highlight.timestamp_seconds - 10),
-      end_time_seconds: Math.min(videoDuration, highlight.timestamp_seconds + 5),
-      caption: `Highlight ${index + 1}: ${highlight.description}`,
+      goal_timestamp_seconds: goal.timestamp_seconds,
+      start_time_seconds: Math.max(0, goal.timestamp_seconds - 10),
+      end_time_seconds: Math.min(videoDuration, goal.timestamp_seconds + 5),
+      caption: `Goal ${index + 1}: ${goal.description}`,
       is_selected: true,
       clip_video_url: job.video_url,
     }));
@@ -243,23 +312,41 @@ serve(async (req) => {
 
       if (clipsError) {
         console.error("Error creating clips:", clipsError);
-        throw new Error(`Failed to create clips: ${clipsError.message}`);
       }
     }
 
+    // Update job with metrics
     await supabase
       .from('video_analysis_jobs')
-      .update({ status: 'completed', updated_at: new Date().toISOString() })
+      .update({ 
+        status: 'completed', 
+        updated_at: new Date().toISOString(),
+        goals_count: analysis.goals_count,
+        shots_count: analysis.shots_count,
+        passes_count: analysis.passes_count,
+        analysis_metadata: {
+          analyzed_frames: frames.length,
+          video_duration: videoDuration,
+          analyzed_at: new Date().toISOString()
+        }
+      })
       .eq('id', jobId);
 
-    console.log(`Analysis completed. Created ${clips.length} clips`);
+    console.log(`Analysis completed. Detected ${allEvents.length} total events`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        highlights: highlights,
+        analysis: {
+          goals_count: analysis.goals_count,
+          shots_count: analysis.shots_count,
+          passes_count: analysis.passes_count,
+          goals: analysis.goals,
+          shots: analysis.shots,
+          passes: analysis.passes,
+        },
         clipsCreated: clips.length,
-        message: `Generated ${clips.length} highlight clips`
+        message: `Detected ${analysis.goals_count} goals, ${analysis.shots_count} shots, ${analysis.passes_count} passes`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -267,7 +354,6 @@ serve(async (req) => {
   } catch (error) {
     console.error('Video analysis error:', error);
 
-    // Return appropriate status codes based on error type
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     let statusCode = 500;
     
