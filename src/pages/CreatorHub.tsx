@@ -540,6 +540,7 @@ const CreatorHub = () => {
                 ref={videoRef}
                 src={activeJob.video_url} 
                 controls 
+                crossOrigin="anonymous"
                 className="w-full rounded-lg max-h-[300px] bg-black"
                 onLoadedMetadata={handleVideoLoaded}
               />
