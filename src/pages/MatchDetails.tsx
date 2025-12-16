@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Layout } from "@/components/layout/Layout";
 import { useAuth } from "@/hooks/useAuth";
-import { useOwnedTurfs } from "@/hooks/useUserRoles";
+import { useOwnedTurfs, useUserRoles } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -18,6 +18,9 @@ import { FootballPitch } from "@/components/match/FootballPitch";
 import { MatchStatsInput } from "@/components/match/MatchStatsInput";
 import { MatchScorecard } from "@/components/match/MatchScorecard";
 import { PlayerRatingsSection } from "@/components/match/PlayerRatingsSection";
+import { AdminVideoTagger } from "@/components/match/AdminVideoTagger";
+import { VideoHighlightEvents } from "@/components/match/VideoHighlightEvents";
+
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
   open: "open",
   full: "full",
@@ -55,10 +58,12 @@ export default function MatchDetails() {
 
   // Check if user owns the turf for this match
   const { data: ownedTurfs = [] } = useOwnedTurfs();
+  const { isAdmin } = useUserRoles();
   const isTurfOwner = match?.turf_id && ownedTurfs.some((ot: any) => ot.turfs?.id === match.turf_id);
 
   const isHost = user && match?.host_id === user.id;
-  const canEditStats = isHost || isTurfOwner; // Both host and turf owner can edit stats
+  const canEditStats = isHost || isTurfOwner || isAdmin; // Host, turf owner, or admin can edit stats
+  const canTagEvents = isHost || isTurfOwner || isAdmin; // Host, turf owner, or admin can tag events
   const confirmedPlayers = match?.match_players?.filter((p: any) => p.join_status === "confirmed") || [];
   const isJoined = confirmedPlayers.some((p: any) => p.user_id === user?.id);
   const slotsLeft = (match?.total_slots || 0) - confirmedPlayers.length;
@@ -91,6 +96,21 @@ export default function MatchDetails() {
         .select("rated_user_id, rating")
         .eq("match_id", id)
         .eq("moderation_status", "approved");
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  // Fetch video events (manually tagged events)
+  const { data: videoEvents = [], refetch: refetchVideoEvents } = useQuery({
+    queryKey: ["match-video-events", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_video_events")
+        .select("*")
+        .eq("match_id", id)
+        .order("timestamp_seconds", { ascending: true });
+      if (error) throw error;
       return data || [];
     },
     enabled: !!id,
@@ -722,6 +742,12 @@ export default function MatchDetails() {
                   </Card>
                 )}
 
+                {/* Video Highlight Events - Visible to everyone */}
+                <VideoHighlightEvents 
+                  events={videoEvents}
+                  videoUrl={match.video_url}
+                />
+
                 {/* Analytics */}
                 {analytics && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -771,8 +797,24 @@ export default function MatchDetails() {
                   />
                 )}
 
+                {/* Admin Video Event Tagger */}
+                {canTagEvents && match.video_url && (
+                  <AdminVideoTagger
+                    matchId={match.id}
+                    videoUrl={match.video_url}
+                    players={confirmedPlayers.map((mp: any) => ({
+                      id: mp.id,
+                      user_id: mp.user_id,
+                      offline_player_name: mp.offline_player_name,
+                      profiles: mp.profiles,
+                    }))}
+                    existingEvents={videoEvents}
+                    onEventsChange={refetchVideoEvents}
+                  />
+                )}
+
                 {/* Show message if not host/turf owner and no analytics */}
-                {!canEditStats && !analytics && matchEvents.length === 0 && (
+                {!canEditStats && !analytics && matchEvents.length === 0 && videoEvents.length === 0 && (
                   <Card>
                     <CardContent className="p-8 text-center">
                       <p className="text-muted-foreground">Match stats not yet available</p>

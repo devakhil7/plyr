@@ -908,6 +908,76 @@ export type Database = {
           },
         ]
       }
+      match_video_events: {
+        Row: {
+          clip_url: string | null
+          created_at: string
+          created_by: string | null
+          event_type: string
+          generate_highlight: boolean | null
+          id: string
+          jersey_number: number | null
+          match_id: string
+          notes: string | null
+          player_id: string | null
+          player_name: string | null
+          timestamp_seconds: number
+          updated_at: string
+        }
+        Insert: {
+          clip_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_type: string
+          generate_highlight?: boolean | null
+          id?: string
+          jersey_number?: number | null
+          match_id: string
+          notes?: string | null
+          player_id?: string | null
+          player_name?: string | null
+          timestamp_seconds: number
+          updated_at?: string
+        }
+        Update: {
+          clip_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          event_type?: string
+          generate_highlight?: boolean | null
+          id?: string
+          jersey_number?: number | null
+          match_id?: string
+          notes?: string | null
+          player_id?: string | null
+          player_name?: string | null
+          timestamp_seconds?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_video_events_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_video_events_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_video_events_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           analytics_status:
