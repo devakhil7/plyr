@@ -82,6 +82,7 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
   const [playingClipId, setPlayingClipId] = useState<string | null>(null);
   const [mutedClips, setMutedClips] = useState<Set<string>>(new Set());
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
+  const clipBoundsRef = useRef<Map<string, { start: number; end: number }>>(new Map());
 
   if (events.length === 0) {
     return null;
@@ -121,7 +122,13 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
     toast.success("Highlight link copied!");
   };
 
-  const togglePlayClip = (eventId: string) => {
+  const getClipBounds = (event: VideoEvent) => {
+    const start = Math.max(0, event.timestamp_seconds - 10);
+    const end = event.timestamp_seconds + 5;
+    return { start, end };
+  };
+
+  const togglePlayClip = (eventId: string, event: VideoEvent) => {
     const video = videoRefs.current.get(eventId);
     if (!video) return;
 
@@ -133,8 +140,22 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
       videoRefs.current.forEach((v, id) => {
         if (id !== eventId) v.pause();
       });
+      
+      // Set clip bounds and start from the correct position
+      const bounds = getClipBounds(event);
+      clipBoundsRef.current.set(eventId, bounds);
+      video.currentTime = bounds.start;
       video.play();
       setPlayingClipId(eventId);
+    }
+  };
+
+  const handleTimeUpdate = (eventId: string, video: HTMLVideoElement) => {
+    const bounds = clipBoundsRef.current.get(eventId);
+    if (bounds && video.currentTime >= bounds.end) {
+      video.pause();
+      video.currentTime = bounds.start; // Reset to start for replay
+      setPlayingClipId(null);
     }
   };
 
@@ -318,6 +339,7 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
                           muted={isMuted}
                           playsInline
                           onEnded={() => setPlayingClipId(null)}
+                          onTimeUpdate={(e) => handleTimeUpdate(event.id, e.currentTarget)}
                         />
                         {/* Play/Pause Overlay */}
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -325,7 +347,7 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
                             variant="secondary"
                             size="icon"
                             className="h-12 w-12 rounded-full bg-black/50 hover:bg-black/70"
-                            onClick={() => togglePlayClip(event.id)}
+                            onClick={() => togglePlayClip(event.id, event)}
                           >
                             {isPlaying ? (
                               <Pause className="h-6 w-6 text-white" />
