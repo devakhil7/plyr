@@ -46,8 +46,8 @@ export function TournamentShareDialog({
   };
 
   const handleWhatsAppShare = () => {
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-    window.open(whatsappUrl, '_blank');
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+    window.location.href = whatsappUrl;
   };
 
   const handleTwitterShare = () => {

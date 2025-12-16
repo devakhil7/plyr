@@ -23,10 +23,10 @@ export function ShareDialog({ open, onOpenChange, postId, caption, onShare }: Sh
   };
 
   const handleWhatsAppShare = () => {
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n\n${postUrl}`)}`;
-    window.open(whatsappUrl, "_blank");
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n\n${postUrl}`)}`;
     onShare();
     onOpenChange(false);
+    window.location.href = whatsappUrl;
   };
 
   const handleInstagramShare = async () => {
