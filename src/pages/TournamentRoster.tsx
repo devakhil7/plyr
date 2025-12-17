@@ -264,11 +264,12 @@ export default function TournamentRoster() {
     },
   });
 
-  // Submit roster for verification
+  // Submit roster for verification and sync to match_players
   const submitRoster = useMutation({
     mutationFn: async () => {
       if (!teamId) throw new Error("Invalid state");
 
+      // Update team status
       await supabase
         .from("tournament_teams")
         .update({ 
@@ -276,6 +277,48 @@ export default function TournamentRoster() {
           registration_status: "submitted"
         })
         .eq("id", teamId);
+
+      // Sync players to match_players for any tournament matches this team is assigned to
+      const { data: tournamentMatches } = await supabase
+        .from("tournament_matches")
+        .select("match_id, team_a_id, team_b_id")
+        .or(`team_a_id.eq.${teamId},team_b_id.eq.${teamId}`);
+
+      if (tournamentMatches && tournamentMatches.length > 0) {
+        // Get current team players
+        const { data: teamPlayers } = await supabase
+          .from("tournament_team_players")
+          .select("*")
+          .eq("tournament_team_id", teamId);
+
+        if (teamPlayers && teamPlayers.length > 0) {
+          for (const tm of tournamentMatches) {
+            // Determine which team (A or B) this is for the match
+            const teamSide: "A" | "B" = tm.team_a_id === teamId ? "A" : "B";
+
+            for (const player of teamPlayers) {
+              // Check if player already exists in match_players
+              const existingQuery = player.user_id 
+                ? supabase.from("match_players").select("id").eq("match_id", tm.match_id).eq("user_id", player.user_id).maybeSingle()
+                : supabase.from("match_players").select("id").eq("match_id", tm.match_id).eq("offline_player_name", player.player_name).maybeSingle();
+              
+              const { data: existing } = await existingQuery;
+
+              if (!existing) {
+                // Insert new match player
+                await supabase.from("match_players").insert({
+                  match_id: tm.match_id,
+                  user_id: player.user_id || null,
+                  offline_player_name: player.user_id ? null : player.player_name,
+                  team: teamSide,
+                  role: "player",
+                  join_status: "confirmed",
+                });
+              }
+            }
+          }
+        }
+      }
 
       return true;
     },
