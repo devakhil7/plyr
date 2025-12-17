@@ -23,6 +23,7 @@ interface HighlightShareDialogProps {
     player_name: string | null;
     clip_url: string | null;
     team: string | null;
+    generate_highlight?: boolean;
   } | null;
   matchId?: string;
   matchName?: string;
@@ -69,21 +70,22 @@ export function HighlightShareDialog({
     enabled: searchQuery.length >= 2,
   });
 
-  // Check if clip is available
-  const hasClip = !!highlight?.clip_url;
+  // Check if clip is available - allow if clip_url exists OR if it's a generated highlight
+  const hasClip = !!highlight?.clip_url || (highlight?.generate_highlight !== false);
+  const mediaUrlToUse = highlight?.clip_url || videoUrl;
 
   // Create post mutation
   const createPostMutation = useMutation({
     mutationFn: async () => {
       if (!user || !highlight) throw new Error("Missing data");
-      if (!highlight.clip_url) throw new Error("Clip not generated");
+      if (!mediaUrlToUse) throw new Error("No video available");
 
       const finalCaption = caption || defaultCaption;
 
       const { error } = await supabase.from("feed_posts").insert({
         user_id: user.id,
         caption: `${finalCaption}\n\n🔗 ${highlightUrl}`,
-        media_url: highlight.clip_url,
+        media_url: mediaUrlToUse,
         highlight_type: highlight.event_type,
         match_id: matchId || null,
         post_type: "highlight",
