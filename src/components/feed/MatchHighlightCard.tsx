@@ -7,6 +7,7 @@ import { PostCommentsPreview } from "./PostCommentsPreview";
 import { PostOptionsMenu } from "./PostOptionsMenu";
 import { format } from "date-fns";
 import { formatDistanceToNow } from "date-fns";
+import { SegmentVideo } from "@/components/media/SegmentVideo";
 
 interface Comment {
   id: string;
@@ -127,8 +128,8 @@ export function MatchHighlightCard({
       {/* Video/Score Section */}
       <div className="aspect-video bg-gradient-to-br from-primary/10 to-amber-500/10 relative group cursor-pointer">
         {post.media_url ? (
-          <video 
-            src={post.media_url} 
+          <SegmentVideo
+            src={post.media_url}
             className="w-full h-full object-cover"
             controls
             muted

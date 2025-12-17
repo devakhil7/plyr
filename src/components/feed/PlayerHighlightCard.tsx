@@ -6,6 +6,7 @@ import { FeedPostActions } from "./FeedPostActions";
 import { PostCommentsPreview } from "./PostCommentsPreview";
 import { PostOptionsMenu } from "./PostOptionsMenu";
 import { formatDistanceToNow } from "date-fns";
+import { SegmentVideo } from "@/components/media/SegmentVideo";
 
 interface Comment {
   id: string;
@@ -131,8 +132,8 @@ export function PlayerHighlightCard({
       {/* Video/Media */}
       <div className="aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 relative group cursor-pointer">
         {post.media_url ? (
-          <video 
-            src={post.media_url} 
+          <SegmentVideo
+            src={post.media_url}
             className="w-full h-full object-cover"
             controls
             muted
