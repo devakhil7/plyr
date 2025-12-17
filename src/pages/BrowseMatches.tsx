@@ -20,6 +20,13 @@ export default function BrowseMatches() {
   const { data: matches, isLoading } = useQuery({
     queryKey: ["all-matches", cityFilter, statusFilter],
     queryFn: async () => {
+      // First get all tournament match IDs to exclude
+      const { data: tournamentMatches } = await supabase
+        .from("tournament_matches")
+        .select("match_id");
+      
+      const tournamentMatchIds = tournamentMatches?.map(tm => tm.match_id) || [];
+
       let query = supabase
         .from("matches")
         .select(`
@@ -31,6 +38,11 @@ export default function BrowseMatches() {
         .eq("visibility", "public" as const)
         .gte("match_date", new Date().toISOString().split("T")[0])
         .order("match_date", { ascending: true });
+
+      // Exclude tournament matches
+      if (tournamentMatchIds.length > 0) {
+        query = query.not("id", "in", `(${tournamentMatchIds.join(",")})`);
+      }
 
       if (statusFilter !== "all") {
         query = query.eq("status", statusFilter as "open" | "full" | "in_progress" | "completed" | "cancelled");

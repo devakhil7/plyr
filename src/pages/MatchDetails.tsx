@@ -56,6 +56,22 @@ export default function MatchDetails() {
     enabled: !!id,
   });
 
+  // Check if this match is part of a tournament
+  const { data: tournamentMatch } = useQuery({
+    queryKey: ["tournament-match", id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tournament_matches")
+        .select("id, tournament_id, tournaments(name)")
+        .eq("match_id", id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!id,
+  });
+
+  const isTournamentMatch = !!tournamentMatch;
+
   // Check if user owns the turf for this match
   const { data: ownedTurfs = [] } = useOwnedTurfs();
   const { isAdmin } = useUserRoles();
@@ -533,6 +549,21 @@ export default function MatchDetails() {
                       {leaveMutation.isPending ? "Leaving..." : "Leave Match"}
                     </Button>
                     <p className="text-xs text-center text-muted-foreground">You're in this match!</p>
+                  </div>
+                ) : isTournamentMatch ? (
+                  <div className="space-y-2">
+                    <div className="p-3 bg-muted/50 border border-border rounded-lg text-center">
+                      <Trophy className="h-5 w-5 mx-auto mb-2 text-primary" />
+                      <p className="text-sm font-medium">Tournament Match</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Players join via team roster submission
+                      </p>
+                    </div>
+                    <Link to={`/tournaments/${tournamentMatch?.tournament_id}`}>
+                      <Button variant="outline" className="w-full">
+                        View Tournament
+                      </Button>
+                    </Link>
                   </div>
                 ) : (
                   <Button
