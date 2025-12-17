@@ -69,18 +69,21 @@ export function HighlightShareDialog({
     enabled: searchQuery.length >= 2,
   });
 
+  // Check if clip is available
+  const hasClip = !!highlight?.clip_url;
+
   // Create post mutation
   const createPostMutation = useMutation({
     mutationFn: async () => {
       if (!user || !highlight) throw new Error("Missing data");
+      if (!highlight.clip_url) throw new Error("Clip not generated");
 
-      const mediaUrl = highlight.clip_url || videoUrl;
       const finalCaption = caption || defaultCaption;
 
       const { error } = await supabase.from("feed_posts").insert({
         user_id: user.id,
         caption: `${finalCaption}\n\n🔗 ${highlightUrl}`,
-        media_url: mediaUrl || null,
+        media_url: highlight.clip_url,
         highlight_type: highlight.event_type,
         match_id: matchId || null,
         post_type: "highlight",
@@ -94,8 +97,8 @@ export function HighlightShareDialog({
       onOpenChange(false);
       resetForm();
     },
-    onError: () => {
-      toast.error("Failed to create post");
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to create post");
     },
   });
 
@@ -221,32 +224,42 @@ export function HighlightShareDialog({
 
           {/* Share to Feed */}
           <TabsContent value="feed" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Caption</Label>
-              <Textarea
-                placeholder={defaultCaption}
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                rows={3}
-              />
-            </div>
-            <Button
-              className="w-full"
-              onClick={() => createPostMutation.mutate()}
-              disabled={createPostMutation.isPending}
-            >
-              {createPostMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Posting...
-                </>
-              ) : (
-                <>
-                  <Rss className="h-4 w-4 mr-2" />
-                  Post to Feed
-                </>
-              )}
-            </Button>
+            {hasClip ? (
+              <>
+                <div className="space-y-2">
+                  <Label>Caption</Label>
+                  <Textarea
+                    placeholder={defaultCaption}
+                    value={caption}
+                    onChange={(e) => setCaption(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <Button
+                  className="w-full"
+                  onClick={() => createPostMutation.mutate()}
+                  disabled={createPostMutation.isPending}
+                >
+                  {createPostMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Posting...
+                    </>
+                  ) : (
+                    <>
+                      <Rss className="h-4 w-4 mr-2" />
+                      Post to Feed
+                    </>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-muted-foreground text-sm">
+                  Clip not generated yet. Please generate the highlight clip first before sharing to feed.
+                </p>
+              </div>
+            )}
           </TabsContent>
 
           {/* Send as DM */}
