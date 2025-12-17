@@ -15,7 +15,8 @@ import {
   Copy,
   Pause,
   Volume2,
-  VolumeX
+  VolumeX,
+  Maximize
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { HighlightShareDialog } from "./HighlightShareDialog";
@@ -356,19 +357,38 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
                             )}
                           </Button>
                         </div>
-                        {/* Mute Button */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute bottom-2 right-2 h-8 w-8 bg-black/50 hover:bg-black/70"
-                          onClick={() => toggleMuteClip(event.id)}
-                        >
-                          {isMuted ? (
-                            <VolumeX className="h-4 w-4 text-white" />
-                          ) : (
-                            <Volume2 className="h-4 w-4 text-white" />
-                          )}
-                        </Button>
+                        {/* Video Controls */}
+                        <div className="absolute bottom-2 right-2 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 bg-black/50 hover:bg-black/70"
+                            onClick={() => toggleMuteClip(event.id)}
+                          >
+                            {isMuted ? (
+                              <VolumeX className="h-4 w-4 text-white" />
+                            ) : (
+                              <Volume2 className="h-4 w-4 text-white" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 bg-black/50 hover:bg-black/70"
+                            onClick={() => {
+                              const video = videoRefs.current.get(event.id);
+                              if (video) {
+                                if (video.requestFullscreen) {
+                                  video.requestFullscreen();
+                                } else if ((video as any).webkitRequestFullscreen) {
+                                  (video as any).webkitRequestFullscreen();
+                                }
+                              }
+                            }}
+                          >
+                            <Maximize className="h-4 w-4 text-white" />
+                          </Button>
+                        </div>
                       </div>
                     )}
                     
