@@ -70,9 +70,17 @@ export function HighlightShareDialog({
     enabled: searchQuery.length >= 2,
   });
 
-  // Check if clip is available - allow if clip_url exists OR if it's a generated highlight
-  const hasClip = !!highlight?.clip_url || (highlight?.generate_highlight !== false);
-  const mediaUrlToUse = highlight?.clip_url || videoUrl;
+  const clipStart = highlight ? Math.max(0, highlight.timestamp_seconds - 10) : 0;
+  const clipEnd = highlight ? highlight.timestamp_seconds + 5 : 0;
+
+  const baseVideoUrl = highlight?.clip_url || videoUrl || null;
+  const mediaUrlToUse = baseVideoUrl
+    ? baseVideoUrl.includes("#t=")
+      ? baseVideoUrl
+      : `${baseVideoUrl}#t=${clipStart},${clipEnd}`
+    : null;
+
+  const hasClip = !!mediaUrlToUse;
 
   // Create post mutation
   const createPostMutation = useMutation({
