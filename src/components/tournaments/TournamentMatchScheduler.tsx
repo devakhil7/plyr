@@ -197,6 +197,38 @@ export function TournamentMatchScheduler({
     },
   });
 
+  // Helper function to sync team players to match_players
+  const syncTeamPlayersToMatch = async (matchId: string, teamId: string, teamSide: "A" | "B") => {
+    // Get team players from roster
+    const { data: teamPlayers } = await supabase
+      .from("tournament_team_players")
+      .select("*")
+      .eq("tournament_team_id", teamId);
+
+    if (teamPlayers && teamPlayers.length > 0) {
+      for (const player of teamPlayers) {
+        // Check if player already exists in match_players
+        const existingQuery = player.user_id 
+          ? supabase.from("match_players").select("id").eq("match_id", matchId).eq("user_id", player.user_id).maybeSingle()
+          : supabase.from("match_players").select("id").eq("match_id", matchId).eq("offline_player_name", player.player_name).maybeSingle();
+        
+        const { data: existing } = await existingQuery;
+
+        if (!existing) {
+          // Insert new match player
+          await supabase.from("match_players").insert({
+            match_id: matchId,
+            user_id: player.user_id || null,
+            offline_player_name: player.user_id ? null : player.player_name,
+            team: teamSide,
+            role: "player",
+            join_status: "confirmed",
+          });
+        }
+      }
+    }
+  };
+
   // Randomize team assignments mutation
   const randomizeTeams = useMutation({
     mutationFn: async () => {
@@ -238,6 +270,14 @@ export function TournamentMatchScheduler({
               match_name: `${teamAName} vs ${teamBName} - ${roundLabel}`,
             })
             .eq("id", match.match_id);
+
+          // Sync players from tournament rosters to match_players
+          if (teamA) {
+            await syncTeamPlayersToMatch(match.match_id, teamA.id, "A");
+          }
+          if (teamB) {
+            await syncTeamPlayersToMatch(match.match_id, teamB.id, "B");
+          }
         }
       }
     },

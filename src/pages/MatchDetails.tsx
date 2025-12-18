@@ -62,7 +62,7 @@ export default function MatchDetails() {
     queryFn: async () => {
       const { data } = await supabase
         .from("tournament_matches")
-        .select("id, tournament_id, tournaments(name)")
+        .select("id, tournament_id, team_a_id, team_b_id, tournaments(name)")
         .eq("match_id", id)
         .maybeSingle();
       return data;
@@ -71,6 +71,54 @@ export default function MatchDetails() {
   });
 
   const isTournamentMatch = !!tournamentMatch;
+
+  // Auto-sync tournament roster players to match_players if missing
+  useEffect(() => {
+    const syncTournamentPlayersToMatch = async () => {
+      if (!tournamentMatch || !match || !id) return;
+      
+      // Only sync if match has no players and tournament has assigned teams
+      const hasPlayers = match.match_players && match.match_players.length > 0;
+      const hasTeams = tournamentMatch.team_a_id || tournamentMatch.team_b_id;
+      
+      if (hasPlayers || !hasTeams) return;
+
+      const syncTeamPlayers = async (teamId: string, teamSide: "A" | "B") => {
+        const { data: teamPlayers } = await supabase
+          .from("tournament_team_players")
+          .select("*")
+          .eq("tournament_team_id", teamId);
+
+        if (teamPlayers && teamPlayers.length > 0) {
+          for (const player of teamPlayers) {
+            await supabase.from("match_players").insert({
+              match_id: id,
+              user_id: player.user_id || null,
+              offline_player_name: player.user_id ? null : player.player_name,
+              team: teamSide,
+              role: "player",
+              join_status: "confirmed",
+            });
+          }
+        }
+      };
+
+      try {
+        if (tournamentMatch.team_a_id) {
+          await syncTeamPlayers(tournamentMatch.team_a_id, "A");
+        }
+        if (tournamentMatch.team_b_id) {
+          await syncTeamPlayers(tournamentMatch.team_b_id, "B");
+        }
+        // Refetch match data to show synced players
+        refetch();
+      } catch (error) {
+        console.error("Error syncing tournament players:", error);
+      }
+    };
+
+    syncTournamentPlayersToMatch();
+  }, [tournamentMatch, match?.match_players?.length, id]);
 
   // Check if user owns the turf for this match
   const { data: ownedTurfs = [] } = useOwnedTurfs();
