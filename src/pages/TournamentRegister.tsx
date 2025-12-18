@@ -134,6 +134,17 @@ export default function TournamentRegister() {
     mutationFn: async () => {
       if (!user || !tournament) throw new Error("Invalid state");
 
+      // Final server-side check for duplicate team name before insert
+      const { data: existingTeams } = await supabase
+        .from("tournament_teams")
+        .select("id")
+        .eq("tournament_id", tournament.id)
+        .ilike("team_name", teamName.trim());
+
+      if (existingTeams && existingTeams.length > 0) {
+        throw new Error("A team with this name already exists in this tournament");
+      }
+
       // Upload logo if provided
       let logoUrl: string | null = null;
       if (teamLogoFile) {
