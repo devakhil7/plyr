@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+import { useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,11 +7,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
-import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowLeft, FileText, Plus, Shuffle } from "lucide-react";
+import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowLeft, FileText, Plus, Shuffle, UserPlus } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   generateGroupKnockoutSchedule,
   generateKnockoutSchedule,
@@ -25,6 +33,8 @@ import { TournamentStatsSection } from "@/components/tournaments/TournamentStats
 export default function TournamentDetails() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
   const { isAdmin } = useUserRoles();
@@ -296,14 +306,20 @@ export default function TournamentDetails() {
               </Link>
             ) : (
               tournament.registration_open &&
-              (!tournament.registration_deadline || !isPast(new Date(tournament.registration_deadline))) &&
-              user && (
-                <Link to={`/tournaments/${id}/register`}>
-                  <Button>
-                    <Users className="h-4 w-4 mr-2" />
+              (!tournament.registration_deadline || !isPast(new Date(tournament.registration_deadline))) && (
+                user ? (
+                  <Link to={`/tournaments/${id}/register`}>
+                    <Button>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Register Your Team
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button onClick={() => setLoginDialogOpen(true)}>
+                    <UserPlus className="h-4 w-4 mr-2" />
                     Register Your Team
                   </Button>
-                </Link>
+                )
               )
             )}
             
@@ -503,6 +519,32 @@ export default function TournamentDetails() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Login Dialog */}
+      <Dialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary" />
+              Login Required
+            </DialogTitle>
+            <DialogDescription>
+              You need to be logged in to register your team for this tournament.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-4">
+            <Button onClick={() => {
+              sessionStorage.setItem("redirectAfterAuth", `/tournaments/${id}/register`);
+              navigate("/auth");
+            }}>
+              Login / Sign Up
+            </Button>
+            <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

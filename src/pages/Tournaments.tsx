@@ -35,7 +35,7 @@ export default function Tournaments() {
         .select(`
           *,
           turfs (name, city, location),
-          tournament_teams (id)
+          tournament_teams (id, captain_user_id)
         `)
         .order("start_datetime", { ascending: true });
 
@@ -47,6 +47,12 @@ export default function Tournaments() {
       return data || [];
     },
   });
+
+  // Helper to find user's team in a tournament
+  const getUserTeam = (tournament: any) => {
+    if (!user) return null;
+    return tournament.tournament_teams?.find((t: any) => t.captain_user_id === user.id);
+  };
 
   const statusColors: Record<string, string> = {
     upcoming: "bg-blue-500/10 text-blue-600 border-blue-500/20",
@@ -198,15 +204,28 @@ export default function Tournaments() {
                   )}
 
                   <div className="flex gap-2 mt-2">
-                    {tournament.status === "upcoming" && tournament.registration_open && (
-                      <Button 
-                        className="flex-1" 
-                        onClick={() => handleRegisterClick(tournament.id)}
-                      >
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        Register Team
-                      </Button>
-                    )}
+                    {tournament.status === "upcoming" && tournament.registration_open && (() => {
+                      const userTeam = getUserTeam(tournament);
+                      if (userTeam) {
+                        return (
+                          <Link to={`/tournaments/${tournament.id}/register/roster?team=${userTeam.id}`} className="flex-1">
+                            <Button className="w-full">
+                              <Users className="h-4 w-4 mr-2" />
+                              Manage Roster
+                            </Button>
+                          </Link>
+                        );
+                      }
+                      return (
+                        <Button 
+                          className="flex-1" 
+                          onClick={() => handleRegisterClick(tournament.id)}
+                        >
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Register Team
+                        </Button>
+                      );
+                    })()}
                     <Link to={`/tournaments/${tournament.id}`} className={tournament.status === "upcoming" && tournament.registration_open ? "" : "flex-1"}>
                       <Button variant="outline" className="w-full">
                         View Details
