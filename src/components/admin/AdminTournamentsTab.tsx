@@ -21,7 +21,7 @@ import { toast } from "sonner";
 
 export function AdminTournamentsTab() {
   const [activeSubTab, setActiveSubTab] = useState("registrations");
-  const [statusFilter, setStatusFilter] = useState<string>("pending_verification");
+  const [statusFilter, setStatusFilter] = useState<string>("pending_payment");
   const [searchTeam, setSearchTeam] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const [verificationNotes, setVerificationNotes] = useState("");
@@ -179,7 +179,7 @@ export function AdminTournamentsTab() {
     totalTournaments: tournaments?.length || 0,
     activeTournaments: tournaments?.filter(t => t.status === "upcoming" || t.status === "live").length || 0,
     totalTeams: allTeams?.length || 0,
-    pendingVerification: allTeams?.filter(t => t.team_status === "pending_verification").length || 0,
+    pendingVerification: allTeams?.filter(t => t.team_status === "pending_payment" || t.team_status === "pending_verification").length || 0,
     totalRevenue: tournamentPayments?.filter(p => p.status === "paid").reduce((acc, p) => acc + Number(p.amount_total), 0) || 0,
     platformFees: tournamentPayments?.filter(p => p.status === "paid").reduce((acc, p) => acc + Number(p.platform_fee), 0) || 0,
   };
@@ -350,10 +350,9 @@ export function AdminTournamentsTab() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Teams</SelectItem>
-                    <SelectItem value="pending_verification">Pending Review</SelectItem>
+                    <SelectItem value="pending_payment">Pending Review</SelectItem>
                     <SelectItem value="approved">Approved</SelectItem>
                     <SelectItem value="rejected">Rejected</SelectItem>
-                    <SelectItem value="pending_payment">Awaiting Payment</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

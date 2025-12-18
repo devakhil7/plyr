@@ -82,15 +82,15 @@ export function TournamentMatchScheduler({
     team_b_id: "",
   });
 
-  // Fetch tournament teams (paid/partial only)
+  // Fetch tournament teams (approved teams only - including pay at ground)
   const { data: teams = [] } = useQuery({
     queryKey: ["tournament-teams", tournamentId],
     queryFn: async () => {
       const { data } = await supabase
         .from("tournament_teams")
-        .select("id, team_name, payment_status")
+        .select("id, team_name, payment_status, team_status")
         .eq("tournament_id", tournamentId)
-        .in("payment_status", ["paid", "partial"])
+        .eq("team_status", "approved")
         .order("team_name");
       return data || [];
     },
