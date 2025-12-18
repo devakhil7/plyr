@@ -595,121 +595,119 @@ export default function TournamentRoster() {
                                   </Button>
                                 </div>
                               ) : (
-                                // Manual input with search option
-                                <Popover 
-                                  open={searchPopoverOpen && searchingPlayerIndex === index} 
-                                  onOpenChange={(open) => {
-                                    setSearchPopoverOpen(open);
-                                    if (open) setSearchingPlayerIndex(index);
-                                    else setSearchingPlayerIndex(null);
-                                  }}
-                                >
-                                  <PopoverTrigger asChild>
-                                    <div className="relative flex-1">
-                                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                      <Input
-                                        value={searchingPlayerIndex === index ? playerSearchQuery : player.player_name}
-                                        onChange={(e) => {
-                                          if (searchingPlayerIndex === index) {
-                                            setPlayerSearchQuery(e.target.value);
-                                          } else {
-                                            updatePlayer(index, "player_name", e.target.value);
-                                          }
-                                        }}
-                                        onFocus={() => {
-                                          setSearchingPlayerIndex(index);
-                                          setPlayerSearchQuery(player.player_name);
-                                          setSearchPopoverOpen(true);
-                                        }}
-                                        placeholder="Search existing players or enter name..."
-                                        className="pl-10"
-                                      />
-                                    </div>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-80 p-0" align="start">
-                                    <div className="p-2 border-b">
-                                      <p className="text-xs text-muted-foreground">
-                                        Search for existing SPORTIQ players to invite
-                                      </p>
-                                    </div>
-                                    {isSearchingUsers ? (
-                                      <div className="p-4 text-center">
-                                        <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                                // Manual input + optional search button
+                                <>
+                                  <Input
+                                    value={player.player_name}
+                                    onChange={(e) => updatePlayer(index, "player_name", e.target.value)}
+                                    placeholder="Enter player name"
+                                    className="flex-1"
+                                  />
+                                  <Popover 
+                                    open={searchPopoverOpen && searchingPlayerIndex === index} 
+                                    onOpenChange={(open) => {
+                                      setSearchPopoverOpen(open);
+                                      if (open) {
+                                        setSearchingPlayerIndex(index);
+                                        setPlayerSearchQuery("");
+                                      } else {
+                                        setSearchingPlayerIndex(null);
+                                      }
+                                    }}
+                                  >
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        type="button"
+                                        title="Search & link existing player"
+                                      >
+                                        <Search className="h-4 w-4" />
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80 p-0" align="end">
+                                      <div className="p-3 border-b">
+                                        <p className="text-xs text-muted-foreground mb-2">
+                                          Search for existing SPORTIQ players to invite
+                                        </p>
+                                        <Input
+                                          value={playerSearchQuery}
+                                          onChange={(e) => setPlayerSearchQuery(e.target.value)}
+                                          placeholder="Search by name..."
+                                          autoFocus
+                                        />
                                       </div>
-                                    ) : filteredSearchedUsers.length > 0 ? (
-                                      <div className="max-h-48 overflow-y-auto">
-                                        {filteredSearchedUsers.map((searchedUser) => (
-                                          <button
-                                            key={searchedUser.id}
-                                            className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left"
-                                            onClick={() => selectSearchedUser(searchedUser, index)}
-                                          >
-                                            <Avatar className="h-8 w-8">
-                                              <AvatarImage src={searchedUser.profile_photo_url || undefined} />
-                                              <AvatarFallback>{searchedUser.name?.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 min-w-0">
-                                              <p className="font-medium text-sm truncate">{searchedUser.name}</p>
-                                              <p className="text-xs text-muted-foreground truncate">
-                                                {searchedUser.city || searchedUser.email || "SPORTIQ Player"}
-                                              </p>
-                                            </div>
-                                            <UserPlus className="h-4 w-4 text-primary shrink-0" />
-                                          </button>
-                                        ))}
-                                      </div>
-                                    ) : playerSearchQuery.length >= 2 ? (
-                                      <div className="p-4 text-center text-sm text-muted-foreground">
-                                        <p>No players found</p>
-                                        <Button
-                                          variant="link"
-                                          size="sm"
-                                          onClick={() => {
-                                            updatePlayer(index, "player_name", playerSearchQuery);
-                                            setSearchPopoverOpen(false);
-                                            setSearchingPlayerIndex(null);
-                                            setPlayerSearchQuery("");
-                                          }}
-                                        >
-                                          Add "{playerSearchQuery}" manually
-                                        </Button>
-                                      </div>
-                                    ) : (
-                                      <div className="p-4 text-center text-xs text-muted-foreground">
-                                        Type at least 2 characters to search
-                                      </div>
-                                    )}
-                                  </PopoverContent>
-                                </Popover>
+                                      {isSearchingUsers ? (
+                                        <div className="p-4 text-center">
+                                          <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                                        </div>
+                                      ) : filteredSearchedUsers.length > 0 ? (
+                                        <div className="max-h-48 overflow-y-auto">
+                                          {filteredSearchedUsers.map((searchedUser) => (
+                                            <button
+                                              key={searchedUser.id}
+                                              className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left"
+                                              onClick={() => selectSearchedUser(searchedUser, index)}
+                                            >
+                                              <Avatar className="h-8 w-8">
+                                                <AvatarImage src={searchedUser.profile_photo_url || undefined} />
+                                                <AvatarFallback>{searchedUser.name?.charAt(0)}</AvatarFallback>
+                                              </Avatar>
+                                              <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-sm truncate">{searchedUser.name}</p>
+                                                <p className="text-xs text-muted-foreground truncate">
+                                                  {searchedUser.city || searchedUser.email || "SPORTIQ Player"}
+                                                </p>
+                                              </div>
+                                              <UserPlus className="h-4 w-4 text-primary shrink-0" />
+                                            </button>
+                                          ))}
+                                        </div>
+                                      ) : playerSearchQuery.length >= 2 ? (
+                                        <div className="p-4 text-center text-sm text-muted-foreground">
+                                          No players found matching "{playerSearchQuery}"
+                                        </div>
+                                      ) : (
+                                        <div className="p-4 text-center text-xs text-muted-foreground">
+                                          Type at least 2 characters to search
+                                        </div>
+                                      )}
+                                    </PopoverContent>
+                                  </Popover>
+                                </>
                               )}
                             </div>
-                            {player.user_id && (
+                            {player.user_id ? (
                               <p className="text-xs text-muted-foreground mt-1">
                                 {player.invite_status === "joined" 
                                   ? "This player has confirmed their participation" 
                                   : "Invite sent - waiting for player to accept"}
                               </p>
+                            ) : (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Enter name manually, or click <Search className="h-3 w-3 inline" /> to link an existing player
+                              </p>
                             )}
                           </div>
                           
                           <div>
-                            <Label>Phone</Label>
+                            <Label>Phone {!player.user_id && <span className="text-xs text-muted-foreground">(for SMS invite)</span>}</Label>
                             <Input
                               type="tel"
                               value={player.phone}
                               onChange={(e) => updatePlayer(index, "phone", e.target.value)}
-                              placeholder="Phone number"
+                              placeholder="+91 9876543210"
                               disabled={!!player.user_id}
                             />
                           </div>
                           
                           <div>
-                            <Label>Email</Label>
+                            <Label>Email {!player.user_id && <span className="text-xs text-muted-foreground">(for email invite)</span>}</Label>
                             <Input
                               type="email"
                               value={player.email}
                               onChange={(e) => updatePlayer(index, "email", e.target.value)}
-                              placeholder="Email address"
+                              placeholder="player@email.com"
                               disabled={!!player.user_id}
                             />
                           </div>
