@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { 
   ArrowLeft, 
@@ -22,7 +24,9 @@ import {
   Send,
   Clock,
   UserCheck,
-  Save
+  Save,
+  Search,
+  X
 } from "lucide-react";
 
 interface Player {
@@ -34,6 +38,15 @@ interface Player {
   position: string;
   invite_status: string;
   user_id?: string | null;
+  profile_photo_url?: string | null;
+}
+
+interface SearchedUser {
+  id: string;
+  name: string;
+  email: string | null;
+  profile_photo_url: string | null;
+  city: string | null;
 }
 
 const POSITIONS = [
@@ -59,6 +72,9 @@ export default function TournamentRoster() {
   const queryClient = useQueryClient();
 
   const [teamId, setTeamId] = useState<string | null>(teamIdParam);
+  const [playerSearchQuery, setPlayerSearchQuery] = useState("");
+  const [searchingPlayerIndex, setSearchingPlayerIndex] = useState<number | null>(null);
+  const [searchPopoverOpen, setSearchPopoverOpen] = useState(false);
 
   useEffect(() => {
     setTeamId(teamIdParam);
@@ -67,6 +83,59 @@ export default function TournamentRoster() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Search for existing users
+  const { data: searchedUsers = [], isLoading: isSearchingUsers } = useQuery({
+    queryKey: ["player-search", playerSearchQuery],
+    queryFn: async () => {
+      if (!playerSearchQuery || playerSearchQuery.length < 2) return [];
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, name, email, profile_photo_url, city")
+        .ilike("name", `%${playerSearchQuery}%`)
+        .neq("id", user?.id || "")
+        .limit(5);
+      return (data || []) as SearchedUser[];
+    },
+    enabled: playerSearchQuery.length >= 2,
+  });
+
+  // Filter out users already in the roster
+  const filteredSearchedUsers = useMemo(() => {
+    const existingUserIds = players.filter(p => p.user_id).map(p => p.user_id);
+    return searchedUsers.filter(u => !existingUserIds.includes(u.id));
+  }, [searchedUsers, players]);
+
+  // Select a user from search results
+  const selectSearchedUser = (searchedUser: SearchedUser, index: number) => {
+    const updated = [...players];
+    updated[index] = {
+      ...updated[index],
+      player_name: searchedUser.name || "",
+      email: searchedUser.email || "",
+      user_id: searchedUser.id,
+      profile_photo_url: searchedUser.profile_photo_url,
+      invite_status: "pending", // Will be "pending" until user accepts
+    };
+    setPlayers(updated);
+    setHasChanges(true);
+    setPlayerSearchQuery("");
+    setSearchingPlayerIndex(null);
+    setSearchPopoverOpen(false);
+  };
+
+  // Clear linked user
+  const clearLinkedUser = (index: number) => {
+    const updated = [...players];
+    updated[index] = {
+      ...updated[index],
+      user_id: null,
+      profile_photo_url: null,
+      invite_status: "pending",
+    };
+    setPlayers(updated);
+    setHasChanges(true);
+  };
 
   // Fetch tournament and team details
   const { data: tournament, isLoading: tournamentLoading } = useQuery({
@@ -107,7 +176,10 @@ export default function TournamentRoster() {
         .from("tournament_teams")
         .select(`
           *,
-          tournament_team_players (*)
+          tournament_team_players (
+            *,
+            profiles:user_id (profile_photo_url)
+          )
         `)
         .eq("id", teamId)
         .maybeSingle();
@@ -122,6 +194,7 @@ export default function TournamentRoster() {
           position: p.position || "",
           invite_status: p.invite_status || "pending",
           user_id: p.user_id,
+          profile_photo_url: p.profiles?.profile_photo_url || null,
         }));
         setPlayers(existingPlayers);
       }
@@ -195,18 +268,30 @@ export default function TournamentRoster() {
       for (const player of players) {
         if (!player.player_name.trim()) continue;
 
-        // Link to an existing user if email matches
-        let linkedUserId: string | null = null;
-        const email = player.email?.trim();
-        if (email) {
-          const { data: existingUser } = await supabase
-            .from("profiles")
-            .select("id")
-            .eq("email", email)
-            .maybeSingle();
+        // Use the user_id from the player if already linked via search
+        // Otherwise, try to link via email match
+        let linkedUserId: string | null = player.user_id || null;
+        if (!linkedUserId) {
+          const email = player.email?.trim();
+          if (email) {
+            const { data: existingUser } = await supabase
+              .from("profiles")
+              .select("id")
+              .eq("email", email)
+              .maybeSingle();
 
-          if (existingUser?.id) linkedUserId = existingUser.id;
+            if (existingUser?.id) linkedUserId = existingUser.id;
+          }
         }
+
+        // Determine invite_status:
+        // - If user is linked and status is already "joined", keep it
+        // - If user is newly linked (either via search or email), set to "pending"
+        // - If no user linked, set to "pending" (manual entry)
+        const currentStatus = player.invite_status;
+        const inviteStatus = linkedUserId 
+          ? (currentStatus === "joined" ? "joined" : "pending")
+          : "pending";
 
         if (player.id) {
           // Update existing
@@ -219,7 +304,7 @@ export default function TournamentRoster() {
               jersey_number: player.jersey_number,
               position: player.position || null,
               user_id: linkedUserId,
-              invite_status: linkedUserId ? "joined" : "pending",
+              invite_status: inviteStatus,
             })
             .eq("id", player.id);
         } else {
@@ -234,7 +319,7 @@ export default function TournamentRoster() {
               jersey_number: player.jersey_number,
               position: player.position || null,
               user_id: linkedUserId,
-              invite_status: linkedUserId ? "joined" : "pending",
+              invite_status: inviteStatus,
             });
         }
       }
@@ -342,15 +427,17 @@ export default function TournamentRoster() {
     }
   };
 
-  const getInviteStatusBadge = (status: string) => {
-    switch (status) {
-      case "joined":
-        return <Badge variant="default" className="bg-green-600">Joined</Badge>;
-      case "pending":
-        return <Badge variant="secondary">Pending Invite</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
+  const getInviteStatusBadge = (status: string, hasUserId: boolean) => {
+    if (hasUserId && status === "joined") {
+      return <Badge variant="default" className="bg-green-600">Confirmed</Badge>;
     }
+    if (hasUserId && status === "pending") {
+      return <Badge variant="secondary" className="text-orange-600 border-orange-300">Unconfirmed</Badge>;
+    }
+    if (!hasUserId) {
+      return null; // No badge for manually entered players without linked user
+    }
+    return <Badge variant="outline">Unknown</Badge>;
   };
 
   if (!user) {
@@ -481,18 +568,128 @@ export default function TournamentRoster() {
                   <Card key={index} className="border-muted">
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
+                        {/* Player Avatar (if linked user) */}
+                        {player.user_id && player.profile_photo_url && (
+                          <Avatar className="h-10 w-10 shrink-0">
+                            <AvatarImage src={player.profile_photo_url} />
+                            <AvatarFallback>{player.player_name?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                        )}
+                        
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="md:col-span-2">
                             <Label>Player Name *</Label>
                             <div className="flex items-center gap-2">
-                              <Input
-                                value={player.player_name}
-                                onChange={(e) => updatePlayer(index, "player_name", e.target.value)}
-                                placeholder="Enter player name"
-                              />
-                              {player.user_id && getInviteStatusBadge("joined")}
-                              {!player.user_id && player.id && getInviteStatusBadge("pending")}
+                              {player.user_id ? (
+                                // Linked user - show name with status and remove option
+                                <div className="flex items-center gap-2 flex-1 p-2 bg-muted/50 rounded-md">
+                                  <span className="flex-1 font-medium">{player.player_name}</span>
+                                  {getInviteStatusBadge(player.invite_status, true)}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                    onClick={() => clearLinkedUser(index)}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                // Manual input with search option
+                                <Popover 
+                                  open={searchPopoverOpen && searchingPlayerIndex === index} 
+                                  onOpenChange={(open) => {
+                                    setSearchPopoverOpen(open);
+                                    if (open) setSearchingPlayerIndex(index);
+                                    else setSearchingPlayerIndex(null);
+                                  }}
+                                >
+                                  <PopoverTrigger asChild>
+                                    <div className="relative flex-1">
+                                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                      <Input
+                                        value={searchingPlayerIndex === index ? playerSearchQuery : player.player_name}
+                                        onChange={(e) => {
+                                          if (searchingPlayerIndex === index) {
+                                            setPlayerSearchQuery(e.target.value);
+                                          } else {
+                                            updatePlayer(index, "player_name", e.target.value);
+                                          }
+                                        }}
+                                        onFocus={() => {
+                                          setSearchingPlayerIndex(index);
+                                          setPlayerSearchQuery(player.player_name);
+                                          setSearchPopoverOpen(true);
+                                        }}
+                                        placeholder="Search existing players or enter name..."
+                                        className="pl-10"
+                                      />
+                                    </div>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-80 p-0" align="start">
+                                    <div className="p-2 border-b">
+                                      <p className="text-xs text-muted-foreground">
+                                        Search for existing SPORTIQ players to invite
+                                      </p>
+                                    </div>
+                                    {isSearchingUsers ? (
+                                      <div className="p-4 text-center">
+                                        <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                                      </div>
+                                    ) : filteredSearchedUsers.length > 0 ? (
+                                      <div className="max-h-48 overflow-y-auto">
+                                        {filteredSearchedUsers.map((searchedUser) => (
+                                          <button
+                                            key={searchedUser.id}
+                                            className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors text-left"
+                                            onClick={() => selectSearchedUser(searchedUser, index)}
+                                          >
+                                            <Avatar className="h-8 w-8">
+                                              <AvatarImage src={searchedUser.profile_photo_url || undefined} />
+                                              <AvatarFallback>{searchedUser.name?.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 min-w-0">
+                                              <p className="font-medium text-sm truncate">{searchedUser.name}</p>
+                                              <p className="text-xs text-muted-foreground truncate">
+                                                {searchedUser.city || searchedUser.email || "SPORTIQ Player"}
+                                              </p>
+                                            </div>
+                                            <UserPlus className="h-4 w-4 text-primary shrink-0" />
+                                          </button>
+                                        ))}
+                                      </div>
+                                    ) : playerSearchQuery.length >= 2 ? (
+                                      <div className="p-4 text-center text-sm text-muted-foreground">
+                                        <p>No players found</p>
+                                        <Button
+                                          variant="link"
+                                          size="sm"
+                                          onClick={() => {
+                                            updatePlayer(index, "player_name", playerSearchQuery);
+                                            setSearchPopoverOpen(false);
+                                            setSearchingPlayerIndex(null);
+                                            setPlayerSearchQuery("");
+                                          }}
+                                        >
+                                          Add "{playerSearchQuery}" manually
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <div className="p-4 text-center text-xs text-muted-foreground">
+                                        Type at least 2 characters to search
+                                      </div>
+                                    )}
+                                  </PopoverContent>
+                                </Popover>
+                              )}
                             </div>
+                            {player.user_id && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {player.invite_status === "joined" 
+                                  ? "This player has confirmed their participation" 
+                                  : "Invite sent - waiting for player to accept"}
+                              </p>
+                            )}
                           </div>
                           
                           <div>
@@ -502,6 +699,7 @@ export default function TournamentRoster() {
                               value={player.phone}
                               onChange={(e) => updatePlayer(index, "phone", e.target.value)}
                               placeholder="Phone number"
+                              disabled={!!player.user_id}
                             />
                           </div>
                           
@@ -512,6 +710,7 @@ export default function TournamentRoster() {
                               value={player.email}
                               onChange={(e) => updatePlayer(index, "email", e.target.value)}
                               placeholder="Email address"
+                              disabled={!!player.user_id}
                             />
                           </div>
                           

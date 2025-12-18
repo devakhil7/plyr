@@ -5,15 +5,27 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layout } from "@/components/layout/Layout";
-import { Link } from "react-router-dom";
-import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowRight, UserPlus } from "lucide-react";
 import { format } from "date-fns";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { CreateTournamentDialog } from "@/components/tournaments/CreateTournamentDialog";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Tournaments() {
   const [statusFilter, setStatusFilter] = useState<string>("upcoming");
   const { isAdmin } = useUserRoles();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [pendingTournamentId, setPendingTournamentId] = useState<string | null>(null);
 
   const { data: tournaments = [], isLoading } = useQuery({
     queryKey: ["tournaments", statusFilter],
@@ -41,6 +53,23 @@ export default function Tournaments() {
     live: "bg-green-500/10 text-green-600 border-green-500/20",
     completed: "bg-gray-500/10 text-gray-600 border-gray-500/20",
     cancelled: "bg-red-500/10 text-red-600 border-red-500/20",
+  };
+
+  const handleRegisterClick = (tournamentId: string) => {
+    if (!user) {
+      setPendingTournamentId(tournamentId);
+      setLoginDialogOpen(true);
+    } else {
+      navigate(`/tournaments/${tournamentId}/register`);
+    }
+  };
+
+  const handleLoginRedirect = () => {
+    // Store the tournament ID in session storage to redirect after login
+    if (pendingTournamentId) {
+      sessionStorage.setItem("redirectAfterAuth", `/tournaments/${pendingTournamentId}/register`);
+    }
+    navigate("/auth");
   };
 
   return (
@@ -168,18 +197,52 @@ export default function Tournaments() {
                     </p>
                   )}
 
-                  <Link to={`/tournaments/${tournament.id}`}>
-                    <Button className="w-full mt-2" variant="outline">
-                      View Details
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </Link>
+                  <div className="flex gap-2 mt-2">
+                    {tournament.status === "upcoming" && tournament.registration_open && (
+                      <Button 
+                        className="flex-1" 
+                        onClick={() => handleRegisterClick(tournament.id)}
+                      >
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Register Team
+                      </Button>
+                    )}
+                    <Link to={`/tournaments/${tournament.id}`} className={tournament.status === "upcoming" && tournament.registration_open ? "" : "flex-1"}>
+                      <Button variant="outline" className="w-full">
+                        View Details
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </div>
+
+      {/* Login Dialog */}
+      <Dialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary" />
+              Login Required
+            </DialogTitle>
+            <DialogDescription>
+              You need to be logged in to register your team for this tournament.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-4">
+            <Button onClick={handleLoginRedirect}>
+              Login / Sign Up
+            </Button>
+            <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

@@ -23,6 +23,9 @@ export default function AuthPage() {
     e.preventDefault();
     setLoading(true);
 
+    // Check for redirect URL after auth
+    const redirectUrl = sessionStorage.getItem("redirectAfterAuth");
+
     try {
       if (isSignUp) {
         const { error } = await signUp(email, password, name);
@@ -34,7 +37,8 @@ export default function AuthPage() {
           }
         } else {
           toast.success("Account created! Redirecting...");
-          navigate("/complete-profile");
+          sessionStorage.removeItem("redirectAfterAuth");
+          navigate(redirectUrl || "/complete-profile");
         }
       } else {
         const { error } = await signIn(email, password);
@@ -42,7 +46,8 @@ export default function AuthPage() {
           toast.error("Invalid email or password");
         } else {
           toast.success("Welcome back!");
-          navigate("/dashboard");
+          sessionStorage.removeItem("redirectAfterAuth");
+          navigate(redirectUrl || "/dashboard");
         }
       }
     } catch (err) {
