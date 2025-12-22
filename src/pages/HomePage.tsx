@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { 
   Users, Calendar, ArrowRight, Play, Trophy, 
   BarChart3, Zap, Crown, Medal, MapPin, Target,
-  Plus, Heart, Award
+  Plus, Heart, Award, Star, ChevronRight
 } from "lucide-react";
 import { QuickActionsFAB } from "@/components/home/QuickActionsFAB";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -84,9 +84,9 @@ export default function HomePage() {
     },
   });
 
-  // Fetch upcoming matches near user
-  const { data: upcomingMatches } = useQuery({
-    queryKey: ["home-upcoming-matches", profile?.city],
+  // Fetch matches near user (public open matches)
+  const { data: nearbyMatches } = useQuery({
+    queryKey: ["home-nearby-matches", profile?.city],
     queryFn: async () => {
       let query = supabase
         .from("matches")
@@ -95,15 +95,92 @@ export default function HomePage() {
         .eq("status", "open")
         .gte("match_date", new Date().toISOString().split("T")[0])
         .order("match_date", { ascending: true })
-        .limit(5);
-
-      if (profile?.city) {
-        query = query.eq("turfs.city", profile.city);
-      }
+        .limit(3);
 
       const { data } = await query;
       return data || [];
     },
+  });
+
+  // Fetch user's upcoming matches (joined or hosted)
+  const { data: myUpcomingMatches } = useQuery({
+    queryKey: ["home-my-matches", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      // Matches user joined
+      const { data: joinedMatches } = await supabase
+        .from("match_players")
+        .select("match_id, matches(*, turfs(name, city))")
+        .eq("user_id", user.id)
+        .eq("join_status", "confirmed");
+
+      // Matches user hosted
+      const { data: hostedMatches } = await supabase
+        .from("matches")
+        .select("*, turfs(name, city)")
+        .eq("host_id", user.id)
+        .gte("match_date", new Date().toISOString().split("T")[0])
+        .order("match_date", { ascending: true });
+
+      const joinedIds = new Set((hostedMatches || []).map(m => m.id));
+      const joined = (joinedMatches || [])
+        .filter((mp: any) => mp.matches && !joinedIds.has(mp.matches.id))
+        .map((mp: any) => ({ ...mp.matches, isJoined: true }))
+        .filter((m: any) => m.match_date >= new Date().toISOString().split("T")[0]);
+
+      const hosted = (hostedMatches || []).map((m: any) => ({ ...m, isHosted: true }));
+
+      return [...hosted, ...joined]
+        .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+        .slice(0, 3);
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch past matches for rating (matches user participated in that are completed)
+  const { data: matchesToRate } = useQuery({
+    queryKey: ["matches-to-rate", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      // Get matches user played in
+      const { data: myMatches } = await supabase
+        .from("match_players")
+        .select(`
+          match_id,
+          matches(
+            id, 
+            match_name, 
+            match_date,
+            status,
+            turfs(name)
+          )
+        `)
+        .eq("user_id", user.id)
+        .eq("join_status", "confirmed");
+
+      if (!myMatches) return [];
+
+      // Filter completed matches
+      const completedMatches = myMatches
+        .filter((mp: any) => mp.matches?.status === "completed")
+        .map((mp: any) => mp.matches);
+
+      // Get ratings user already gave
+      const { data: existingRatings } = await supabase
+        .from("player_ratings")
+        .select("match_id")
+        .eq("rater_user_id", user.id);
+
+      const ratedMatchIds = new Set((existingRatings || []).map(r => r.match_id));
+
+      // Filter out matches user already rated
+      return completedMatches
+        .filter((m: any) => !ratedMatchIds.has(m.id))
+        .slice(0, 3);
+    },
+    enabled: !!user?.id,
   });
 
   const quickActions = [
@@ -133,38 +210,38 @@ export default function HomePage() {
   return (
     <AppLayout>
       <div className="min-h-screen">
-        {/* Hero Header - Premium dark slate */}
-        <div className="bg-gradient-to-br from-[hsl(200,65%,6%)] via-[hsl(205,48%,12%)] to-[hsl(203,29%,21%)] px-4 pt-6 pb-8 rounded-b-3xl">
+        {/* Hero Header */}
+        <div className="hero-gradient px-4 pt-6 pb-8 rounded-b-3xl">
           <div className="flex items-center gap-4 mb-6">
-            <Avatar className="h-14 w-14 border-2 border-[hsl(195,7%,64%)]/50 ring-2 ring-[hsl(195,7%,64%)]/20">
+            <Avatar className="h-14 w-14 border-2 border-primary-foreground/30 ring-2 ring-primary-foreground/10">
               <AvatarImage src={profile?.profile_photo_url || ""} />
-              <AvatarFallback className="bg-[hsl(203,29%,21%)] text-[hsl(160,3%,81%)] text-lg font-bold">
+              <AvatarFallback className="bg-primary/20 text-primary-foreground text-lg font-bold">
                 {profile?.name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-xl font-bold text-[hsl(160,3%,81%)]">
+              <h1 className="text-xl font-bold text-primary-foreground">
                 Hey, {profile?.name?.split(" ")[0] || "Player"}!
               </h1>
-              <p className="text-[hsl(195,7%,64%)] text-sm">{profile?.city || "Ready to play?"}</p>
+              <p className="text-primary-foreground/70 text-sm">{profile?.city || "Ready to play?"}</p>
             </div>
           </div>
 
           {/* Stats Row */}
           <div className="flex gap-3">
-            <div className="flex-1 bg-[hsl(203,29%,21%)]/40 backdrop-blur-sm rounded-xl px-4 py-3 border border-[hsl(204,18%,35%)]/30">
-              <p className="text-[hsl(195,7%,64%)] text-xs">Level</p>
-              <p className="text-[hsl(160,3%,81%)] font-semibold text-sm">
+            <div className="flex-1 bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary-foreground/20">
+              <p className="text-primary-foreground/70 text-xs">Level</p>
+              <p className="text-primary-foreground font-semibold text-sm">
                 {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
               </p>
             </div>
-            <div className="flex-1 bg-[hsl(203,29%,21%)]/40 backdrop-blur-sm rounded-xl px-4 py-3 border border-[hsl(204,18%,35%)]/30">
-              <p className="text-[hsl(195,7%,64%)] text-xs">Matches</p>
-              <p className="text-[hsl(160,3%,81%)] font-semibold text-sm">{userStats?.matches || 0}</p>
+            <div className="flex-1 bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary-foreground/20">
+              <p className="text-primary-foreground/70 text-xs">Matches</p>
+              <p className="text-primary-foreground font-semibold text-sm">{userStats?.matches || 0}</p>
             </div>
-            <div className="flex-1 bg-[hsl(203,29%,21%)]/40 backdrop-blur-sm rounded-xl px-4 py-3 border border-[hsl(204,18%,35%)]/30">
-              <p className="text-[hsl(195,7%,64%)] text-xs">Rating</p>
-              <p className="text-[hsl(160,3%,81%)] font-semibold text-sm">
+            <div className="flex-1 bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary-foreground/20">
+              <p className="text-primary-foreground/70 text-xs">Rating</p>
+              <p className="text-primary-foreground font-semibold text-sm">
                 {userStats?.rating ? userStats.rating.toFixed(1) : "—"}
               </p>
             </div>
@@ -174,7 +251,7 @@ export default function HomePage() {
         {/* Main Content */}
         <div className="px-4 -mt-4 space-y-6 pb-24">
           {/* Quick Actions Grid */}
-          <Card className="shadow-lg border-0">
+          <Card className="glass-card shadow-lg border-0">
             <CardContent className="p-4">
               <div className="grid grid-cols-3 gap-4">
                 {quickActions.map((action) => {
@@ -196,58 +273,95 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          {/* Upcoming Matches */}
-          {upcomingMatches && upcomingMatches.length > 0 && (
+          {/* Matches Section - Split into Two */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Matches Near Me */}
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold text-foreground">Upcoming Matches</h2>
-                <Link to="/matches">
-                  <Button variant="ghost" size="sm" className="text-primary text-xs h-7 px-2">
-                    View all
-                  </Button>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-sm flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-primary" />
+                  Near Me
+                </h3>
+                <Link to="/matches" className="text-xs text-primary flex items-center">
+                  All <ChevronRight className="h-3 w-3" />
                 </Link>
               </div>
-              <ScrollArea className="w-full">
-                <div className="flex gap-3 pb-2">
-                  {upcomingMatches.map((match: any) => (
+              <div className="space-y-2">
+                {nearbyMatches && nearbyMatches.length > 0 ? (
+                  nearbyMatches.map((match: any) => (
                     <Link key={match.id} to={`/matches/${match.id}`}>
-                      <Card className="w-[260px] flex-shrink-0 hover:shadow-md transition-shadow border">
-                        <CardContent className="p-4">
-                          <div className="text-xs text-primary font-medium mb-2">
+                      <Card className="glass-card hover:shadow-md transition-all">
+                        <CardContent className="p-3">
+                          <p className="text-[10px] text-accent font-medium mb-1">
                             {new Date(match.match_date).toLocaleDateString("en-IN", { 
-                              day: "2-digit",
-                              month: "short" 
-                            })} • {match.match_time?.slice(0, 5)}
-                          </div>
-                          <h3 className="font-medium text-sm mb-2 line-clamp-2 text-foreground">
-                            {match.match_name}
-                          </h3>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                            <MapPin className="h-3 w-3" />
-                            <span className="truncate">{match.turfs?.name || "TBD"}</span>
-                          </div>
-                          <div className="flex items-center justify-between pt-2 border-t border-border">
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-6 w-6">
-                                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                                  {match.turfs?.name?.charAt(0) || "M"}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-xs text-muted-foreground">Open</span>
-                            </div>
-                            <Button variant="ghost" size="sm" className="text-primary text-xs h-6 px-2">
-                              Join
-                            </Button>
-                          </div>
+                              day: "2-digit", month: "short" 
+                            })}
+                          </p>
+                          <p className="text-xs font-medium line-clamp-1 mb-1">{match.match_name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {match.turfs?.name}
+                          </p>
                         </CardContent>
                       </Card>
                     </Link>
-                  ))}
-                </div>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
+                  ))
+                ) : (
+                  <Card className="glass-card">
+                    <CardContent className="p-4 text-center">
+                      <MapPin className="h-6 w-6 text-muted-foreground/50 mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">No matches nearby</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </div>
-          )}
+
+            {/* My Upcoming Matches */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-sm flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 text-accent" />
+                  My Matches
+                </h3>
+                <Link to="/matches" className="text-xs text-primary flex items-center">
+                  All <ChevronRight className="h-3 w-3" />
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {myUpcomingMatches && myUpcomingMatches.length > 0 ? (
+                  myUpcomingMatches.map((match: any) => (
+                    <Link key={match.id} to={`/matches/${match.id}`}>
+                      <Card className="glass-card hover:shadow-md transition-all">
+                        <CardContent className="p-3">
+                          <div className="flex items-center gap-1 mb-1">
+                            <p className="text-[10px] text-accent font-medium">
+                              {new Date(match.match_date).toLocaleDateString("en-IN", { 
+                                day: "2-digit", month: "short" 
+                              })}
+                            </p>
+                            {match.isHosted && (
+                              <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded">Host</span>
+                            )}
+                          </div>
+                          <p className="text-xs font-medium line-clamp-1 mb-1">{match.match_name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">
+                            {match.turfs?.name}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))
+                ) : (
+                  <Card className="glass-card">
+                    <CardContent className="p-4 text-center">
+                      <Calendar className="h-6 w-6 text-muted-foreground/50 mx-auto mb-1" />
+                      <p className="text-xs text-muted-foreground">No upcoming</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Top Players */}
           {topPlayers && topPlayers.length > 0 && (
@@ -260,7 +374,7 @@ export default function HomePage() {
                   </Button>
                 </Link>
               </div>
-              <Card className="border">
+              <Card className="glass-card">
                 <CardContent className="p-4 space-y-1">
                   {topPlayers.map((player, index) => (
                     <Link
@@ -293,23 +407,66 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Community Feed Link */}
-          <Link to="/community">
-            <Card className="border hover:shadow-md transition-shadow">
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-primary" />
+          {/* Rate Players Section */}
+          {matchesToRate && matchesToRate.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-foreground flex items-center gap-2">
+                  <Star className="h-4 w-4 text-accent" />
+                  Rate Players
+                </h2>
+              </div>
+              <Card className="glass-card">
+                <CardContent className="p-4 space-y-2">
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Rate players from your past matches
+                  </p>
+                  {matchesToRate.map((match: any) => (
+                    <Link
+                      key={match.id}
+                      to={`/matches/${match.id}`}
+                      className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{match.match_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(match.match_date).toLocaleDateString("en-IN", { 
+                            day: "2-digit", month: "short", year: "numeric"
+                          })}
+                          {match.turfs?.name && ` • ${match.turfs.name}`}
+                        </p>
+                      </div>
+                      <Button variant="outline" size="sm" className="ml-2 h-8 text-xs">
+                        <Star className="h-3 w-3 mr-1" />
+                        Rate
+                      </Button>
+                    </Link>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Spacing before Community Feed */}
+          <div className="pt-2">
+            {/* Community Feed Link */}
+            <Link to="/community">
+              <Card className="glass-card hover:shadow-md transition-shadow">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-sm text-foreground">Community Feed</h3>
+                      <p className="text-xs text-muted-foreground">See highlights & connect</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-medium text-sm text-foreground">Community Feed</h3>
-                    <p className="text-xs text-muted-foreground">See highlights & connect</p>
-                  </div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-              </CardContent>
-            </Card>
-          </Link>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
         </div>
       </div>
 
