@@ -21,7 +21,7 @@ export default function HomePage() {
   const { data: userStats } = useQuery({
     queryKey: ["user-stats", user?.id],
     queryFn: async () => {
-      if (!user?.id) return { matches: 0, rating: 0 };
+      if (!user?.id) return { matches: 0, rating: 0, ratingCount: 0 };
       
       const { count: matchCount } = await supabase
         .from("match_players")
@@ -35,11 +35,12 @@ export default function HomePage() {
         .eq("rated_user_id", user.id)
         .eq("moderation_status", "approved");
 
-      const avgRating = ratings?.length 
-        ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length 
+      const ratingCount = ratings?.length || 0;
+      const avgRating = ratingCount > 0
+        ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratingCount 
         : 0;
 
-      return { matches: matchCount || 0, rating: avgRating };
+      return { matches: matchCount || 0, rating: avgRating, ratingCount };
     },
     enabled: !!user?.id,
   });
@@ -121,12 +122,12 @@ export default function HomePage() {
     return null;
   };
 
-  const getSkillLabel = (rating: number) => {
-    if (rating >= 4.5) return "Pro";
-    if (rating >= 3.5) return "Advanced";
-    if (rating >= 2.5) return "Intermediate";
-    if (rating >= 1.5) return "Beginner";
-    return "New Player";
+  const getPlayerLevel = (ratingCount: number, overallRating: number) => {
+    if (ratingCount < 10) return "New Player";
+    if (overallRating < 30) return "Beginner";
+    if (overallRating < 50) return "Amateur";
+    if (overallRating < 80) return "Professional";
+    return "Advanced";
   };
 
   return (
@@ -154,7 +155,7 @@ export default function HomePage() {
             <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
               <p className="text-white/70 text-xs">Level</p>
               <p className="text-white font-semibold text-sm">
-                {getSkillLabel(userStats?.rating || 0)}
+                {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
               </p>
             </div>
             <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
