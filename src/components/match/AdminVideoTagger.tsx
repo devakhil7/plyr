@@ -57,7 +57,6 @@ interface AdminVideoTaggerProps {
 
 const EVENT_TYPES = [
   { value: "goal", label: "Goal", color: "bg-green-500" },
-  { value: "assist", label: "Assist", color: "bg-blue-500" },
   { value: "key-pass", label: "Key Pass", color: "bg-yellow-500" },
   { value: "dribble", label: "Dribble", color: "bg-purple-500" },
 ];
@@ -89,6 +88,9 @@ export function AdminVideoTagger({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [generatingClip, setGeneratingClip] = useState<string | null>(null);
+  // Assist provider state for goals
+  const [assistPlayerId, setAssistPlayerId] = useState<string>("");
+  const [assistPlayerName, setAssistPlayerName] = useState("");
 
   // Fetch existing events
   const { data: existingEvents = [], refetch: refetchEvents } = useQuery({
@@ -175,6 +177,14 @@ export function AdminVideoTagger({
     }
   };
 
+  const handleAssistPlayerSelect = (playerId: string) => {
+    setAssistPlayerId(playerId);
+    const player = matchPlayers.find(p => p.user_id === playerId || p.profiles?.id === playerId);
+    if (player) {
+      setAssistPlayerName(player.profiles?.name || player.offline_player_name || "");
+    }
+  };
+
   const handleTagEvent = async () => {
     if (!eventType) {
       toast.error("Please select an event type");
@@ -191,6 +201,13 @@ export function AdminVideoTagger({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Build notes with assist info for goals
+      let eventNotes = notes || "";
+      if (eventType === "goal" && (assistPlayerId || assistPlayerName)) {
+        const assistInfo = `Assist: ${assistPlayerName || "Unknown"}${assistPlayerId ? ` (ID: ${assistPlayerId})` : ""}`;
+        eventNotes = eventNotes ? `${eventNotes}\n${assistInfo}` : assistInfo;
+      }
+
       const insertData: any = {
         event_type: eventType,
         timestamp_seconds: Math.floor(currentTime),
@@ -199,7 +216,7 @@ export function AdminVideoTagger({
         jersey_number: jerseyNumber ? parseInt(jerseyNumber) : null,
         team: team || null,
         generate_highlight: generateHighlight,
-        notes: notes || null,
+        notes: eventNotes || null,
         created_by: user.id,
       };
 
@@ -224,6 +241,8 @@ export function AdminVideoTagger({
       setTeam("");
       setGenerateHighlight(false);
       setNotes("");
+      setAssistPlayerId("");
+      setAssistPlayerName("");
       
       refetchEvents();
       onEventAdded?.();
@@ -458,6 +477,44 @@ export function AdminVideoTagger({
               />
             </div>
           </div>
+
+          {/* Assist Provider - only show for goals */}
+          {eventType === "goal" && (
+            <div className="border rounded-lg p-4 bg-blue-500/10 space-y-4">
+              <h4 className="font-medium text-sm text-blue-600 dark:text-blue-400">Assist Provider (Optional)</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {matchPlayers.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Assist by (from match)</Label>
+                    <Select value={assistPlayerId} onValueChange={handleAssistPlayerSelect}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select assist provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No assist</SelectItem>
+                        {matchPlayers.map((player) => (
+                          <SelectItem 
+                            key={player.id} 
+                            value={player.user_id || player.profiles?.id || player.id}
+                          >
+                            {player.profiles?.name || player.offline_player_name || "Unknown Player"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label>Assist Provider Name (manual)</Label>
+                  <Input
+                    value={assistPlayerName}
+                    onChange={(e) => setAssistPlayerName(e.target.value)}
+                    placeholder="Enter assist provider name"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Notes (optional)</Label>
