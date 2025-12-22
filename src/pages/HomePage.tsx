@@ -570,14 +570,34 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Tagline Section */}
-        <div className="px-4 py-4 text-center">
-          <h1 className="text-lg font-bold text-foreground">
-            SportsIQ
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Join, Host & Analyze Local Sports Matches
+        {/* About SportsIQ Section */}
+        <div className="mx-4 my-4 p-5 rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10 border border-primary/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
+              <Zap className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">SportsIQ</h2>
+              <p className="text-xs text-muted-foreground">Your Sports Companion</p>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+            Discover local matches, host your own games, and track your performance with AI-powered analytics. Connect with players in your city and elevate your game.
           </p>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center p-2 rounded-xl bg-background/50">
+              <Users className="h-5 w-5 mx-auto mb-1 text-primary" />
+              <p className="text-xs font-medium">Join Matches</p>
+            </div>
+            <div className="text-center p-2 rounded-xl bg-background/50">
+              <Play className="h-5 w-5 mx-auto mb-1 text-primary" />
+              <p className="text-xs font-medium">Host Games</p>
+            </div>
+            <div className="text-center p-2 rounded-xl bg-background/50">
+              <BarChart3 className="h-5 w-5 mx-auto mb-1 text-primary" />
+              <p className="text-xs font-medium">Get Analytics</p>
+            </div>
+          </div>
         </div>
 
         {/* Main Content */}
