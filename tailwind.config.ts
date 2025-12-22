@@ -89,9 +89,10 @@ export default {
         'md': 'var(--shadow-md)',
         'lg': 'var(--shadow-lg)',
         'glow': 'var(--shadow-glow)',
-        'premium': '0 10px 40px hsla(245, 70%, 23%, 0.15), 0 2px 10px hsla(245, 70%, 23%, 0.1)',
-        'premium-lg': '0 20px 60px hsla(245, 70%, 23%, 0.2), 0 4px 20px hsla(245, 70%, 23%, 0.12)',
-        'inner-glow': 'inset 0 2px 20px hsla(60, 21%, 95%, 0.1)',
+        'premium': '0 10px 40px hsla(165, 50%, 15%, 0.12), 0 2px 10px hsla(165, 50%, 15%, 0.08)',
+        'premium-lg': '0 20px 60px hsla(165, 50%, 15%, 0.18), 0 4px 20px hsla(165, 50%, 15%, 0.1)',
+        'inner-glow': 'inset 0 2px 20px hsla(68, 65%, 55%, 0.1)',
+        'card': '0 8px 32px hsla(165, 50%, 15%, 0.1)',
       },
       keyframes: {
         'accordion-down': {
@@ -128,10 +129,10 @@ export default {
         },
         'glow': {
           '0%, 100%': { 
-            boxShadow: '0 0 20px hsla(245, 70%, 23%, 0.3), 0 0 40px hsla(245, 60%, 35%, 0.15)' 
+            boxShadow: '0 0 20px hsla(68, 65%, 50%, 0.3), 0 0 40px hsla(68, 70%, 55%, 0.15)' 
           },
           '50%': { 
-            boxShadow: '0 0 30px hsla(245, 70%, 23%, 0.4), 0 0 60px hsla(245, 60%, 35%, 0.25)' 
+            boxShadow: '0 0 30px hsla(68, 65%, 50%, 0.45), 0 0 60px hsla(68, 70%, 55%, 0.25)' 
           },
         },
         'shimmer': {
@@ -154,12 +155,12 @@ export default {
         'shimmer': 'shimmer 2s linear infinite',
       },
       backgroundImage: {
-        'gradient-premium': 'linear-gradient(135deg, hsl(245 70% 23%) 0%, hsl(245 60% 35%) 50%, hsl(245 70% 23%) 100%)',
-        'gradient-premium-light': 'linear-gradient(135deg, hsl(60 21% 90%) 0%, hsl(60 18% 85%) 50%, hsl(60 21% 90%) 100%)',
-        'gradient-glass': 'linear-gradient(145deg, hsla(60, 21%, 95%, 0.15) 0%, hsla(60, 21%, 90%, 0.05) 100%)',
-        'gradient-dark-glass': 'linear-gradient(145deg, hsla(245, 60%, 25%, 0.4) 0%, hsla(245, 70%, 15%, 0.2) 100%)',
-        'hero-pattern': 'radial-gradient(ellipse at 30% 20%, hsla(245, 70%, 23%, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, hsla(245, 60%, 35%, 0.06) 0%, transparent 50%)',
-        'hero-pattern-dark': 'radial-gradient(ellipse at 30% 20%, hsla(60, 21%, 90%, 0.05) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, hsla(60, 15%, 85%, 0.03) 0%, transparent 50%)',
+        'gradient-premium': 'linear-gradient(135deg, hsl(165 55% 22%) 0%, hsl(165 50% 28%) 50%, hsl(68 65% 50%) 100%)',
+        'gradient-premium-light': 'linear-gradient(135deg, hsl(85 25% 82%) 0%, hsl(85 20% 78%) 50%, hsl(85 25% 82%) 100%)',
+        'gradient-glass': 'linear-gradient(160deg, hsla(0, 0%, 100%, 0.15) 0%, hsla(0, 0%, 100%, 0.05) 100%)',
+        'gradient-dark-glass': 'linear-gradient(160deg, hsla(165, 50%, 25%, 0.4) 0%, hsla(165, 55%, 15%, 0.2) 100%)',
+        'hero-pattern': 'radial-gradient(ellipse at 30% 20%, hsla(68, 65%, 50%, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, hsla(165, 55%, 22%, 0.08) 0%, transparent 50%)',
+        'hero-pattern-dark': 'radial-gradient(ellipse at 30% 20%, hsla(68, 65%, 55%, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, hsla(165, 50%, 30%, 0.06) 0%, transparent 50%)',
       },
     },
   },
