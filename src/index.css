@@ -4,116 +4,116 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
-/* SPORTIQ Design System - Premium Teal & Lime Theme (Gradient 3) */
+/* SPORTIQ Design System - Premium Dark Navy Theme */
 
 @layer base {
   :root {
-    /* Root uses dark teal theme by default (Gradient 3) */
-    --background: 166 64% 13%;
-    --foreground: 166 20% 92%;
-    --card: 166 87% 18%;
-    --card-foreground: 166 20% 92%;
-    --popover: 166 87% 18%;
-    --popover-foreground: 166 20% 92%;
-    --primary: 65 86% 54%;
-    --primary-foreground: 166 64% 10%;
-    --secondary: 166 50% 22%;
-    --secondary-foreground: 166 20% 88%;
-    --muted: 166 45% 20%;
-    --muted-foreground: 166 20% 60%;
-    --accent: 65 86% 54%;
-    --accent-foreground: 166 64% 10%;
+    /* Deep navy blue theme */
+    --background: 210 55% 11%;
+    --foreground: 210 20% 95%;
+    --card: 210 40% 16%;
+    --card-foreground: 210 20% 95%;
+    --popover: 210 40% 16%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 210 55% 8%;
+    --secondary: 210 35% 22%;
+    --secondary-foreground: 210 20% 90%;
+    --muted: 210 30% 20%;
+    --muted-foreground: 210 15% 55%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 210 55% 8%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 166 50% 24%;
-    --input: 166 50% 24%;
-    --ring: 65 86% 54%;
-    --radius: 0.75rem;
+    --border: 210 35% 25%;
+    --input: 210 35% 25%;
+    --ring: 142 71% 45%;
+    --radius: 1rem;
 
     /* SPORTIQ Custom */
-    --sportiq-primary: 65 86% 54%;
-    --sportiq-secondary: 166 87% 18%;
-    --sportiq-accent: 65 86% 54%;
-    --sportiq-surface: 166 60% 16%;
+    --sportiq-primary: 142 71% 45%;
+    --sportiq-secondary: 210 40% 16%;
+    --sportiq-accent: 142 71% 45%;
+    --sportiq-surface: 210 35% 14%;
 
     /* Match status colors */
-    --status-open: 65 86% 54%;
-    --status-full: 166 60% 35%;
+    --status-open: 142 71% 45%;
+    --status-full: 210 60% 50%;
     --status-progress: 45 93% 47%;
-    --status-completed: 166 40% 45%;
+    --status-completed: 210 30% 50%;
     --status-cancelled: 0 72% 51%;
 
     /* Premium shadows */
-    --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.25);
-    --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.35);
-    --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.45);
-    --shadow-xl: 0 16px 48px hsl(0 0% 0% / 0.55);
-    --shadow-glow: 0 0 40px hsl(65 86% 54% / 0.2);
-    --shadow-glow-accent: 0 0 40px hsl(65 86% 54% / 0.15);
+    --shadow-sm: 0 1px 2px hsl(210 55% 5% / 0.3);
+    --shadow-md: 0 4px 12px hsl(210 55% 5% / 0.4);
+    --shadow-lg: 0 8px 24px hsl(210 55% 5% / 0.5);
+    --shadow-xl: 0 16px 48px hsl(210 55% 5% / 0.6);
+    --shadow-glow: 0 0 40px hsl(142 71% 45% / 0.2);
+    --shadow-glow-accent: 0 0 40px hsl(142 71% 45% / 0.15);
 
     /* Sidebar */
-    --sidebar-background: 166 64% 13%;
-    --sidebar-foreground: 166 20% 92%;
-    --sidebar-primary: 65 86% 54%;
-    --sidebar-primary-foreground: 166 64% 10%;
-    --sidebar-accent: 166 87% 18%;
-    --sidebar-accent-foreground: 65 86% 54%;
-    --sidebar-border: 166 50% 24%;
-    --sidebar-ring: 65 86% 54%;
+    --sidebar-background: 210 55% 11%;
+    --sidebar-foreground: 210 20% 95%;
+    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary-foreground: 210 55% 8%;
+    --sidebar-accent: 210 40% 16%;
+    --sidebar-accent-foreground: 142 71% 45%;
+    --sidebar-border: 210 35% 25%;
+    --sidebar-ring: 142 71% 45%;
   }
 
   .dark {
-    /* Dark mode - Deep forest teal with lime accents */
-    --background: 166 64% 13%;
-    --foreground: 166 20% 92%;
-    --card: 166 87% 18%;
-    --card-foreground: 166 20% 92%;
-    --popover: 166 87% 18%;
-    --popover-foreground: 166 20% 92%;
-    --primary: 65 86% 54%;
-    --primary-foreground: 166 64% 10%;
-    --secondary: 166 50% 22%;
-    --secondary-foreground: 166 20% 88%;
-    --muted: 166 45% 20%;
-    --muted-foreground: 166 20% 60%;
-    --accent: 65 86% 54%;
-    --accent-foreground: 166 64% 10%;
+    /* Dark mode uses same theme */
+    --background: 210 55% 11%;
+    --foreground: 210 20% 95%;
+    --card: 210 40% 16%;
+    --card-foreground: 210 20% 95%;
+    --popover: 210 40% 16%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 210 55% 8%;
+    --secondary: 210 35% 22%;
+    --secondary-foreground: 210 20% 90%;
+    --muted: 210 30% 20%;
+    --muted-foreground: 210 15% 55%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 210 55% 8%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 166 50% 24%;
-    --input: 166 50% 24%;
-    --ring: 65 86% 54%;
+    --border: 210 35% 25%;
+    --input: 210 35% 25%;
+    --ring: 142 71% 45%;
 
     /* SPORTIQ Custom - Dark */
-    --sportiq-primary: 65 86% 54%;
-    --sportiq-secondary: 166 87% 18%;
-    --sportiq-accent: 65 86% 54%;
-    --sportiq-surface: 166 60% 16%;
+    --sportiq-primary: 142 71% 45%;
+    --sportiq-secondary: 210 40% 16%;
+    --sportiq-accent: 142 71% 45%;
+    --sportiq-surface: 210 35% 14%;
 
     /* Match status colors - Dark */
-    --status-open: 65 86% 54%;
-    --status-full: 166 60% 35%;
+    --status-open: 142 71% 45%;
+    --status-full: 210 60% 50%;
     --status-progress: 45 93% 47%;
-    --status-completed: 166 40% 45%;
+    --status-completed: 210 30% 50%;
     --status-cancelled: 0 72% 51%;
 
     /* Premium shadows - Dark */
-    --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.25);
-    --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.35);
-    --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.45);
-    --shadow-xl: 0 16px 48px hsl(0 0% 0% / 0.55);
-    --shadow-glow: 0 0 40px hsl(65 86% 54% / 0.2);
-    --shadow-glow-accent: 0 0 40px hsl(65 86% 54% / 0.15);
+    --shadow-sm: 0 1px 2px hsl(210 55% 5% / 0.3);
+    --shadow-md: 0 4px 12px hsl(210 55% 5% / 0.4);
+    --shadow-lg: 0 8px 24px hsl(210 55% 5% / 0.5);
+    --shadow-xl: 0 16px 48px hsl(210 55% 5% / 0.6);
+    --shadow-glow: 0 0 40px hsl(142 71% 45% / 0.2);
+    --shadow-glow-accent: 0 0 40px hsl(142 71% 45% / 0.15);
 
     /* Sidebar - Dark */
-    --sidebar-background: 166 64% 13%;
-    --sidebar-foreground: 166 20% 92%;
-    --sidebar-primary: 65 86% 54%;
-    --sidebar-primary-foreground: 166 64% 10%;
-    --sidebar-accent: 166 87% 18%;
-    --sidebar-accent-foreground: 65 86% 54%;
-    --sidebar-border: 166 50% 24%;
-    --sidebar-ring: 65 86% 54%;
+    --sidebar-background: 210 55% 11%;
+    --sidebar-foreground: 210 20% 95%;
+    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary-foreground: 210 55% 8%;
+    --sidebar-accent: 210 40% 16%;
+    --sidebar-accent-foreground: 142 71% 45%;
+    --sidebar-border: 210 35% 25%;
+    --sidebar-ring: 142 71% 45%;
   }
 }
 
@@ -139,32 +139,32 @@
 }
 
 @layer components {
-  /* Glass morphism card - Premium teal */
+  /* Glass morphism card - Premium navy glass */
   .glass-card {
     @apply backdrop-blur-xl border rounded-2xl;
     background: linear-gradient(
       135deg,
-      hsl(166 87% 18% / 0.95) 0%,
-      hsl(166 64% 13% / 0.9) 100%
+      hsl(210 40% 16% / 0.85) 0%,
+      hsl(210 35% 20% / 0.75) 100%
     );
-    border-color: hsl(65 86% 54% / 0.15);
+    border-color: hsl(210 35% 35% / 0.3);
     box-shadow: 
-      0 8px 32px hsl(0 0% 0% / 0.35),
-      inset 0 1px 0 hsl(65 86% 54% / 0.08);
+      0 8px 32px hsl(210 55% 5% / 0.4),
+      inset 0 1px 0 hsl(210 30% 40% / 0.15);
   }
   
-  /* Gradient text - Lime to teal */
+  /* Gradient text - Green to cyan */
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(65 86% 54%) 0%, hsl(166 87% 35%) 100%);
+    background-image: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(180 70% 50%) 100%);
   }
   
-  /* Hero gradient background - Gradient 3 colors */
+  /* Hero gradient background - Premium navy */
   .hero-gradient {
     background: linear-gradient(180deg, 
-      hsl(65 86% 54%) 0%, 
-      hsl(166 87% 18%) 50%, 
-      hsl(166 64% 13%) 100%
+      hsl(210 55% 11%) 0%, 
+      hsl(210 40% 16%) 50%, 
+      hsl(210 35% 20%) 100%
     );
   }
   
@@ -181,8 +181,8 @@
   .card-hover:hover {
     transform: translateY(-4px);
     box-shadow: 
-      0 16px 48px hsl(0 0% 0% / 0.3),
-      0 0 30px hsl(65 86% 54% / 0.15);
+      0 16px 48px hsl(210 55% 5% / 0.4),
+      0 0 30px hsl(142 71% 45% / 0.1);
   }
   
   /* Status badges */
@@ -191,11 +191,11 @@
   }
   
   .status-full {
-    @apply bg-accent/20 text-accent border border-accent/30;
+    @apply bg-blue-500/20 text-blue-400 border border-blue-500/30;
   }
   
   .status-progress {
-    @apply bg-amber-500/20 text-amber-500 border border-amber-500/30;
+    @apply bg-amber-500/20 text-amber-400 border border-amber-500/30;
   }
   
   .status-completed {
@@ -212,11 +212,11 @@
   }
   
   .skill-intermediate {
-    @apply bg-accent/20 text-accent border border-accent/30;
+    @apply bg-blue-500/20 text-blue-400 border border-blue-500/30;
   }
   
   .skill-advanced {
-    @apply bg-rose-500/20 text-rose-500 border border-rose-500/30;
+    @apply bg-rose-500/20 text-rose-400 border border-rose-500/30;
   }
   
   /* Sport type badge */
@@ -253,20 +253,20 @@
   /* Active status dot */
   .status-dot-active {
     @apply w-2.5 h-2.5 rounded-full;
-    background: hsl(65 86% 54%);
-    box-shadow: 0 0 10px hsl(65 86% 54% / 0.6);
+    background: hsl(142 71% 45%);
+    box-shadow: 0 0 10px hsl(142 71% 45% / 0.6);
   }
   
-  /* Premium lime glow button */
+  /* Premium green glow button */
   .btn-glow {
     @apply relative overflow-hidden;
-    box-shadow: 0 0 20px hsl(65 86% 54% / 0.25);
+    box-shadow: 0 0 20px hsl(142 71% 45% / 0.25);
   }
   
   .btn-glow::before {
     content: '';
     @apply absolute inset-0 opacity-0 transition-opacity duration-300;
-    background: linear-gradient(135deg, hsl(65 86% 54% / 0.15), hsl(166 87% 18% / 0.1));
+    background: linear-gradient(135deg, hsl(142 71% 45% / 0.15), hsl(180 70% 50% / 0.1));
   }
   
   .btn-glow:hover::before {
@@ -274,7 +274,7 @@
   }
   
   .btn-glow:hover {
-    box-shadow: 0 0 35px hsl(65 86% 54% / 0.4);
+    box-shadow: 0 0 35px hsl(142 71% 45% / 0.4);
   }
   
   /* Gradient border card */
@@ -286,28 +286,28 @@
     content: '';
     @apply absolute inset-0 rounded-2xl;
     padding: 1px;
-    background: linear-gradient(135deg, hsl(65 86% 54% / 0.5), hsl(166 87% 18% / 0.3));
+    background: linear-gradient(135deg, hsl(142 71% 45% / 0.4), hsl(210 60% 50% / 0.2));
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: xor;
     -webkit-mask-composite: xor;
     pointer-events: none;
   }
   
-  /* Stats card with gradient - Premium teal */
+  /* Stats card with gradient - Premium navy */
   .stats-card {
     @apply relative overflow-hidden rounded-2xl p-5;
     background: linear-gradient(
       180deg,
-      hsl(166 87% 18% / 0.95) 0%,
-      hsl(166 64% 13% / 0.9) 100%
+      hsl(210 40% 16% / 0.9) 0%,
+      hsl(210 35% 20% / 0.85) 100%
     );
-    border: 1px solid hsl(65 86% 54% / 0.15);
+    border: 1px solid hsl(210 35% 30% / 0.3);
   }
   
   .stats-card::after {
     content: '';
     @apply absolute bottom-0 left-0 right-0 h-1/2;
-    background: linear-gradient(0deg, hsl(65 86% 54% / 0.03), transparent);
+    background: linear-gradient(0deg, hsl(142 71% 45% / 0.03), transparent);
     pointer-events: none;
   }
   
@@ -395,11 +395,11 @@
 }
 
 @keyframes glow {
-  from { box-shadow: 0 0 20px hsl(65 86% 54% / 0.15); }
-  to { box-shadow: 0 0 40px hsl(65 86% 54% / 0.3); }
+  from { box-shadow: 0 0 20px hsl(142 71% 45% / 0.15); }
+  to { box-shadow: 0 0 40px hsl(142 71% 45% / 0.3); }
 }
 
-/* Scrollbar styling - Premium teal */
+/* Scrollbar styling - Premium navy */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -407,22 +407,22 @@
 
 ::-webkit-scrollbar-track {
   @apply rounded-full;
-  background: hsl(166 64% 13%);
+  background: hsl(210 55% 11%);
 }
 
 ::-webkit-scrollbar-thumb {
   @apply rounded-full transition-colors;
-  background: hsl(166 87% 18%);
+  background: hsl(210 35% 25%);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(65 86% 54% / 0.5);
+  background: hsl(142 71% 45% / 0.5);
 }
 
 /* Selection styling */
 ::selection {
-  background: hsl(65 86% 54% / 0.3);
-  color: hsl(166 20% 92%);
+  background: hsl(142 71% 45% / 0.3);
+  color: hsl(210 20% 95%);
 }
 
 /* Print styles for PDF export */
