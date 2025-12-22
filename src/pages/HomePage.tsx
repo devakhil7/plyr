@@ -345,9 +345,9 @@ export default function HomePage() {
             </Link>
 
             {/* Right Side - Level + Quick Actions */}
-            <div className="flex-1 pt-1 space-y-2">
+            <div className="flex-1 flex flex-col gap-2">
               {/* Player Level Badge */}
-              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-2xl px-4 py-2.5 border border-primary-foreground/20 inline-flex items-center gap-2">
+              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-2xl px-4 py-2.5 border border-primary-foreground/20 inline-flex items-center gap-2 w-fit">
                 <Star className="h-5 w-5 text-accent" />
                 <div>
                   <p className="text-primary-foreground/70 text-[10px]">Level</p>
@@ -358,16 +358,16 @@ export default function HomePage() {
               </div>
 
               {/* Quick Actions - 2 rows × 3 columns */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 flex-1">
                 {quickActions.map((action) => {
                   const Icon = action.icon;
                   return (
-                    <Link key={action.label} to={action.href}>
-                      <div className="flex flex-col items-center gap-2 px-2 py-3 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
-                        <div className={`w-9 h-9 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
-                          <Icon className="h-4 w-4 text-white" />
+                    <Link key={action.label} to={action.href} className="h-full">
+                      <div className="flex flex-col items-center justify-center gap-2 px-3 py-4 h-full rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
+                        <div className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
+                          <Icon className="h-5 w-5 text-white" />
                         </div>
-                        <span className="text-[11px] font-medium text-primary-foreground text-center leading-tight">
+                        <span className="text-xs font-medium text-primary-foreground text-center leading-tight">
                           {action.label}
                         </span>
                       </div>
