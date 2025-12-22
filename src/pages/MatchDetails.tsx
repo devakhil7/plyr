@@ -20,6 +20,7 @@ import { MatchScorecard } from "@/components/match/MatchScorecard";
 import { PlayerRatingsSection } from "@/components/match/PlayerRatingsSection";
 import { AdminVideoTagger } from "@/components/match/AdminVideoTagger";
 import { VideoHighlightEvents } from "@/components/match/VideoHighlightEvents";
+import { MatchEventsShareDialog } from "@/components/match/MatchEventsShareDialog";
 
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
   open: "open",
@@ -827,10 +828,23 @@ export default function MatchDetails() {
                 {matchEvents.length > 0 && (
                   <Card className="glass-card">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Trophy className="h-4 w-4 text-primary" />
-                        Goal Scorers & Assists
-                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Trophy className="h-4 w-4 text-primary" />
+                          Goal Scorers & Assists
+                        </CardTitle>
+                        <MatchEventsShareDialog
+                          matchId={match.id}
+                          matchName={match.match_name}
+                          matchDate={new Date(match.match_date).toLocaleDateString("en-IN", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                          turfName={match.turfs?.name}
+                          matchEvents={matchEvents}
+                        />
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
