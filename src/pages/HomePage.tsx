@@ -15,35 +15,84 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useGeolocation, calculateDistance, formatDistance, getCityCoordinates } from "@/hooks/useGeolocation";
 import { useMemo } from "react";
+import { PlayerCard } from "@/components/player/PlayerCard";
+import { calculateWinsLosses } from "@/lib/playerStats";
 
 export default function HomePage() {
   const { user, profile } = useAuth();
   const { latitude, longitude, loading: locationLoading } = useGeolocation();
 
-  // Fetch user stats
+  // Fetch user stats for PlayerCard
   const { data: userStats } = useQuery({
-    queryKey: ["user-stats", user?.id],
+    queryKey: ["user-stats-full", user?.id],
     queryFn: async () => {
-      if (!user?.id) return { matches: 0, rating: 0, ratingCount: 0 };
+      if (!user?.id) return null;
+
+      // Fetch favourite_club from profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("favourite_club")
+        .eq("id", user.id)
+        .single();
       
+      // Match count
       const { count: matchCount } = await supabase
         .from("match_players")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("join_status", "confirmed");
 
+      // Player ratings with averages
       const { data: ratings } = await supabase
         .from("player_ratings")
-        .select("rating")
+        .select("rating, pace, shooting, passing, dribbling, defending, ball_control")
         .eq("rated_user_id", user.id)
         .eq("moderation_status", "approved");
 
       const ratingCount = ratings?.length || 0;
-      const avgRating = ratingCount > 0
-        ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratingCount 
-        : 0;
+      const avgRating = ratingCount > 0 ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratingCount : 0;
+      const avgPace = ratingCount > 0 ? ratings.reduce((sum, r) => sum + (r.pace || 0), 0) / ratingCount : null;
+      const avgShooting = ratingCount > 0 ? ratings.reduce((sum, r) => sum + (r.shooting || 0), 0) / ratingCount : null;
+      const avgPassing = ratingCount > 0 ? ratings.reduce((sum, r) => sum + (r.passing || 0), 0) / ratingCount : null;
+      const avgDribbling = ratingCount > 0 ? ratings.reduce((sum, r) => sum + (r.dribbling || 0), 0) / ratingCount : null;
+      const avgDefending = ratingCount > 0 ? ratings.reduce((sum, r) => sum + (r.defending || 0), 0) / ratingCount : null;
+      const avgPhysical = ratingCount > 0 ? ratings.reduce((sum, r) => sum + (r.ball_control || 0), 0) / ratingCount : null;
 
-      return { matches: matchCount || 0, rating: avgRating, ratingCount };
+      // Goals and assists
+      const { data: matchEventsAsScorer } = await supabase
+        .from("match_events")
+        .select("id")
+        .eq("scorer_user_id", user.id);
+      
+      const { data: matchEventsAsAssist } = await supabase
+        .from("match_events")
+        .select("id")
+        .eq("assist_user_id", user.id);
+
+      // Wins calculation
+      const { data: matchParticipations } = await supabase
+        .from("match_players")
+        .select("team, matches(team_a_score, team_b_score, status)")
+        .eq("user_id", user.id)
+        .eq("join_status", "confirmed");
+
+      const { wins } = calculateWinsLosses(matchParticipations || []);
+
+      return {
+        matches: matchCount || 0,
+        rating: avgRating,
+        ratingCount,
+        pace: avgPace,
+        shooting: avgShooting,
+        passing: avgPassing,
+        dribbling: avgDribbling,
+        defending: avgDefending,
+        physical: avgPhysical,
+        goals: matchEventsAsScorer?.length || 0,
+        assists: matchEventsAsAssist?.length || 0,
+        wins,
+        favourite_club: profileData?.favourite_club || null,
+      };
     },
     enabled: !!user?.id,
   });
@@ -265,42 +314,33 @@ export default function HomePage() {
   return (
     <AppLayout>
       <div className="min-h-screen">
-        {/* Hero Header */}
+        {/* Player Card Section */}
         <div className="hero-gradient px-4 pt-6 pb-8 rounded-b-3xl">
-          <div className="flex items-center gap-4 mb-6">
-            <Avatar className="h-14 w-14 border-2 border-primary-foreground/30 ring-2 ring-primary-foreground/10">
-              <AvatarImage src={profile?.profile_photo_url || ""} />
-              <AvatarFallback className="bg-primary/20 text-primary-foreground text-lg font-bold">
-                {profile?.name?.charAt(0) || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h1 className="text-xl font-bold text-primary-foreground">
-                Hey, {profile?.name?.split(" ")[0] || "Player"}!
-              </h1>
-              <p className="text-primary-foreground/70 text-sm">{profile?.city || "Ready to play?"}</p>
-            </div>
-          </div>
-
-          {/* Stats Row */}
-          <div className="flex gap-3">
-            <div className="flex-1 bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary-foreground/20">
-              <p className="text-primary-foreground/70 text-xs">Level</p>
-              <p className="text-primary-foreground font-semibold text-sm">
-                {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
-              </p>
-            </div>
-            <div className="flex-1 bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary-foreground/20">
-              <p className="text-primary-foreground/70 text-xs">Matches</p>
-              <p className="text-primary-foreground font-semibold text-sm">{userStats?.matches || 0}</p>
-            </div>
-            <div className="flex-1 bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary-foreground/20">
-              <p className="text-primary-foreground/70 text-xs">Rating</p>
-              <p className="text-primary-foreground font-semibold text-sm">
-                {userStats?.rating ? userStats.rating.toFixed(1) : "—"}
-              </p>
-            </div>
-          </div>
+          <Link to="/profile">
+            <PlayerCard
+              player={{
+                name: profile?.name || null,
+                position: profile?.position || null,
+                city: profile?.city || null,
+                profile_photo_url: profile?.profile_photo_url || null,
+                favourite_club: userStats?.favourite_club || null,
+              }}
+              stats={{
+                overall: userStats?.rating || null,
+                pace: userStats?.pace || null,
+                shooting: userStats?.shooting || null,
+                passing: userStats?.passing || null,
+                dribbling: userStats?.dribbling || null,
+                defending: userStats?.defending || null,
+                physical: userStats?.physical || null,
+                matches: userStats?.matches || 0,
+                goals: userStats?.goals || 0,
+                assists: userStats?.assists || 0,
+                wins: userStats?.wins || 0,
+              }}
+              className="transform scale-[0.85] origin-top"
+            />
+          </Link>
         </div>
 
         {/* Main Content */}
