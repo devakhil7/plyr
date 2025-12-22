@@ -755,41 +755,6 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Improve Your Game Section */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-foreground flex items-center gap-2">
-                <GraduationCap className="h-4 w-4 text-primary" />
-                Improve Your Game
-              </h2>
-              <Link to="/improve/football">
-                <Button variant="ghost" size="sm" className="text-primary text-xs h-7 px-2">
-                  View all
-                </Button>
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {improveCategories.map((category) => {
-                const Icon = category.icon;
-                return (
-                  <Link key={category.label} to={category.href}>
-                    <Card className="glass-card hover:shadow-md transition-all h-full">
-                      <CardContent className="p-4">
-                        <div className={`w-10 h-10 rounded-xl ${category.bgColor} flex items-center justify-center mb-3`}>
-                          <Icon className={`h-5 w-5 ${category.color}`} />
-                        </div>
-                        <h3 className="font-semibold text-sm mb-1">{category.label}</h3>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {category.description}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Community Feed Link */}
           <div className="pt-2">
             <Link to="/community">
