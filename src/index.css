@@ -4,133 +4,116 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
-/* SPORTIQ Design System - Premium Dark Slate Theme */
+/* SPORTIQ Design System - Premium Warm Dark Theme */
 
 @layer base {
   :root {
-    /* Core Brand Colors - Premium Dark Slate Palette */
-    /* #11212D → Primary dark */
-    --primary: 205 48% 12%;
-    --primary-foreground: 160 3% 81%;
-    
-    /* #253745 → Secondary */
-    --secondary: 203 29% 21%;
-    --secondary-foreground: 160 3% 81%;
-    
-    /* Background - Light mode uses lighter shades */
-    --background: 160 3% 81%;
-    --foreground: 205 48% 12%;
-    
-    /* Card surfaces - Off-white */
-    --card: 160 4% 92%;
-    --card-foreground: 205 48% 12%;
-    
-    /* Popover surfaces */
-    --popover: 160 4% 92%;
-    --popover-foreground: 205 48% 12%;
-    
-    /* Muted elements - #9BA8AB */
-    --muted: 195 7% 64%;
-    --muted-foreground: 203 29% 21%;
-    
-    /* Accent - #253745 medium dark */
-    --accent: 203 29% 21%;
-    --accent-foreground: 160 3% 81%;
-    
-    /* Destructive */
-    --destructive: 0 72% 55%;
+    /* Light mode - Clean warm whites */
+    --background: 30 20% 98%;
+    --foreground: 20 15% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 15% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 15% 12%;
+    --primary: 36 45% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 15% 92%;
+    --secondary-foreground: 20 15% 20%;
+    --muted: 30 10% 90%;
+    --muted-foreground: 20 10% 45%;
+    --accent: 78 42% 65%;
+    --accent-foreground: 20 15% 12%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    
-    /* Border & Input - #4A5C6A */
-    --border: 204 18% 35%;
-    --input: 195 7% 64%;
-    --ring: 205 48% 12%;
-    
-    /* Radius - Larger for pill-like shapes */
-    --radius: 1rem;
-    
-    /* Sidebar - Dark #11212D */
-    --sidebar-background: 205 48% 12%;
-    --sidebar-foreground: 160 3% 81%;
-    --sidebar-primary: 160 3% 81%;
-    --sidebar-primary-foreground: 205 48% 12%;
-    --sidebar-accent: 203 29% 21%;
-    --sidebar-accent-foreground: 160 3% 81%;
-    --sidebar-border: 203 29% 21%;
-    --sidebar-ring: 195 7% 64%;
-    
-    /* Custom SPORTIQ tokens */
-    --sportiq-primary: 205 48% 12%;
-    --sportiq-secondary: 203 29% 21%;
-    --sportiq-accent: 204 18% 35%;
-    --sportiq-surface: 160 3% 81%;
-    --sportiq-glass: 203 29% 21%;
-    
-    /* Gradient colors */
-    --gradient-start: 205 48% 12%;
-    --gradient-mid: 203 29% 21%;
-    --gradient-end: 204 18% 35%;
-    
-    /* Status colors */
-    --status-open: 160 50% 45%;
-    --status-full: 38 92% 55%;
-    --status-progress: 200 80% 55%;
-    --status-completed: 195 7% 64%;
-    --status-cancelled: 0 72% 55%;
-    
-    /* Shadows - Dark slate tinted */
-    --shadow-sm: 0 1px 2px 0 hsl(205 48% 12% / 0.08);
-    --shadow-md: 0 4px 12px -2px hsl(205 48% 12% / 0.12), 0 2px 6px -2px hsl(205 48% 12% / 0.08);
-    --shadow-lg: 0 12px 24px -4px hsl(205 48% 12% / 0.15), 0 4px 8px -4px hsl(205 48% 12% / 0.1);
-    --shadow-xl: 0 24px 48px -8px hsl(205 48% 12% / 0.2), 0 8px 16px -8px hsl(205 48% 12% / 0.12);
-    --shadow-glow: 0 0 40px hsl(195 7% 64% / 0.15);
-    --shadow-glow-accent: 0 0 30px hsl(203 29% 21% / 0.2);
+    --border: 30 15% 88%;
+    --input: 30 15% 88%;
+    --ring: 36 45% 55%;
+    --radius: 0.75rem;
+
+    /* SPORTIQ Custom */
+    --sportiq-primary: 36 45% 55%;
+    --sportiq-secondary: 78 42% 65%;
+    --sportiq-accent: 78 42% 65%;
+    --sportiq-surface: 30 20% 96%;
+
+    /* Match status colors */
+    --status-open: 78 42% 65%;
+    --status-full: 36 45% 55%;
+    --status-progress: 45 93% 47%;
+    --status-completed: 78 42% 50%;
+    --status-cancelled: 0 84% 60%;
+
+    /* Premium shadows */
+    --shadow-sm: 0 1px 2px hsl(20 15% 12% / 0.05);
+    --shadow-md: 0 4px 12px hsl(20 15% 12% / 0.08);
+    --shadow-lg: 0 8px 24px hsl(20 15% 12% / 0.12);
+    --shadow-xl: 0 16px 48px hsl(20 15% 12% / 0.16);
+    --shadow-glow: 0 0 30px hsl(36 45% 55% / 0.2);
+    --shadow-glow-accent: 0 0 30px hsl(78 42% 65% / 0.25);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 20 15% 12%;
+    --sidebar-primary: 36 45% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 78 42% 65%;
+    --sidebar-accent-foreground: 20 15% 12%;
+    --sidebar-border: 30 15% 88%;
+    --sidebar-ring: 36 45% 55%;
   }
 
   .dark {
-    /* Dark mode - Use the dark slate palette directly */
-    --primary: 195 7% 64%;
-    --primary-foreground: 205 48% 12%;
-    
-    --secondary: 203 29% 21%;
-    --secondary-foreground: 160 3% 81%;
-    
-    /* #11212D background */
-    --background: 205 48% 12%;
-    --foreground: 160 3% 81%;
-    
-    /* #253745 card */
-    --card: 203 29% 21%;
-    --card-foreground: 160 3% 81%;
-    
-    /* #253745 popover */
-    --popover: 203 29% 21%;
-    --popover-foreground: 160 3% 81%;
-    
-    /* #4A5C6A muted */
-    --muted: 204 18% 35%;
-    --muted-foreground: 195 7% 64%;
-    
-    /* #4A5C6A accent */
-    --accent: 204 18% 35%;
-    --accent-foreground: 160 3% 81%;
-    
-    --destructive: 0 72% 55%;
+    /* Dark mode - Warm charcoal palette */
+    --background: 20 12% 10%;
+    --foreground: 30 15% 92%;
+    --card: 25 12% 14%;
+    --card-foreground: 30 15% 92%;
+    --popover: 25 12% 14%;
+    --popover-foreground: 30 15% 92%;
+    --primary: 36 45% 58%;
+    --primary-foreground: 20 15% 8%;
+    --secondary: 25 10% 20%;
+    --secondary-foreground: 30 15% 85%;
+    --muted: 25 10% 18%;
+    --muted-foreground: 30 10% 55%;
+    --accent: 78 42% 70%;
+    --accent-foreground: 20 15% 8%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    
-    /* #253745 border */
-    --border: 203 29% 21%;
-    --input: 203 29% 21%;
-    --ring: 195 7% 64%;
-    
-    --sidebar-background: 205 48% 12%;
-    --sidebar-foreground: 160 3% 81%;
-    --sidebar-primary: 195 7% 64%;
-    --sidebar-primary-foreground: 205 48% 12%;
-    --sidebar-accent: 203 29% 21%;
-    --sidebar-accent-foreground: 160 3% 81%;
-    --sidebar-border: 203 29% 21%;
-    --sidebar-ring: 195 7% 64%;
+    --border: 25 12% 22%;
+    --input: 25 12% 22%;
+    --ring: 36 45% 58%;
+
+    /* SPORTIQ Custom - Dark */
+    --sportiq-primary: 36 45% 58%;
+    --sportiq-secondary: 78 42% 70%;
+    --sportiq-accent: 78 42% 70%;
+    --sportiq-surface: 25 12% 16%;
+
+    /* Match status colors - Dark */
+    --status-open: 78 42% 70%;
+    --status-full: 36 45% 58%;
+    --status-progress: 45 93% 47%;
+    --status-completed: 78 42% 55%;
+    --status-cancelled: 0 72% 51%;
+
+    /* Premium shadows - Dark */
+    --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.2);
+    --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.4);
+    --shadow-xl: 0 16px 48px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 40px hsl(36 45% 58% / 0.15);
+    --shadow-glow-accent: 0 0 40px hsl(78 42% 70% / 0.2);
+
+    /* Sidebar - Dark */
+    --sidebar-background: 20 12% 10%;
+    --sidebar-foreground: 30 15% 92%;
+    --sidebar-primary: 36 45% 58%;
+    --sidebar-primary-foreground: 20 15% 8%;
+    --sidebar-accent: 78 42% 70%;
+    --sidebar-accent-foreground: 20 15% 8%;
+    --sidebar-border: 25 12% 22%;
+    --sidebar-ring: 36 45% 58%;
   }
 }
 
@@ -156,32 +139,32 @@
 }
 
 @layer components {
-  /* Glass morphism card - Premium dark slate */
+  /* Glass morphism card - Premium warm dark */
   .glass-card {
     @apply backdrop-blur-xl border rounded-2xl;
     background: linear-gradient(
       135deg,
-      hsl(203 29% 21% / 0.95) 0%,
-      hsl(205 48% 12% / 0.9) 100%
+      hsl(25 12% 14% / 0.95) 0%,
+      hsl(20 12% 10% / 0.9) 100%
     );
-    border-color: hsl(204 18% 35% / 0.5);
+    border-color: hsl(36 45% 55% / 0.2);
     box-shadow: 
-      0 8px 32px hsl(205 48% 12% / 0.3),
-      inset 0 1px 0 hsl(204 18% 35% / 0.15);
+      0 8px 32px hsl(0 0% 0% / 0.3),
+      inset 0 1px 0 hsl(36 45% 55% / 0.1);
   }
   
-  /* Gradient text - Premium slate */
+  /* Gradient text - Premium warm gold */
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(195 7% 64%) 0%, hsl(160 3% 81%) 100%);
+    background-image: linear-gradient(135deg, hsl(36 45% 58%) 0%, hsl(78 42% 70%) 100%);
   }
   
-  /* Hero gradient background - Premium dark slate */
+  /* Hero gradient background - Premium warm dark */
   .hero-gradient {
     background: linear-gradient(135deg, 
-      hsl(205 48% 12%) 0%, 
-      hsl(203 29% 21%) 50%, 
-      hsl(204 18% 35%) 100%
+      hsl(20 12% 10%) 0%, 
+      hsl(25 12% 14%) 50%, 
+      hsl(25 10% 18%) 100%
     );
   }
   
@@ -198,21 +181,21 @@
   .card-hover:hover {
     transform: translateY(-4px);
     box-shadow: 
-      0 16px 48px hsl(205 48% 12% / 0.2),
-      0 0 30px hsl(195 7% 64% / 0.1);
+      0 16px 48px hsl(0 0% 0% / 0.25),
+      0 0 30px hsl(36 45% 55% / 0.1);
   }
   
   /* Status badges */
   .status-open {
-    @apply bg-primary/20 text-primary border border-primary/30;
+    @apply bg-accent/20 text-accent border border-accent/30;
   }
   
   .status-full {
-    @apply bg-amber-500/20 text-amber-600 border border-amber-500/30;
+    @apply bg-primary/20 text-primary border border-primary/30;
   }
   
   .status-progress {
-    @apply bg-sky-500/20 text-sky-600 border border-sky-500/30;
+    @apply bg-amber-500/20 text-amber-500 border border-amber-500/30;
   }
   
   .status-completed {
@@ -225,15 +208,15 @@
   
   /* Skill level badges */
   .skill-beginner {
-    @apply bg-emerald-500/20 text-emerald-600 border border-emerald-500/30;
+    @apply bg-accent/20 text-accent border border-accent/30;
   }
   
   .skill-intermediate {
-    @apply bg-amber-500/20 text-amber-600 border border-amber-500/30;
+    @apply bg-primary/20 text-primary border border-primary/30;
   }
   
   .skill-advanced {
-    @apply bg-rose-500/20 text-rose-600 border border-rose-500/30;
+    @apply bg-rose-500/20 text-rose-500 border border-rose-500/30;
   }
   
   /* Sport type badge */
@@ -258,7 +241,7 @@
   
   /* Animated underline */
   .animated-underline {
-    @apply relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-accent after:transition-all after:duration-300 hover:after:w-full;
+    @apply relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all after:duration-300 hover:after:w-full;
   }
   
   /* Pulse animation for live indicator */
@@ -270,23 +253,28 @@
   /* Active status dot */
   .status-dot-active {
     @apply w-2.5 h-2.5 rounded-full;
-    background: hsl(160 50% 45%);
-    box-shadow: 0 0 10px hsl(160 50% 45% / 0.6);
+    background: hsl(78 42% 65%);
+    box-shadow: 0 0 10px hsl(78 42% 65% / 0.6);
   }
   
-  /* Premium slate glow button */
+  /* Premium warm glow button */
   .btn-glow {
     @apply relative overflow-hidden;
+    box-shadow: 0 0 20px hsl(36 45% 55% / 0.2);
   }
   
   .btn-glow::before {
     content: '';
     @apply absolute inset-0 opacity-0 transition-opacity duration-300;
-    background: linear-gradient(135deg, hsl(195 7% 64% / 0.1), hsl(160 3% 81% / 0.08));
+    background: linear-gradient(135deg, hsl(36 45% 55% / 0.15), hsl(78 42% 65% / 0.1));
   }
   
   .btn-glow:hover::before {
     @apply opacity-100;
+  }
+  
+  .btn-glow:hover {
+    box-shadow: 0 0 30px hsl(36 45% 55% / 0.35);
   }
   
   /* Gradient border card */
@@ -298,28 +286,28 @@
     content: '';
     @apply absolute inset-0 rounded-2xl;
     padding: 1px;
-    background: linear-gradient(135deg, hsl(203 29% 21% / 0.4), hsl(204 18% 35% / 0.2));
+    background: linear-gradient(135deg, hsl(36 45% 55% / 0.4), hsl(78 42% 65% / 0.2));
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: xor;
     -webkit-mask-composite: xor;
     pointer-events: none;
   }
   
-  /* Stats card with gradient - Premium dark slate */
+  /* Stats card with gradient - Premium warm dark */
   .stats-card {
     @apply relative overflow-hidden rounded-2xl p-5;
     background: linear-gradient(
       180deg,
-      hsl(203 29% 21% / 0.95) 0%,
-      hsl(205 48% 12% / 0.9) 100%
+      hsl(25 12% 14% / 0.95) 0%,
+      hsl(20 12% 10% / 0.9) 100%
     );
-    border: 1px solid hsl(204 18% 35% / 0.4);
+    border: 1px solid hsl(36 45% 55% / 0.2);
   }
   
   .stats-card::after {
     content: '';
     @apply absolute bottom-0 left-0 right-0 h-1/2;
-    background: linear-gradient(0deg, hsl(195 7% 64% / 0.03), transparent);
+    background: linear-gradient(0deg, hsl(36 45% 55% / 0.03), transparent);
     pointer-events: none;
   }
   
@@ -407,11 +395,11 @@
 }
 
 @keyframes glow {
-  from { box-shadow: 0 0 20px hsl(195 7% 64% / 0.1); }
-  to { box-shadow: 0 0 40px hsl(195 7% 64% / 0.2); }
+  from { box-shadow: 0 0 20px hsl(36 45% 55% / 0.15); }
+  to { box-shadow: 0 0 40px hsl(36 45% 55% / 0.25); }
 }
 
-/* Scrollbar styling - Premium slate */
+/* Scrollbar styling - Premium warm */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -419,22 +407,22 @@
 
 ::-webkit-scrollbar-track {
   @apply rounded-full;
-  background: hsl(203 29% 21%);
+  background: hsl(25 12% 14%);
 }
 
 ::-webkit-scrollbar-thumb {
   @apply rounded-full transition-colors;
-  background: hsl(204 18% 35%);
+  background: hsl(36 45% 55% / 0.4);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(195 7% 64%);
+  background: hsl(36 45% 55% / 0.6);
 }
 
 /* Selection styling */
 ::selection {
-  background: hsl(204 18% 35% / 0.4);
-  color: hsl(160 3% 81%);
+  background: hsl(36 45% 55% / 0.3);
+  color: hsl(30 15% 92%);
 }
 
 /* Print styles for PDF export */
