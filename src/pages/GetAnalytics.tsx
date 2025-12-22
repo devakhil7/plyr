@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Upload, Video, Clock, CheckCircle, XCircle, Play, Eye, Film, Loader2 } from "lucide-react";
+import { Upload, Video, Clock, CheckCircle, XCircle, Play, Eye, Film, Loader2, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { AdminVideoTagger } from "@/components/match/AdminVideoTagger";
 import { VideoHighlightEvents } from "@/components/match/VideoHighlightEvents";
@@ -242,13 +242,19 @@ const GetAnalytics = () => {
   );
 
   return (
-    <Layout>
-      <div className="container max-w-6xl py-8 space-y-8">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">Get Analytics & Highlights</h1>
-          <p className="text-muted-foreground">
-            Upload your game footage and get professional analysis with highlight reels
-          </p>
+    <AppLayout>
+      <div className="container-app py-4 space-y-4">
+        {/* Header */}
+        <div className="hero-gradient -mx-4 px-4 py-6 rounded-b-3xl mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-primary-foreground/15 flex items-center justify-center">
+              <BarChart3 className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-primary-foreground">Get Analytics</h1>
+              <p className="text-sm text-primary-foreground/70">Upload footage for AI insights</p>
+            </div>
+          </div>
         </div>
 
         <Tabs defaultValue="submit" key={rolesLoading ? "loading" : isAdmin ? "admin" : "user"} className="w-full">
@@ -506,7 +512,7 @@ const GetAnalytics = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </AppLayout>
   );
 };
 

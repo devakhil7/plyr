@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -114,7 +114,7 @@ export default function ImproveFootball() {
   const selectedCategoryData = categories.find((c) => c.id === selectedCategory);
 
   return (
-    <Layout>
+    <AppLayout>
       <Helmet>
         <title>Improve Your Football Skills | SPORTIQ</title>
         <meta name="description" content="Master football with position guides, skill tutorials, and training drills. Learn from goalkeeper to striker, passing to shooting." />
@@ -376,6 +376,6 @@ export default function ImproveFootball() {
           </Tabs>
         </div>
       </div>
-    </Layout>
+    </AppLayout>
   );
 }
