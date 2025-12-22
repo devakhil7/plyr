@@ -7,12 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, IndianRupee, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, IndianRupee, Navigation, Play } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CalendarSlotPicker } from "@/components/CalendarSlotPicker";
 import { useGeolocation, calculateDistance, formatDistance, getCityCoordinates } from "@/hooks/useGeolocation";
@@ -184,29 +184,36 @@ export default function HostMatch() {
 
   if (loading) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 flex items-center justify-center min-h-[60vh]">
           <div className="animate-pulse text-muted-foreground">Loading...</div>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   return (
-    <Layout showFooter={false}>
-      <div className="container-app py-8">
-        <Link to="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to dashboard
-        </Link>
+    <AppLayout showBottomNav={false}>
+      <div className="container-app py-4 space-y-4">
+        {/* Header */}
+        <div className="hero-gradient -mx-4 px-4 py-6 rounded-b-3xl mb-2">
+          <Link to="/dashboard" className="inline-flex items-center text-sm text-primary-foreground/70 hover:text-primary-foreground mb-3">
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            Back
+          </Link>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-primary-foreground/15 flex items-center justify-center">
+              <Play className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-primary-foreground">Host a Match</h1>
+              <p className="text-sm text-primary-foreground/70">Create and invite players</p>
+            </div>
+          </div>
+        </div>
 
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Host a Match</CardTitle>
-              <CardDescription>Create a new match and invite players to join</CardDescription>
-            </CardHeader>
-            <CardContent>
+        <Card className="glass-card">
+          <CardContent className="p-4">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -414,14 +421,13 @@ export default function HostMatch() {
                   />
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+                <Button type="submit" className="w-full btn-glow" size="lg" disabled={submitting}>
                   {submitting ? "Creating Match..." : "Create Match"}
                 </Button>
               </form>
             </CardContent>
           </Card>
         </div>
-      </div>
-    </Layout>
-  );
-}
+      </AppLayout>
+    );
+  }

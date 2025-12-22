@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -576,132 +576,138 @@ export default function Leaderboards() {
   });
 
   return (
-    <Layout>
-      <div className="container-app py-8">
+    <AppLayout>
+      <div className="container-app py-4 space-y-4">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Trophy className="h-6 w-6 text-primary" />
+        <div className="hero-gradient -mx-4 px-4 py-6 rounded-b-3xl mb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-primary-foreground/15 flex items-center justify-center">
+              <Trophy className="h-6 w-6 text-primary-foreground" />
             </div>
-            <h1 className="text-3xl font-bold">Leaderboards</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-primary-foreground">Leaderboards</h1>
+              <p className="text-sm text-primary-foreground/70">Top performers on SPORTIQ</p>
+            </div>
           </div>
-          <p className="text-muted-foreground">
-            Top performers across SPORTIQ
-          </p>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap gap-4 mb-8">
-          {/* Time Period Filter */}
-          <Select value={selectedPeriod} onValueChange={(value: TimePeriod) => {
-            setSelectedPeriod(value);
-            if (value !== "custom") {
-              setCustomStartDate(undefined);
-              setCustomEndDate(undefined);
-            }
-          }}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Time" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-              <SelectItem value="3months">Last 3 Months</SelectItem>
-              <SelectItem value="6months">Last 6 Months</SelectItem>
-              <SelectItem value="year">This Year</SelectItem>
-              <SelectItem value="custom">Custom Range</SelectItem>
-            </SelectContent>
-          </Select>
+        <Card className="glass-card">
+          <CardContent className="p-3">
+            <div className="flex flex-wrap gap-2">
+              {/* Time Period Filter */}
+              <Select value={selectedPeriod} onValueChange={(value: TimePeriod) => {
+                setSelectedPeriod(value);
+                if (value !== "custom") {
+                  setCustomStartDate(undefined);
+                  setCustomEndDate(undefined);
+                }
+              }}>
+                <SelectTrigger className="w-[140px] bg-background/50">
+                  <SelectValue placeholder="All Time" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="3months">Last 3 Months</SelectItem>
+                  <SelectItem value="6months">Last 6 Months</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
 
-          {/* Custom Date Range Pickers */}
-          {selectedPeriod === "custom" && (
-            <>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[160px] justify-start text-left font-normal",
-                      !customStartDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {customStartDate ? format(customStartDate, "PP") : <span>Start date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={customStartDate}
-                    onSelect={setCustomStartDate}
-                    disabled={(date) => date > new Date() || (customEndDate ? date > customEndDate : false)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-[160px] justify-start text-left font-normal",
-                      !customEndDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {customEndDate ? format(customEndDate, "PP") : <span>End date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={customEndDate}
-                    onSelect={setCustomEndDate}
-                    disabled={(date) => date > new Date() || (customStartDate ? date < customStartDate : false)}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
-            </>
-          )}
+              {/* Custom Date Range Pickers */}
+              {selectedPeriod === "custom" && (
+                <>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "w-[120px] justify-start text-left font-normal",
+                          !customStartDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-1 h-3 w-3" />
+                        {customStartDate ? format(customStartDate, "PP") : <span>Start</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customStartDate}
+                        onSelect={setCustomStartDate}
+                        disabled={(date) => date > new Date() || (customEndDate ? date > customEndDate : false)}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "w-[120px] justify-start text-left font-normal",
+                          !customEndDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-1 h-3 w-3" />
+                        {customEndDate ? format(customEndDate, "PP") : <span>End</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customEndDate}
+                        onSelect={setCustomEndDate}
+                        disabled={(date) => date > new Date() || (customStartDate ? date < customStartDate : false)}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </>
+              )}
 
-          <Select value={selectedCity} onValueChange={(value) => {
-            setSelectedCity(value);
-            setSelectedTurf("all");
-          }}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Cities" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Cities</SelectItem>
-              {cities.map((city) => (
-                <SelectItem key={city} value={city}>{city}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <Select value={selectedCity} onValueChange={(value) => {
+                setSelectedCity(value);
+                setSelectedTurf("all");
+              }}>
+                <SelectTrigger className="w-[140px] bg-background/50">
+                  <SelectValue placeholder="All Cities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Cities</SelectItem>
+                  {cities.map((city) => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-          <Select value={selectedTurf} onValueChange={setSelectedTurf}>
-            <SelectTrigger className="w-[220px]">
-              <SelectValue placeholder="All Turfs" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Turfs</SelectItem>
-              {turfs.map((turf) => (
-                <SelectItem key={turf.id} value={turf.id}>
-                  {turf.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+              <Select value={selectedTurf} onValueChange={setSelectedTurf}>
+                <SelectTrigger className="w-[160px] bg-background/50">
+                  <SelectValue placeholder="All Turfs" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Turfs</SelectItem>
+                  {turfs.map((turf) => (
+                    <SelectItem key={turf.id} value={turf.id}>
+                      {turf.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Active Filters Display */}
         {(selectedPeriod !== "all" || selectedCity !== "all" || selectedTurf !== "all") && (
-          <div className="flex flex-wrap items-center gap-2 mb-6">
-            <span className="text-sm text-muted-foreground">Filters:</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Filters:</span>
             {selectedPeriod !== "all" && (
               <Badge variant="secondary" className="text-xs">
                 {selectedPeriod === "month" && "This Month"}
@@ -739,7 +745,7 @@ export default function Leaderboards() {
         )}
 
         {/* Leaderboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <LeaderboardCard
             title="Top Rated Players"
             icon={Star}
@@ -787,6 +793,6 @@ export default function Leaderboards() {
           />
         </div>
       </div>
-    </Layout>
+    </AppLayout>
   );
 }

@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Link, useNavigate } from "react-router-dom";
-import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowRight, UserPlus } from "lucide-react";
+import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowRight, UserPlus, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { CreateTournamentDialog } from "@/components/tournaments/CreateTournamentDialog";
@@ -55,10 +55,10 @@ export default function Tournaments() {
   };
 
   const statusColors: Record<string, string> = {
-    upcoming: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-    live: "bg-green-500/10 text-green-600 border-green-500/20",
-    completed: "bg-gray-500/10 text-gray-600 border-gray-500/20",
-    cancelled: "bg-red-500/10 text-red-600 border-red-500/20",
+    upcoming: "bg-accent/15 text-accent border-accent/30",
+    live: "bg-green-500/15 text-green-600 border-green-500/30",
+    completed: "bg-muted text-muted-foreground border-border",
+    cancelled: "bg-destructive/15 text-destructive border-destructive/30",
   };
 
   const handleRegisterClick = (tournamentId: string) => {
@@ -71,7 +71,6 @@ export default function Tournaments() {
   };
 
   const handleLoginRedirect = () => {
-    // Store the tournament ID in session storage to redirect after login
     if (pendingTournamentId) {
       sessionStorage.setItem("redirectAfterAuth", `/tournaments/${pendingTournamentId}/register`);
     }
@@ -79,38 +78,37 @@ export default function Tournaments() {
   };
 
   return (
-    <Layout>
-      <div className="container-app py-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-              <Trophy className="h-8 w-8 text-primary" />
-              Tournaments
-            </h1>
-            <p className="text-muted-foreground">
-              Compete in organized sports events and win prizes
-            </p>
-          </div>
-          {isAdmin && (
-            <div className="flex gap-2">
-              <CreateTournamentDialog />
-              <Link to="/admin/tournaments">
-                <Button variant="outline">
-                  Manage Tournaments
-                </Button>
-              </Link>
+    <AppLayout>
+      <div className="container-app py-4 space-y-4">
+        {/* Header */}
+        <div className="hero-gradient -mx-4 px-4 py-6 rounded-b-3xl mb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-primary-foreground/15 flex items-center justify-center">
+                <Trophy className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-primary-foreground">Tournaments</h1>
+                <p className="text-sm text-primary-foreground/70">Compete & win prizes</p>
+              </div>
             </div>
-          )}
+            {isAdmin && (
+              <div className="flex gap-2">
+                <CreateTournamentDialog />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 overflow-x-auto pb-1">
           {["upcoming", "live", "completed", "all"].map((status) => (
             <Button
               key={status}
               variant={statusFilter === status ? "default" : "outline"}
               size="sm"
               onClick={() => setStatusFilter(status)}
+              className={statusFilter === status ? "btn-glow" : ""}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
             </Button>
@@ -119,35 +117,35 @@ export default function Tournaments() {
 
         {/* Tournaments List */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-40 bg-muted rounded-lg mb-4" />
-                  <div className="h-6 bg-muted rounded w-3/4 mb-2" />
+              <Card key={i} className="glass-card animate-pulse">
+                <CardContent className="p-4">
+                  <div className="h-32 bg-muted rounded-lg mb-3" />
+                  <div className="h-5 bg-muted rounded w-3/4 mb-2" />
                   <div className="h-4 bg-muted rounded w-1/2" />
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : tournaments.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+          <Card className="glass-card">
+            <CardContent className="p-8 text-center">
+              <Trophy className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
               <h3 className="text-lg font-semibold mb-2">No tournaments found</h3>
-              <p className="text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {statusFilter === "upcoming"
                   ? "Check back later for upcoming tournaments"
-                  : "No tournaments match your filter criteria"}
+                  : "No tournaments match your filter"}
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {tournaments.map((tournament: any) => (
-              <Card key={tournament.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card key={tournament.id} className="glass-card overflow-hidden hover:shadow-lg transition-all">
                 {/* Cover Image */}
-                <div className="h-40 bg-gradient-to-br from-primary/20 to-secondary/20 relative">
+                <div className="h-32 bg-gradient-to-br from-primary/20 to-accent/20 relative">
                   {tournament.cover_image_url ? (
                     <img
                       src={tournament.cover_image_url}
@@ -156,61 +154,60 @@ export default function Tournaments() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Trophy className="h-16 w-16 text-primary/30" />
+                      <Trophy className="h-12 w-12 text-primary/30" />
                     </div>
                   )}
-                  <Badge className={`absolute top-3 right-3 ${statusColors[tournament.status]}`}>
+                  <Badge className={`absolute top-2 right-2 text-xs ${statusColors[tournament.status]}`}>
                     {tournament.status}
                   </Badge>
                 </div>
 
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{tournament.name}</CardTitle>
-                </CardHeader>
-
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>
-                      {format(new Date(tournament.start_datetime), "MMM d")} -{" "}
-                      {format(new Date(tournament.end_datetime), "MMM d, yyyy")}
-                    </span>
-                  </div>
-
-                  {tournament.turfs && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      <span>{tournament.turfs.name}, {tournament.turfs.city}</span>
+                <CardContent className="p-4 space-y-3">
+                  <h3 className="font-semibold line-clamp-1">{tournament.name}</h3>
+                  
+                  <div className="space-y-1.5 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>
+                        {format(new Date(tournament.start_datetime), "MMM d")} - {format(new Date(tournament.end_datetime), "MMM d")}
+                      </span>
                     </div>
-                  )}
 
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>{tournament.tournament_teams?.length || 0} teams requested</span>
-                    </div>
-                    {tournament.entry_fee > 0 && (
-                      <div className="flex items-center gap-1">
-                        <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                        <span>₹{tournament.entry_fee.toLocaleString()}</span>
+                    {tournament.turfs && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-3.5 w-3.5" />
+                        <span className="truncate">{tournament.turfs.name}, {tournament.turfs.city}</span>
                       </div>
                     )}
+
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
+                        <Users className="h-3.5 w-3.5" />
+                        <span>{tournament.tournament_teams?.length || 0} teams</span>
+                      </div>
+                      {tournament.entry_fee > 0 && (
+                        <div className="flex items-center gap-1 font-medium text-foreground">
+                          <IndianRupee className="h-3.5 w-3.5" />
+                          <span>{tournament.entry_fee.toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {tournament.prize_details && (
-                    <p className="text-sm text-green-600 font-medium">
+                    <p className="text-xs text-accent font-medium bg-accent/10 px-2 py-1 rounded-full inline-block">
                       🏆 {tournament.prize_details}
                     </p>
                   )}
 
-                  <div className="flex gap-2 mt-2">
+                  <div className="flex gap-2 pt-2">
                     {tournament.status === "upcoming" && tournament.registration_open && (() => {
                       const userTeam = getUserTeam(tournament);
                       if (userTeam) {
                         return (
                           <Link to={`/tournaments/${tournament.id}/register/roster?team=${userTeam.id}`} className="flex-1">
-                            <Button className="w-full">
-                              <Users className="h-4 w-4 mr-2" />
+                            <Button className="w-full" size="sm">
+                              <Users className="h-3.5 w-3.5 mr-1" />
                               Manage Roster
                             </Button>
                           </Link>
@@ -218,18 +215,19 @@ export default function Tournaments() {
                       }
                       return (
                         <Button 
-                          className="flex-1" 
+                          className="flex-1 btn-glow" 
+                          size="sm"
                           onClick={() => handleRegisterClick(tournament.id)}
                         >
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Register Team
+                          <UserPlus className="h-3.5 w-3.5 mr-1" />
+                          Register
                         </Button>
                       );
                     })()}
                     <Link to={`/tournaments/${tournament.id}`} className={tournament.status === "upcoming" && tournament.registration_open ? "" : "flex-1"}>
-                      <Button variant="outline" className="w-full">
-                        View Details
-                        <ArrowRight className="h-4 w-4 ml-2" />
+                      <Button variant="outline" size="sm" className="w-full">
+                        Details
+                        <ChevronRight className="h-3.5 w-3.5 ml-1" />
                       </Button>
                     </Link>
                   </div>
@@ -242,7 +240,7 @@ export default function Tournaments() {
 
       {/* Login Dialog */}
       <Dialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="glass-card sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-primary" />
@@ -253,7 +251,7 @@ export default function Tournaments() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 mt-4">
-            <Button onClick={handleLoginRedirect}>
+            <Button onClick={handleLoginRedirect} className="btn-glow">
               Login / Sign Up
             </Button>
             <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>
@@ -262,6 +260,6 @@ export default function Tournaments() {
           </div>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </AppLayout>
   );
 }
