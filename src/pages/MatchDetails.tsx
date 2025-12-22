@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useOwnedTurfs, useUserRoles } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
@@ -126,8 +126,8 @@ export default function MatchDetails() {
   const isTurfOwner = match?.turf_id && ownedTurfs.some((ot: any) => ot.turfs?.id === match.turf_id);
 
   const isHost = user && match?.host_id === user.id;
-  const canEditStats = isHost || isTurfOwner || isAdmin; // Host, turf owner, or admin can edit stats
-  const canTagEvents = isHost || isTurfOwner || isAdmin; // Host, turf owner, or admin can tag events
+  const canEditStats = isHost || isTurfOwner || isAdmin;
+  const canTagEvents = isHost || isTurfOwner || isAdmin;
   const confirmedPlayers = match?.match_players?.filter((p: any) => p.join_status === "confirmed") || [];
   const isJoined = confirmedPlayers.some((p: any) => p.user_id === user?.id);
   const slotsLeft = (match?.total_slots || 0) - confirmedPlayers.length;
@@ -431,109 +431,113 @@ export default function MatchDetails() {
 
   if (isLoading) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 flex items-center justify-center min-h-[60vh]">
           <div className="animate-pulse text-muted-foreground">Loading match...</div>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   if (!match) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 text-center">
           <h2 className="text-2xl font-bold mb-4">Match not found</h2>
           <Link to="/matches">
-            <Button>Browse Matches</Button>
+            <Button className="btn-glow">Browse Matches</Button>
           </Link>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   return (
-    <Layout>
-      <div className="container-app py-8">
+    <AppLayout>
+      <div className="container-app py-4 space-y-4">
         {/* Back Button */}
-        <Link to="/matches" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
+        <Link to="/matches" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to matches
         </Link>
 
         {/* Header */}
-        <div className="flex flex-col lg:flex-row gap-8 mb-8">
+        <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-3">
-              <Badge variant="sport">{match.sport}</Badge>
-              <Badge variant={statusVariants[match.status] || "secondary"}>
-                {match.status === "in_progress" ? "In Progress" : match.status.charAt(0).toUpperCase() + match.status.slice(1)}
-              </Badge>
-            </div>
-            <h1 className="text-3xl font-bold mb-4">{match.match_name}</h1>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-muted-foreground mb-6">
-              <div className="flex items-center">
-                <MapPin className="h-5 w-5 mr-3 text-primary" />
-                <div>
-                  <p className="font-medium text-foreground">{match.turfs?.name}</p>
-                  <p className="text-sm">{match.turfs?.location}, {match.turfs?.city}</p>
+            <div className="hero-gradient -mx-4 px-4 py-5 rounded-b-3xl lg:rounded-3xl lg:mx-0">
+              <div className="flex items-center gap-3 mb-3">
+                <Badge variant="sport" className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">
+                  {match.sport}
+                </Badge>
+                <Badge variant={statusVariants[match.status] || "secondary"}>
+                  {match.status === "in_progress" ? "In Progress" : match.status.charAt(0).toUpperCase() + match.status.slice(1)}
+                </Badge>
+              </div>
+              <h1 className="text-xl font-bold text-primary-foreground mb-4">{match.match_name}</h1>
+              
+              <div className="grid grid-cols-2 gap-3 text-primary-foreground/90">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <div>
+                    <p className="font-medium text-sm">{match.turfs?.name}</p>
+                    <p className="text-xs text-primary-foreground/70">{match.turfs?.location}, {match.turfs?.city}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <div>
+                    <p className="font-medium text-sm">
+                      {new Date(match.match_date).toLocaleDateString("en-IN", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                    <p className="text-xs text-primary-foreground/70">{match.match_time?.slice(0, 5)} • {match.duration_minutes} min</p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center">
-                <Calendar className="h-5 w-5 mr-3 text-primary" />
-                <div>
-                  <p className="font-medium text-foreground">
-                    {new Date(match.match_date).toLocaleDateString("en-IN", {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                    })}
-                  </p>
-                  <p className="text-sm">{match.match_time?.slice(0, 5)} • {match.duration_minutes} min</p>
-                </div>
-              </div>
-            </div>
 
-            {/* Invite & Share Buttons */}
-            <div className="flex flex-wrap gap-3">
-              {user && (isHost || isJoined) && match.status === "open" && (
-                <MatchInviteDialog
+              {/* Invite & Share Buttons */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                {user && (isHost || isJoined) && match.status === "open" && (
+                  <MatchInviteDialog
+                    matchId={match.id}
+                    matchDetails={{
+                      name: match.match_name,
+                      date: new Date(match.match_date).toLocaleDateString("en-IN", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      }),
+                      time: match.match_time?.slice(0, 5),
+                      turf: match.turfs?.name || "TBD",
+                    }}
+                    userId={user.id}
+                    existingPlayerIds={confirmedPlayers.map((p: any) => p.user_id)}
+                    matchCity={match.turfs?.city}
+                  />
+                )}
+                <MatchShareDialog
                   matchId={match.id}
-                  matchDetails={{
-                    name: match.match_name,
-                    date: new Date(match.match_date).toLocaleDateString("en-IN", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    }),
-                    time: match.match_time?.slice(0, 5),
-                    turf: match.turfs?.name || "TBD",
-                  }}
-                  userId={user.id}
-                  existingPlayerIds={confirmedPlayers.map((p: any) => p.user_id)}
-                  matchCity={match.turfs?.city}
+                  matchName={match.match_name}
+                  matchDate={new Date(match.match_date).toLocaleDateString("en-IN", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                  matchTime={match.match_time?.slice(0, 5)}
+                  turfName={match.turfs?.name || "TBD"}
                 />
-              )}
-              <MatchShareDialog
-                matchId={match.id}
-                matchName={match.match_name}
-                matchDate={new Date(match.match_date).toLocaleDateString("en-IN", {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                })}
-                matchTime={match.match_time?.slice(0, 5)}
-                turfName={match.turfs?.name || "TBD"}
-              />
+              </div>
             </div>
           </div>
 
           {/* Action Card */}
-          <Card className="lg:w-80">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-muted-foreground">Players</span>
+          <Card className="glass-card lg:w-80">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-muted-foreground">Players</span>
                 <span className="font-semibold">{confirmedPlayers.length}/{match.total_slots}</span>
               </div>
               <Progress value={(confirmedPlayers.length / match.total_slots) * 100} className="mb-4" />
@@ -545,9 +549,9 @@ export default function MatchDetails() {
                     {match.turf_id && (
                       isTurfBooked ? (
                         <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <CheckCircle className="h-4 w-4 text-green-600" />
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-green-700">Turf Booked</p>
+                            <p className="text-xs font-medium text-green-700">Turf Booked</p>
                             <p className="text-xs text-green-600">Payment confirmed</p>
                           </div>
                         </div>
@@ -555,6 +559,7 @@ export default function MatchDetails() {
                         <Button
                           className="w-full"
                           variant="outline"
+                          size="sm"
                           onClick={handleBookTurf}
                           disabled={bookingTurf}
                         >
@@ -566,7 +571,7 @@ export default function MatchDetails() {
                           ) : (
                             <>
                               <CreditCard className="h-4 w-4 mr-2" />
-                              Book & Pay Turf (₹{((match.turfs?.price_per_hour || 0) * match.duration_minutes / 60).toLocaleString('en-IN')})
+                              Book Turf (₹{((match.turfs?.price_per_hour || 0) * match.duration_minutes / 60).toLocaleString('en-IN')})
                             </>
                           )}
                         </Button>
@@ -574,13 +579,13 @@ export default function MatchDetails() {
                     )}
                     
                     {match.status === "open" && (
-                      <Button className="w-full" onClick={() => updateStatusMutation.mutate("in_progress")}>
+                      <Button className="w-full btn-glow" size="sm" onClick={() => updateStatusMutation.mutate("in_progress")}>
                         <Play className="h-4 w-4 mr-2" />
                         Start Match
                       </Button>
                     )}
                     {match.status === "in_progress" && (
-                      <Button className="w-full" onClick={() => updateStatusMutation.mutate("completed")}>
+                      <Button className="w-full btn-glow" size="sm" onClick={() => updateStatusMutation.mutate("completed")}>
                         Complete Match
                       </Button>
                     )}
@@ -591,6 +596,7 @@ export default function MatchDetails() {
                     <Button
                       variant="outline"
                       className="w-full"
+                      size="sm"
                       onClick={() => leaveMutation.mutate()}
                       disabled={leaveMutation.isPending || match.status !== "open"}
                     >
@@ -601,21 +607,22 @@ export default function MatchDetails() {
                 ) : isTournamentMatch ? (
                   <div className="space-y-2">
                     <div className="p-3 bg-muted/50 border border-border rounded-lg text-center">
-                      <Trophy className="h-5 w-5 mx-auto mb-2 text-primary" />
-                      <p className="text-sm font-medium">Tournament Match</p>
+                      <Trophy className="h-4 w-4 mx-auto mb-2 text-primary" />
+                      <p className="text-xs font-medium">Tournament Match</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Players join via team roster submission
+                        Players join via team roster
                       </p>
                     </div>
                     <Link to={`/tournaments/${tournamentMatch?.tournament_id}`}>
-                      <Button variant="outline" className="w-full">
+                      <Button variant="outline" className="w-full" size="sm">
                         View Tournament
                       </Button>
                     </Link>
                   </div>
                 ) : (
                   <Button
-                    className="w-full"
+                    className="w-full btn-glow"
+                    size="sm"
                     onClick={() => joinMutation.mutate()}
                     disabled={joinMutation.isPending || slotsLeft === 0 || match.status !== "open"}
                   >
@@ -624,7 +631,7 @@ export default function MatchDetails() {
                 )
               ) : (
                 <Link to="/auth">
-                  <Button className="w-full">Sign in to Join</Button>
+                  <Button className="w-full btn-glow" size="sm">Sign in to Join</Button>
                 </Link>
               )}
             </CardContent>
@@ -632,20 +639,20 @@ export default function MatchDetails() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview">
-          <TabsList>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="glass-card w-full justify-start">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="players">Players ({confirmedPlayers.length})</TabsTrigger>
             <TabsTrigger value="analytics">Video & Analytics</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Match Details</CardTitle>
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="glass-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Match Details</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Skill Level</span>
                     <span className="capitalize">{match.required_skill_min} - {match.required_skill_max}</span>
@@ -659,24 +666,24 @@ export default function MatchDetails() {
                     <span className="capitalize">{match.visibility}</span>
                   </div>
                   {match.notes && (
-                    <div className="pt-3 border-t">
-                      <p className="text-muted-foreground text-sm mb-1">Notes</p>
-                      <p className="text-sm">{match.notes}</p>
+                    <div className="pt-2 border-t">
+                      <p className="text-muted-foreground text-xs mb-1">Notes</p>
+                      <p className="text-xs">{match.notes}</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Host</CardTitle>
+              <Card className="glass-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Host</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Link 
                     to={`/players/${match.host_id}`}
-                    className="flex items-center gap-4 hover:bg-accent/50 p-2 -m-2 rounded-lg transition-colors"
+                    className="flex items-center gap-3 hover:bg-accent/50 p-2 -m-2 rounded-lg transition-colors"
                   >
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold overflow-hidden">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold overflow-hidden">
                       {match.profiles?.profile_photo_url ? (
                         <img src={match.profiles.profile_photo_url} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -684,8 +691,8 @@ export default function MatchDetails() {
                       )}
                     </div>
                     <div>
-                      <p className="font-medium hover:text-primary">{match.profiles?.name || "Host"}</p>
-                      <p className="text-sm text-muted-foreground">Match Organizer</p>
+                      <p className="font-medium text-sm hover:text-primary">{match.profiles?.name || "Host"}</p>
+                      <p className="text-xs text-muted-foreground">Match Organizer</p>
                     </div>
                   </Link>
                 </CardContent>
@@ -693,11 +700,11 @@ export default function MatchDetails() {
             </div>
           </TabsContent>
 
-          <TabsContent value="players" className="mt-6 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5" />
+          <TabsContent value="players" className="space-y-4">
+            <Card className="glass-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
                   Players on the Pitch
                 </CardTitle>
               </CardHeader>
@@ -734,9 +741,9 @@ export default function MatchDetails() {
             )}
           </TabsContent>
 
-          <TabsContent value="analytics" className="mt-6">
+          <TabsContent value="analytics" className="space-y-4">
             {match.status === "completed" ? (
-              <div className="space-y-6">
+              <>
                 {/* Share Scorecard Button */}
                 {match.team_a_score !== null && (
                   <div className="flex justify-end">
@@ -764,18 +771,18 @@ export default function MatchDetails() {
 
                 {/* Score Display */}
                 {match.team_a_score !== null && (
-                  <Card className="bg-gradient-to-r from-primary/5 to-secondary/5">
-                    <CardContent className="p-8 text-center">
-                      <p className="text-sm text-muted-foreground mb-2">Final Score</p>
-                      <div className="flex items-center justify-center gap-8">
+                  <Card className="glass-card bg-gradient-to-r from-primary/5 to-secondary/5">
+                    <CardContent className="p-6 text-center">
+                      <p className="text-xs text-muted-foreground mb-2">Final Score</p>
+                      <div className="flex items-center justify-center gap-6">
                         <div>
-                          <p className="text-4xl font-bold">{match.team_a_score}</p>
-                          <p className="text-sm text-muted-foreground">Team A</p>
+                          <p className="text-3xl font-bold">{match.team_a_score}</p>
+                          <p className="text-xs text-muted-foreground">Team A</p>
                         </div>
-                        <span className="text-2xl text-muted-foreground">-</span>
+                        <span className="text-xl text-muted-foreground">-</span>
                         <div>
-                          <p className="text-4xl font-bold">{match.team_b_score}</p>
-                          <p className="text-sm text-muted-foreground">Team B</p>
+                          <p className="text-3xl font-bold">{match.team_b_score}</p>
+                          <p className="text-xs text-muted-foreground">Team B</p>
                         </div>
                       </div>
                     </CardContent>
@@ -784,32 +791,32 @@ export default function MatchDetails() {
 
                 {/* Goal Scorers & Assists Display */}
                 {matchEvents.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Trophy className="h-5 w-5 text-primary" />
+                  <Card className="glass-card">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Trophy className="h-4 w-4 text-primary" />
                         Goal Scorers & Assists
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {matchEvents.map((event: any) => (
                           <div
                             key={event.id}
-                            className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg"
+                            className="flex items-center gap-3 p-2 bg-muted/50 rounded-lg"
                           >
-                            <Badge variant={event.team === "A" ? "default" : "secondary"}>
+                            <Badge variant={event.team === "A" ? "default" : "secondary"} className="text-xs">
                               Team {event.team}
                             </Badge>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="font-medium">⚽ {event.scorer?.name || "Unknown"}</span>
+                                <span className="font-medium text-sm">⚽ {event.scorer?.name || "Unknown"}</span>
                                 {event.minute && (
                                   <span className="text-xs text-muted-foreground">({event.minute}')</span>
                                 )}
                               </div>
                               {event.assist?.name && (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-xs text-muted-foreground">
                                   Assist: {event.assist.name}
                                 </p>
                               )}
@@ -831,26 +838,26 @@ export default function MatchDetails() {
 
                 {/* Analytics */}
                 {analytics && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
-                      <CardContent className="p-6 text-center">
-                        <Trophy className="h-8 w-8 mx-auto mb-2 text-primary" />
-                        <p className="text-2xl font-bold">{analytics.goals_team_a} - {analytics.goals_team_b}</p>
-                        <p className="text-sm text-muted-foreground">Goals</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Card className="glass-card">
+                      <CardContent className="p-4 text-center">
+                        <Trophy className="h-6 w-6 mx-auto mb-2 text-primary" />
+                        <p className="text-lg font-bold">{analytics.goals_team_a} - {analytics.goals_team_b}</p>
+                        <p className="text-xs text-muted-foreground">Goals</p>
                       </CardContent>
                     </Card>
-                    <Card>
-                      <CardContent className="p-6 text-center">
-                        <Target className="h-8 w-8 mx-auto mb-2 text-accent" />
-                        <p className="text-2xl font-bold">{analytics.shots_on_target_a} - {analytics.shots_on_target_b}</p>
-                        <p className="text-sm text-muted-foreground">Shots on Target</p>
+                    <Card className="glass-card">
+                      <CardContent className="p-4 text-center">
+                        <Target className="h-6 w-6 mx-auto mb-2 text-accent" />
+                        <p className="text-lg font-bold">{analytics.shots_on_target_a} - {analytics.shots_on_target_b}</p>
+                        <p className="text-xs text-muted-foreground">Shots on Target</p>
                       </CardContent>
                     </Card>
-                    <Card>
-                      <CardContent className="p-6 text-center">
-                        <Percent className="h-8 w-8 mx-auto mb-2 text-secondary" />
-                        <p className="text-2xl font-bold">{analytics.possession_team_a}% - {analytics.possession_team_b}%</p>
-                        <p className="text-sm text-muted-foreground">Possession</p>
+                    <Card className="glass-card">
+                      <CardContent className="p-4 text-center">
+                        <Percent className="h-6 w-6 mx-auto mb-2 text-secondary" />
+                        <p className="text-lg font-bold">{analytics.possession_team_a}% - {analytics.possession_team_b}%</p>
+                        <p className="text-xs text-muted-foreground">Possession</p>
                       </CardContent>
                     </Card>
                   </div>
@@ -886,34 +893,58 @@ export default function MatchDetails() {
                     matchPlayers={confirmedPlayers.map((mp: any) => ({
                       id: mp.id,
                       user_id: mp.user_id,
-                      offline_player_name: mp.offline_player_name,
+                      team: mp.team,
                       profiles: mp.profiles,
+                      offline_player_name: mp.offline_player_name,
                     }))}
-                    onEventAdded={() => refetchVideoEvents()}
+                    onEventSaved={refetchVideoEvents}
                   />
                 )}
-
-                {/* Show message if not host/turf owner and no analytics */}
-                {!canEditStats && !analytics && matchEvents.length === 0 && videoEvents.length === 0 && (
-                  <Card>
-                    <CardContent className="p-8 text-center">
-                      <p className="text-muted-foreground">Match stats not yet available</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+              </>
             ) : (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Clock className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
-                  <p className="font-medium">Match not completed yet</p>
-                  <p className="text-sm text-muted-foreground">Analytics will be available after the match ends</p>
+              <Card className="glass-card">
+                <CardContent className="p-6 text-center">
+                  <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
+                  <h3 className="font-semibold text-sm mb-1">Match Not Yet Complete</h3>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Analytics and video highlights will be available after the match is completed.
+                  </p>
+                  {isHost && match.analytics_status !== "processing" && (
+                    <>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        As the host, you can upload match video to generate highlights:
+                      </p>
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          onChange={handleVideoUpload}
+                          disabled={uploading}
+                        />
+                        <Button variant="outline" size="sm" disabled={uploading}>
+                          {uploading ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Upload className="h-4 w-4 mr-2" />
+                          )}
+                          {uploading ? "Processing..." : "Upload Match Video"}
+                        </Button>
+                      </label>
+                    </>
+                  )}
+                  {match.analytics_status === "processing" && (
+                    <div className="flex items-center justify-center gap-2 text-primary">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm">Processing video...</span>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </AppLayout>
   );
 }

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowLeft, FileText, Plus, Shuffle, UserPlus } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
@@ -77,10 +77,10 @@ export default function TournamentDetails() {
   );
 
   const statusColors: Record<string, string> = {
-    upcoming: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-    live: "bg-green-500/10 text-green-600 border-green-500/20",
-    completed: "bg-gray-500/10 text-gray-600 border-gray-500/20",
-    cancelled: "bg-red-500/10 text-red-600 border-red-500/20",
+    upcoming: "bg-accent/15 text-accent border-accent/30",
+    live: "bg-green-500/15 text-green-600 border-green-500/30",
+    completed: "bg-muted text-muted-foreground border-border",
+    cancelled: "bg-destructive/15 text-destructive border-destructive/30",
   };
 
   const tournamentMatches = (tournament?.tournament_matches || []) as any[];
@@ -208,84 +208,76 @@ export default function TournamentDetails() {
 
   if (isLoading) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 flex items-center justify-center min-h-[60vh]">
           <div className="animate-pulse text-muted-foreground">Loading tournament...</div>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   if (!tournament) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 text-center">
           <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
           <h2 className="text-2xl font-bold mb-4">Tournament not found</h2>
           <Link to="/tournaments">
-            <Button>Browse Tournaments</Button>
+            <Button className="btn-glow">Browse Tournaments</Button>
           </Link>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   return (
-    <Layout>
-      <div className="container-app py-8">
-        <Link to="/tournaments" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
+    <AppLayout>
+      <div className="container-app py-4 space-y-4">
+        <Link to="/tournaments" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to tournaments
         </Link>
 
-        {/* Header */}
-        <div className="mb-8">
+        {/* Hero Header */}
+        <div className="hero-gradient -mx-4 px-4 py-6 rounded-b-3xl">
           <div className="flex items-center gap-3 mb-3">
-            <Badge variant="sport">{tournament.sport}</Badge>
+            <Badge variant="sport" className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">
+              {tournament.sport}
+            </Badge>
             <Badge className={statusColors[tournament.status]}>
               {tournament.status}
             </Badge>
           </div>
-          <h1 className="text-3xl font-bold mb-4">{tournament.name}</h1>
+          <h1 className="text-2xl font-bold text-primary-foreground mb-4">{tournament.name}</h1>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-primary" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="flex items-center gap-2 text-primary-foreground/90">
+              <Calendar className="h-4 w-4" />
               <div>
-                <p className="text-sm text-muted-foreground">Dates</p>
-                <p className="font-medium">
+                <p className="text-xs text-primary-foreground/70">Dates</p>
+                <p className="text-sm font-medium">
                   {format(new Date(tournament.start_datetime), "MMM d")} - {format(new Date(tournament.end_datetime), "MMM d, yyyy")}
                 </p>
               </div>
             </div>
 
-            {tournament.turfs && (
-              <div className="flex items-center gap-3">
-                <MapPin className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Venue</p>
-                  <p className="font-medium">{tournament.turfs.name}, {tournament.turfs.city}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-2 text-primary-foreground/90">
+              <Users className="h-4 w-4" />
               <div>
-                <p className="text-sm text-muted-foreground">Teams</p>
-                <p className="font-medium">{registeredTeams.length} approved</p>
+                <p className="text-xs text-primary-foreground/70">Teams</p>
+                <p className="text-sm font-medium">{registeredTeams.length} approved</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <IndianRupee className="h-5 w-5 text-primary" />
+            <div className="flex items-center gap-2 text-primary-foreground/90">
+              <IndianRupee className="h-4 w-4" />
               <div>
-                <p className="text-sm text-muted-foreground">Entry Fee</p>
-                <p className="font-medium">
+                <p className="text-xs text-primary-foreground/70">Entry Fee</p>
+                <p className="text-sm font-medium">
                   {tournament.entry_fee > 0 ? `₹${tournament.entry_fee.toLocaleString()}` : "Free"}
                 </p>
                 {tournament.allow_part_payment && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-primary-foreground/60">
                     Part payment: {tournament.advance_type === "percentage" 
                       ? `${tournament.advance_value}%` 
                       : `₹${tournament.advance_value}`} advance
@@ -293,13 +285,23 @@ export default function TournamentDetails() {
                 )}
               </div>
             </div>
+
+            {tournament.turfs && (
+              <div className="flex items-center gap-2 text-primary-foreground/90 col-span-2 lg:col-span-1">
+                <MapPin className="h-4 w-4" />
+                <div>
+                  <p className="text-xs text-primary-foreground/70">Venue</p>
+                  <p className="text-sm font-medium truncate">{tournament.turfs.name}, {tournament.turfs.city}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Registration / Roster Button */}
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
+          <div className="mt-4 flex flex-wrap gap-3">
             {user && myTeam ? (
               <Link to={`/tournaments/${id}/register/roster?team=${myTeam.id}`}>
-                <Button>
+                <Button className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
                   <Users className="h-4 w-4 mr-2" />
                   Manage Team Roster
                 </Button>
@@ -309,13 +311,16 @@ export default function TournamentDetails() {
               (!tournament.registration_deadline || !isPast(new Date(tournament.registration_deadline))) && (
                 user ? (
                   <Link to={`/tournaments/${id}/register`}>
-                    <Button>
+                    <Button className="btn-glow bg-primary-foreground text-primary hover:bg-primary-foreground/90">
                       <UserPlus className="h-4 w-4 mr-2" />
                       Register Your Team
                     </Button>
                   </Link>
                 ) : (
-                  <Button onClick={() => setLoginDialogOpen(true)}>
+                  <Button 
+                    onClick={() => setLoginDialogOpen(true)}
+                    className="btn-glow bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                  >
                     <UserPlus className="h-4 w-4 mr-2" />
                     Register Your Team
                   </Button>
@@ -336,74 +341,74 @@ export default function TournamentDetails() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview">
-          <TabsList>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="glass-card w-full justify-start">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="stats">Stats</TabsTrigger>
             <TabsTrigger value="teams">Teams ({registeredTeams.length})</TabsTrigger>
             <TabsTrigger value="matches">Matches</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="glass-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary" />
                     Description
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-line">
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">
                     {tournament.description || "No description provided."}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
+              <Card className="glass-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
                     Team Format
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between">
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Players per team</span>
                     <span className="font-medium">{tournament.min_players_per_team} - {tournament.max_players_per_team}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Playing on field</span>
                     <span className="font-medium">{tournament.max_playing_players || 7}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Max substitutes</span>
                     <span className="font-medium">{tournament.max_subs || 4}</span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-yellow-500" />
+              <Card className="glass-card">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-yellow-500" />
                     Prizes
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground whitespace-pre-line">
+                  <p className="text-sm text-muted-foreground whitespace-pre-line">
                     {tournament.prize_details || "Prize details to be announced."}
                   </p>
                 </CardContent>
               </Card>
 
               {tournament.rules && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Rules & Format</CardTitle>
+                <Card className="glass-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Rules & Format</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground whitespace-pre-line">
+                    <p className="text-sm text-muted-foreground whitespace-pre-line">
                       {tournament.rules}
                     </p>
                   </CardContent>
@@ -412,24 +417,24 @@ export default function TournamentDetails() {
             </div>
           </TabsContent>
 
-          <TabsContent value="stats" className="mt-6">
+          <TabsContent value="stats">
             <TournamentStatsSection 
               tournamentId={id!} 
               tournamentMatches={tournamentMatches}
             />
           </TabsContent>
 
-          <TabsContent value="teams" className="mt-6">
-            <Card>
-              <CardContent className="p-6">
+          <TabsContent value="teams">
+            <Card className="glass-card">
+              <CardContent className="p-4">
                 {registeredTeams.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {registeredTeams.map((team: any) => {
                       const isMyTeam = team.captain_user_id === user?.id;
                       const cardContent = (
                         <>
                           <div className="flex items-center justify-between mb-1">
-                            <p className="font-semibold">{team.team_name}</p>
+                            <p className="font-semibold text-sm">{team.team_name}</p>
                             <Badge 
                               variant={team.payment_status === 'paid' ? 'default' : 'secondary'}
                               className="text-xs"
@@ -437,7 +442,7 @@ export default function TournamentDetails() {
                               {team.payment_status === 'paid' ? 'Paid' : team.verification_notes === 'Pay at ground' ? 'Pay at Ground' : 'Partial'}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             Captain: {team.profiles?.name || "Unknown"}
                           </p>
                           {isMyTeam && (
@@ -450,19 +455,19 @@ export default function TournamentDetails() {
                         <Link 
                           key={team.id} 
                           to={`/tournaments/${id}/register/roster?team=${team.id}`}
-                          className="p-4 border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer block"
+                          className="p-3 border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer block glass-card"
                         >
                           {cardContent}
                         </Link>
                       ) : (
-                        <div key={team.id} className="p-4 border rounded-lg">
+                        <div key={team.id} className="p-3 border rounded-lg glass-card">
                           {cardContent}
                         </div>
                       );
                     })}
                   </div>
                 ) : (
-                  <p className="text-center text-muted-foreground py-8">
+                  <p className="text-center text-muted-foreground py-8 text-sm">
                     No approved teams yet
                   </p>
                 )}
@@ -470,13 +475,13 @@ export default function TournamentDetails() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="matches" className="mt-6">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+          <TabsContent value="matches">
+            <Card className="glass-card">
+              <CardContent className="p-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold">Match Schedule</h2>
-                    <p className="text-sm text-muted-foreground">
+                    <h2 className="text-base font-semibold">Match Schedule</h2>
+                    <p className="text-xs text-muted-foreground">
                       {tournamentMatches.length} matches • {registeredTeams.length}/{tournamentNumTeams} teams registered
                     </p>
                   </div>
@@ -487,6 +492,8 @@ export default function TournamentDetails() {
                         <Button
                           onClick={() => generateSchedule.mutate()}
                           disabled={generateSchedule.isPending || tournamentFormat === "league"}
+                          size="sm"
+                          className="btn-glow"
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           Generate Schedule
@@ -494,6 +501,7 @@ export default function TournamentDetails() {
                       ) : (
                         <Button
                           variant="outline"
+                          size="sm"
                           onClick={() => randomizeTeams.mutate()}
                           disabled={randomizeTeams.isPending || registeredTeams.length === 0}
                         >
@@ -506,7 +514,7 @@ export default function TournamentDetails() {
                 </div>
 
                 {tournamentFormat === "league" ? (
-                  <p className="text-center text-muted-foreground py-8">League schedule not yet available</p>
+                  <p className="text-center text-muted-foreground py-8 text-sm">League schedule not yet available</p>
                 ) : (
                   <TournamentBracket 
                     matches={tournamentMatches}
@@ -522,7 +530,7 @@ export default function TournamentDetails() {
 
       {/* Login Dialog */}
       <Dialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="glass-card sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Trophy className="h-5 w-5 text-primary" />
@@ -533,10 +541,13 @@ export default function TournamentDetails() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-3 mt-4">
-            <Button onClick={() => {
-              sessionStorage.setItem("redirectAfterAuth", `/tournaments/${id}/register`);
-              navigate("/auth");
-            }}>
+            <Button 
+              className="btn-glow"
+              onClick={() => {
+                sessionStorage.setItem("redirectAfterAuth", `/tournaments/${id}/register`);
+                navigate("/auth");
+              }}
+            >
               Login / Sign Up
             </Button>
             <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>
@@ -545,6 +556,6 @@ export default function TournamentDetails() {
           </div>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </AppLayout>
   );
 }

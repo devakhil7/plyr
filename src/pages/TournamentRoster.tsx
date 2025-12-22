@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -448,80 +448,69 @@ export default function TournamentRoster() {
     },
   });
 
-  const getInviteStatusIcon = (status: string) => {
-    switch (status) {
-      case "joined":
-        return <UserCheck className="h-4 w-4 text-green-600" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-orange-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-muted-foreground" />;
-    }
-  };
-
   const getInviteStatusBadge = (status: string, hasUserId: boolean) => {
     if (hasUserId && status === "joined") {
-      return <Badge variant="default" className="bg-green-600">Confirmed</Badge>;
+      return <Badge variant="default" className="bg-green-600 text-xs">Confirmed</Badge>;
     }
     if (hasUserId && status === "pending") {
-      return <Badge variant="secondary" className="text-orange-600 border-orange-300">Unconfirmed</Badge>;
+      return <Badge variant="secondary" className="text-orange-600 border-orange-300 text-xs">Unconfirmed</Badge>;
     }
     if (!hasUserId) {
-      return null; // No badge for manually entered players without linked user
+      return null;
     }
-    return <Badge variant="outline">Unknown</Badge>;
+    return <Badge variant="outline" className="text-xs">Unknown</Badge>;
   };
 
   if (!user) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 text-center">
           <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
           <h2 className="text-2xl font-bold mb-4">Please Login</h2>
           <Link to="/auth">
-            <Button>Login / Sign Up</Button>
+            <Button className="btn-glow">Login / Sign Up</Button>
           </Link>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   if (isLoading) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   if (!tournament || !team) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 text-center">
           <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
           <h2 className="text-2xl font-bold mb-4">Team not found</h2>
           <Link to="/tournaments">
-            <Button>Browse Tournaments</Button>
+            <Button className="btn-glow">Browse Tournaments</Button>
           </Link>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   if (!isCaptain) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 text-center">
           <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
           <h2 className="text-2xl font-bold mb-4">Access Denied</h2>
           <p className="text-muted-foreground mb-6">Only the team captain can manage the roster.</p>
           <Link to={`/tournaments/${id}`}>
-            <Button>Back to Tournament</Button>
+            <Button className="btn-glow">Back to Tournament</Button>
           </Link>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
@@ -530,30 +519,34 @@ export default function TournamentRoster() {
                     team.team_status === "pending_roster";
 
   return (
-    <Layout>
-      <div className="container-app py-8 max-w-3xl mx-auto">
-        <Link to={`/tournaments/${id}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
+    <AppLayout>
+      <div className="container-app py-4 max-w-3xl mx-auto space-y-4">
+        <Link to={`/tournaments/${id}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to tournament
         </Link>
 
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <Badge variant="sport" className="mb-2">{tournament.sport}</Badge>
-            <h1 className="text-2xl font-bold">{team.team_name} - Player Roster</h1>
-            <p className="text-muted-foreground">
-              {validPlayers.length} of {minPlayers}-{maxPlayers} players
-            </p>
+        <div className="hero-gradient -mx-4 px-4 py-5 rounded-b-3xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <Badge variant="sport" className="mb-2 bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">
+                {tournament.sport}
+              </Badge>
+              <h1 className="text-xl font-bold text-primary-foreground">{team.team_name} - Player Roster</h1>
+              <p className="text-sm text-primary-foreground/70">
+                {validPlayers.length} of {minPlayers}-{maxPlayers} players
+              </p>
+            </div>
+            <Badge variant={team.team_status === "approved" ? "default" : "secondary"} className="shrink-0">
+              {team.team_status?.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
+            </Badge>
           </div>
-          <Badge variant={team.team_status === "approved" ? "default" : "secondary"}>
-            {team.team_status?.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
-          </Badge>
         </div>
 
         {team.team_status === "pending_verification" && (
-          <Card className="bg-blue-50 border-blue-200 mb-6">
+          <Card className="bg-accent/10 border-accent/20">
             <CardContent className="p-4">
-              <p className="text-sm text-blue-800">
+              <p className="text-sm text-accent-foreground">
                 <strong>Under Review:</strong> Your team is being verified by the organizer. 
                 You'll receive a notification once approved.
               </p>
@@ -562,9 +555,9 @@ export default function TournamentRoster() {
         )}
 
         {team.team_status === "approved" && (
-          <Card className="bg-green-50 border-green-200 mb-6">
+          <Card className="bg-green-500/10 border-green-500/20">
             <CardContent className="p-4">
-              <p className="text-sm text-green-800 flex items-center gap-2">
+              <p className="text-sm text-green-700 flex items-center gap-2">
                 <CheckCircle className="h-4 w-4" />
                 <strong>Approved!</strong> Your team has been verified and is ready to play.
               </p>
@@ -572,10 +565,10 @@ export default function TournamentRoster() {
           </Card>
         )}
 
-        <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
+        <Card className="glass-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
               Players
             </CardTitle>
             <Button
@@ -592,7 +585,7 @@ export default function TournamentRoster() {
             {players.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No players added yet. Click "Add Player" to start building your roster.</p>
+                <p className="text-sm">No players added yet. Click "Add Player" to start building your roster.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -608,14 +601,14 @@ export default function TournamentRoster() {
                           </Avatar>
                         )}
                         
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div className="md:col-span-2">
-                            <Label>Player Name *</Label>
+                            <Label className="text-xs">Player Name *</Label>
                             <div className="flex items-center gap-2">
                               {player.user_id ? (
                                 // Linked user - show name with status and remove option
                                 <div className="flex items-center gap-2 flex-1 p-2 bg-muted/50 rounded-md">
-                                  <span className="flex-1 font-medium">{player.player_name}</span>
+                                  <span className="flex-1 font-medium text-sm">{player.player_name}</span>
                                   {getInviteStatusBadge(player.invite_status, true)}
                                   <Button
                                     variant="ghost"
@@ -723,7 +716,7 @@ export default function TournamentRoster() {
                           </div>
                           
                           <div>
-                            <Label>Phone {!player.user_id && <span className="text-xs text-muted-foreground">(for SMS invite)</span>}</Label>
+                            <Label className="text-xs">Phone {!player.user_id && <span className="text-muted-foreground">(for SMS invite)</span>}</Label>
                             <Input
                               type="tel"
                               value={player.phone}
@@ -734,7 +727,7 @@ export default function TournamentRoster() {
                           </div>
                           
                           <div>
-                            <Label>Email {!player.user_id && <span className="text-xs text-muted-foreground">(for email invite)</span>}</Label>
+                            <Label className="text-xs">Email {!player.user_id && <span className="text-muted-foreground">(for email invite)</span>}</Label>
                             <Input
                               type="email"
                               value={player.email}
@@ -745,7 +738,7 @@ export default function TournamentRoster() {
                           </div>
                           
                           <div>
-                            <Label>Jersey Number</Label>
+                            <Label className="text-xs">Jersey Number</Label>
                             <Input
                               type="number"
                               min="1"
@@ -757,7 +750,7 @@ export default function TournamentRoster() {
                           </div>
                           
                           <div>
-                            <Label>Position</Label>
+                            <Label className="text-xs">Position</Label>
                             <Select
                               value={player.position}
                               onValueChange={(value) => updatePlayer(index, "position", value)}
@@ -778,7 +771,7 @@ export default function TournamentRoster() {
                           variant="ghost"
                           size="icon"
                           onClick={() => removePlayer(index)}
-                          className="text-destructive hover:text-destructive"
+                          className="text-destructive hover:text-destructive shrink-0"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -806,7 +799,7 @@ export default function TournamentRoster() {
             <Button
               onClick={() => submitRoster.mutate()}
               disabled={submitRoster.isPending}
-              className="flex-1"
+              className="flex-1 btn-glow"
             >
               {submitRoster.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
               Submit for Verification
@@ -815,11 +808,11 @@ export default function TournamentRoster() {
         </div>
 
         {validPlayers.length < minPlayers && (
-          <p className="text-sm text-muted-foreground text-center mt-4">
+          <p className="text-xs text-muted-foreground text-center">
             Add at least {minPlayers - validPlayers.length} more player(s) to submit roster
           </p>
         )}
       </div>
-    </Layout>
+    </AppLayout>
   );
 }
