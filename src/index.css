@@ -8,9 +8,9 @@
 
 @layer base {
   :root {
-    /* Core Brand Colors - Dark + Lime Green */
-    --primary: 75 85% 50%;
-    --primary-foreground: 0 0% 0%;
+    /* Core Brand Colors - Dark + Premium Green */
+    --primary: 152 60% 42%;
+    --primary-foreground: 0 0% 100%;
     
     --secondary: 220 10% 20%;
     --secondary-foreground: 0 0% 100%;
@@ -31,9 +31,9 @@
     --muted: 220 10% 94%;
     --muted-foreground: 220 10% 45%;
     
-    /* Accent - Vibrant lime green */
-    --accent: 75 85% 50%;
-    --accent-foreground: 0 0% 0%;
+    /* Accent - Premium green */
+    --accent: 152 55% 48%;
+    --accent-foreground: 0 0% 100%;
     
     /* Destructive */
     --destructive: 0 72% 55%;
@@ -42,7 +42,7 @@
     /* Border & Input */
     --border: 220 10% 90%;
     --input: 220 10% 92%;
-    --ring: 75 85% 50%;
+    --ring: 152 60% 42%;
     
     /* Radius - Larger for pill-like shapes */
     --radius: 1rem;
@@ -50,17 +50,17 @@
     /* Sidebar - Dark */
     --sidebar-background: 220 15% 10%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 75 85% 50%;
-    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-primary: 152 60% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 18%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 75 85% 50%;
+    --sidebar-ring: 152 60% 42%;
     
     /* Custom SPORTIQ tokens */
-    --sportiq-primary: 75 85% 50%;
+    --sportiq-primary: 152 60% 42%;
     --sportiq-secondary: 220 15% 15%;
-    --sportiq-accent: 75 85% 55%;
+    --sportiq-accent: 152 55% 48%;
     --sportiq-surface: 0 0% 100%;
     --sportiq-glass: 220 15% 12%;
     
@@ -70,7 +70,7 @@
     --gradient-end: 220 15% 18%;
     
     /* Status colors */
-    --status-open: 75 85% 50%;
+    --status-open: 152 60% 42%;
     --status-full: 38 92% 55%;
     --status-progress: 200 80% 55%;
     --status-completed: 220 10% 50%;
@@ -81,13 +81,13 @@
     --shadow-md: 0 4px 12px -2px hsl(220 15% 10% / 0.08), 0 2px 6px -2px hsl(220 15% 10% / 0.05);
     --shadow-lg: 0 12px 24px -4px hsl(220 15% 10% / 0.1), 0 4px 8px -4px hsl(220 15% 10% / 0.06);
     --shadow-xl: 0 24px 48px -8px hsl(220 15% 10% / 0.12), 0 8px 16px -8px hsl(220 15% 10% / 0.08);
-    --shadow-glow: 0 0 40px hsl(75 85% 50% / 0.25);
-    --shadow-glow-accent: 0 0 30px hsl(75 85% 50% / 0.3);
+    --shadow-glow: 0 0 40px hsl(152 60% 42% / 0.2);
+    --shadow-glow-accent: 0 0 30px hsl(152 55% 48% / 0.25);
   }
 
   .dark {
-    --primary: 75 85% 50%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 152 60% 42%;
+    --primary-foreground: 0 0% 100%;
     
     --secondary: 220 15% 18%;
     --secondary-foreground: 0 0% 100%;
@@ -104,24 +104,24 @@
     --muted: 220 15% 18%;
     --muted-foreground: 220 10% 55%;
     
-    --accent: 75 85% 50%;
-    --accent-foreground: 0 0% 0%;
+    --accent: 152 55% 48%;
+    --accent-foreground: 0 0% 100%;
     
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
     
     --border: 220 15% 20%;
     --input: 220 15% 18%;
-    --ring: 75 85% 50%;
+    --ring: 152 60% 42%;
     
     --sidebar-background: 220 15% 6%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 75 85% 50%;
-    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-primary: 152 60% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 15%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 220 15% 18%;
-    --sidebar-ring: 75 85% 50%;
+    --sidebar-ring: 152 60% 42%;
   }
 }
 
@@ -161,10 +161,10 @@
       inset 0 1px 0 hsl(220 15% 30% / 0.1);
   }
   
-  /* Gradient text - Lime green */
+  /* Gradient text - Premium green */
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(75 85% 50%) 0%, hsl(85 90% 55%) 100%);
+    background-image: linear-gradient(135deg, hsl(152 60% 42%) 0%, hsl(152 50% 55%) 100%);
   }
   
   /* Hero gradient background - Dark */
@@ -190,7 +190,7 @@
     transform: translateY(-4px);
     box-shadow: 
       0 16px 48px hsl(220 15% 10% / 0.15),
-      0 0 30px hsl(75 85% 50% / 0.1);
+      0 0 30px hsl(152 60% 42% / 0.08);
   }
   
   /* Status badges */
@@ -273,7 +273,7 @@
   .btn-glow::before {
     content: '';
     @apply absolute inset-0 opacity-0 transition-opacity duration-300;
-    background: linear-gradient(135deg, hsl(75 85% 50% / 0.2), hsl(85 90% 55% / 0.15));
+    background: linear-gradient(135deg, hsl(152 60% 42% / 0.15), hsl(152 50% 55% / 0.1));
   }
   
   .btn-glow:hover::before {
@@ -289,7 +289,7 @@
     content: '';
     @apply absolute inset-0 rounded-2xl;
     padding: 1px;
-    background: linear-gradient(135deg, hsl(75 85% 50% / 0.4), hsl(85 90% 55% / 0.2));
+    background: linear-gradient(135deg, hsl(152 60% 42% / 0.3), hsl(152 50% 55% / 0.15));
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: xor;
     -webkit-mask-composite: xor;
@@ -310,7 +310,7 @@
   .stats-card::after {
     content: '';
     @apply absolute bottom-0 left-0 right-0 h-1/2;
-    background: linear-gradient(0deg, hsl(75 85% 50% / 0.05), transparent);
+    background: linear-gradient(0deg, hsl(152 60% 42% / 0.03), transparent);
     pointer-events: none;
   }
   
@@ -398,8 +398,8 @@
 }
 
 @keyframes glow {
-  from { box-shadow: 0 0 20px hsl(75 85% 50% / 0.2); }
-  to { box-shadow: 0 0 40px hsl(75 85% 50% / 0.4); }
+  from { box-shadow: 0 0 20px hsl(152 60% 42% / 0.15); }
+  to { box-shadow: 0 0 40px hsl(152 60% 42% / 0.3); }
 }
 
 /* Scrollbar styling */
@@ -424,7 +424,7 @@
 
 /* Selection styling */
 ::selection {
-  background: hsl(75 85% 50% / 0.3);
+  background: hsl(152 60% 42% / 0.25);
   color: hsl(220 15% 10%);
 }
 
