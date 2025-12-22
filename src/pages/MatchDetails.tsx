@@ -767,29 +767,58 @@ export default function MatchDetails() {
             {match.status === "completed" ? (
               <>
                 {/* Share Scorecard Button */}
-                {match.team_a_score !== null && (
-                  <div className="flex justify-end">
-                    <MatchScorecard
-                      matchId={match.id}
-                      matchName={match.match_name}
-                      matchDate={new Date(match.match_date).toLocaleDateString("en-IN", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                      turfName={match.turfs?.name}
-                      teamAScore={match.team_a_score}
-                      teamBScore={match.team_b_score}
-                      matchEvents={matchEvents}
-                      players={confirmedPlayers.map((mp: any) => ({
-                        user_id: mp.user_id,
-                        team: mp.team,
-                        profiles: mp.profiles,
-                      }))}
-                      playerRatings={playerRatings}
-                    />
-                  </div>
-                )}
+                {(() => {
+                  // Calculate scores for scorecard - same logic as Final Score display
+                  const videoGoalsA = videoEvents.filter((e: any) => e.event_type === "goal" && e.team === "A").length;
+                  const videoGoalsB = videoEvents.filter((e: any) => e.event_type === "goal" && e.team === "B").length;
+                  const hasVideoGoals = videoGoalsA > 0 || videoGoalsB > 0;
+
+                  const matchGoalsA = matchEvents.filter((e: any) => e.team === "A").length;
+                  const matchGoalsB = matchEvents.filter((e: any) => e.team === "B").length;
+                  const hasMatchEvents = matchEvents.length > 0;
+
+                  let scorecardScoreA: number;
+                  let scorecardScoreB: number;
+
+                  if (hasVideoGoals) {
+                    scorecardScoreA = videoGoalsA;
+                    scorecardScoreB = videoGoalsB;
+                  } else if (hasMatchEvents) {
+                    scorecardScoreA = matchGoalsA;
+                    scorecardScoreB = matchGoalsB;
+                  } else {
+                    scorecardScoreA = match.team_a_score ?? 0;
+                    scorecardScoreB = match.team_b_score ?? 0;
+                  }
+
+                  const showScorecard = hasVideoGoals || hasMatchEvents || match.team_a_score !== null;
+
+                  if (!showScorecard) return null;
+
+                  return (
+                    <div className="flex justify-end">
+                      <MatchScorecard
+                        matchId={match.id}
+                        matchName={match.match_name}
+                        matchDate={new Date(match.match_date).toLocaleDateString("en-IN", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                        turfName={match.turfs?.name}
+                        teamAScore={scorecardScoreA}
+                        teamBScore={scorecardScoreB}
+                        matchEvents={matchEvents}
+                        players={confirmedPlayers.map((mp: any) => ({
+                          user_id: mp.user_id,
+                          team: mp.team,
+                          profiles: mp.profiles,
+                        }))}
+                        playerRatings={playerRatings}
+                      />
+                    </div>
+                  );
+                })()}
 
                 {/* Score Display - Priority: videoEvents goals > matchEvents count > manual score */}
                 {(() => {
