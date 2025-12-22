@@ -201,7 +201,11 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
 
       const { error: uploadError } = await supabase.storage
         .from('match-videos')
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, file, {
+          upsert: true,
+          cacheControl: '3600',
+          contentType: file.type || undefined,
+        });
 
       if (uploadError) throw uploadError;
 
@@ -233,7 +237,20 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
       <CardContent className="space-y-6">
         {/* Highlight Video */}
         <div className="space-y-2">
-          <Label>Highlight Video</Label>
+          <div className="flex items-center justify-between">
+            <Label>Highlight Video</Label>
+            {highlightUrl ? (
+              <a
+                href={highlightUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+              >
+                Open
+              </a>
+            ) : null}
+          </div>
+
           <div className="flex gap-2">
             <Input
               value={highlightUrl}
@@ -260,6 +277,24 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
               </Button>
             </label>
           </div>
+
+          {highlightUrl ? (
+            <div className="overflow-hidden rounded-lg border bg-muted/30">
+              <video
+                key={highlightUrl}
+                src={highlightUrl}
+                controls
+                playsInline
+                preload="metadata"
+                className="w-full aspect-video bg-muted object-contain"
+                onError={() => toast.error("Couldn't play this video. Try re-uploading or use a direct .mp4 URL.")}
+              />
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Upload a video or paste a direct video URL.
+            </p>
+          )}
         </div>
 
         {/* Final Score */}

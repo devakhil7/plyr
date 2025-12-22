@@ -420,7 +420,11 @@ export default function MatchDetails() {
 
       const { error: uploadError } = await supabase.storage
         .from('match-videos')
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, file, {
+          upsert: true,
+          cacheControl: '3600',
+          contentType: file.type || undefined,
+        });
 
       if (uploadError) throw uploadError;
 
@@ -845,6 +849,29 @@ export default function MatchDetails() {
                   </Card>
                 )}
 
+                {/* Match Video Player */}
+                {match.video_url && (
+                  <Card className="glass-card">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Play className="h-4 w-4 text-primary" />
+                        Match Video
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-hidden rounded-lg border bg-muted/30">
+                        <video
+                          src={match.video_url}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="w-full aspect-video bg-muted object-contain"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Video Highlight Events - Visible to everyone */}
                 <VideoHighlightEvents 
                   events={videoEvents}
@@ -926,6 +953,19 @@ export default function MatchDetails() {
                   <p className="text-xs text-muted-foreground mb-4">
                     Analytics and video highlights will be available after the match is completed.
                   </p>
+
+                  {match.video_url && (
+                    <div className="mt-4 overflow-hidden rounded-lg border bg-muted/30">
+                      <video
+                        src={match.video_url}
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="w-full aspect-video bg-muted object-contain"
+                      />
+                    </div>
+                  )}
+
                   {isHost && match.analytics_status !== "processing" && (
                     <>
                       <p className="text-xs text-muted-foreground mb-3">
