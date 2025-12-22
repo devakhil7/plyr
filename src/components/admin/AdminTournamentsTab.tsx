@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { createNotification } from "@/hooks/useNotifications";
 
 export function AdminTournamentsTab() {
   const [activeSubTab, setActiveSubTab] = useState("registrations");
@@ -117,7 +118,27 @@ export function AdminTournamentsTab() {
         const tournamentName = team.tournaments?.name || "Tournament";
         const teamName = team.team_name || "Your team";
         
-        // Create a conversation if needed and send message
+        // Create database notification
+        try {
+          await createNotification({
+            userId: team.captain_user_id,
+            type: status === "approved" ? "tournament_team_approved" : "tournament_team_rejected",
+            title: status === "approved" ? "Team Approved!" : "Team Registration Update",
+            message: status === "approved"
+              ? `Great news! Your team "${teamName}" has been approved for ${tournamentName}. Get ready to compete!`
+              : `Your team "${teamName}" registration for ${tournamentName} was not approved.${notes ? ` Reason: ${notes}` : ""}`,
+            link: `/tournaments/${team.tournament_id}`,
+            metadata: { 
+              tournamentId: team.tournament_id,
+              teamId: teamId,
+              status 
+            },
+          });
+        } catch (notifError) {
+          console.error("Failed to create notification:", notifError);
+        }
+
+        // Also send system message (legacy)
         const { data: existingConversation } = await supabase
           .from("conversation_participants")
           .select("conversation_id")

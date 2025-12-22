@@ -1,24 +1,184 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
 
 export interface Notification {
   id: string;
-  type: "message" | "match_invite" | "match_join" | "rating";
+  user_id: string;
+  type: string;
   title: string;
-  description: string;
-  created_at: string;
+  message: string;
+  link?: string | null;
   is_read: boolean;
-  link?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
 }
 
+export type NotificationType = 
+  | "match_join_request"
+  | "match_join_approved"
+  | "match_join_rejected"
+  | "match_reminder"
+  | "match_cancelled"
+  | "match_completed"
+  | "tournament_team_approved"
+  | "tournament_team_rejected"
+  | "tournament_reminder"
+  | "tournament_match_scheduled"
+  | "rating_received"
+  | "rating_approved"
+  | "rating_rejected"
+  | "new_message"
+  | "new_follower"
+  | "system";
+
+export function useNotifications(userId: string | null) {
+  const queryClient = useQueryClient();
+
+  const { data: notifications = [], isLoading, refetch } = useQuery({
+    queryKey: ["notifications", userId],
+    queryFn: async () => {
+      if (!userId) return [];
+
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error("Error fetching notifications:", error);
+        return [];
+      }
+
+      return data as Notification[];
+    },
+    enabled: !!userId,
+    refetchInterval: 60000,
+  });
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  // Subscribe to realtime notifications
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel("notifications-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, refetch]);
+
+  const markAsRead = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("id", notificationId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
+    },
+  });
+
+  const markAllAsRead = useMutation({
+    mutationFn: async () => {
+      if (!userId) return;
+
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("user_id", userId)
+        .eq("is_read", false);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
+    },
+  });
+
+  const deleteNotification = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", notificationId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", userId] });
+    },
+  });
+
+  return {
+    notifications,
+    unreadCount,
+    isLoading,
+    refetch,
+    markAsRead: markAsRead.mutate,
+    markAllAsRead: markAllAsRead.mutate,
+    deleteNotification: deleteNotification.mutate,
+  };
+}
+
+// Helper function to create notifications
+export async function createNotification({
+  userId,
+  type,
+  title,
+  message,
+  link,
+  metadata,
+}: {
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  link?: string;
+  metadata?: Record<string, any>;
+}) {
+  const { error } = await supabase.from("notifications").insert({
+    user_id: userId,
+    type,
+    title,
+    message,
+    link,
+    metadata: metadata || {},
+  });
+
+  if (error) {
+    console.error("Error creating notification:", error);
+    throw error;
+  }
+}
+
+// Legacy hooks for backward compatibility
 export function useUnreadMessageCount(userId: string | null) {
   const { data: unreadCount = 0, refetch } = useQuery({
     queryKey: ["unread-messages", userId],
     queryFn: async () => {
       if (!userId) return 0;
 
-      // Get conversations the user is part of
       const { data: participations } = await supabase
         .from("conversation_participants")
         .select("conversation_id")
@@ -28,7 +188,6 @@ export function useUnreadMessageCount(userId: string | null) {
 
       const conversationIds = participations.map((p) => p.conversation_id);
 
-      // Count unread messages not sent by the user
       const { count } = await supabase
         .from("messages")
         .select("*", { count: "exact", head: true })
@@ -39,10 +198,9 @@ export function useUnreadMessageCount(userId: string | null) {
       return count || 0;
     },
     enabled: !!userId,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
 
-  // Subscribe to realtime message inserts
   useEffect(() => {
     if (!userId) return;
 
@@ -86,7 +244,6 @@ export function useMatchNotifications(userId: string | null) {
     queryFn: async () => {
       if (!userId) return [];
 
-      // Get recent match join requests for matches the user hosts
       const { data: joinRequests } = await supabase
         .from("match_players")
         .select(`
@@ -103,11 +260,11 @@ export function useMatchNotifications(userId: string | null) {
         .order("created_at", { ascending: false })
         .limit(10);
 
-      const notifications: Notification[] = (joinRequests || []).map((req: any) => ({
+      const notifications = (joinRequests || []).map((req: any) => ({
         id: req.id,
-        type: "match_join" as const,
+        type: "match_join_request" as const,
         title: "Join Request",
-        description: `${req.profiles?.name || "A player"} wants to join ${req.matches?.match_name}`,
+        message: `${req.profiles?.name || "A player"} wants to join ${req.matches?.match_name}`,
         created_at: req.created_at,
         is_read: false,
         link: `/matches/${req.match_id}`,
@@ -116,6 +273,6 @@ export function useMatchNotifications(userId: string | null) {
       return notifications;
     },
     enabled: !!userId,
-    refetchInterval: 60000, // Refetch every minute
+    refetchInterval: 60000,
   });
 }
