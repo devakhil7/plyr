@@ -809,6 +809,7 @@ export default function MatchDetails() {
                         teamAScore={scorecardScoreA}
                         teamBScore={scorecardScoreB}
                         matchEvents={matchEvents}
+                        videoEvents={videoEvents}
                         players={confirmedPlayers.map((mp: any) => ({
                           user_id: mp.user_id,
                           team: mp.team,
