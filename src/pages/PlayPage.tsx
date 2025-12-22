@@ -4,7 +4,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Play, BarChart3, ArrowRight, MapPin, Calendar, Trophy, ChevronRight } from "lucide-react";
+import { Users, Play, BarChart3, MapPin, Calendar, Trophy, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function PlayPage() {
   const { user, profile } = useAuth();
@@ -43,6 +44,24 @@ export default function PlayPage() {
       return data || [];
     },
   });
+
+  // Fetch user's registered tournament teams
+  const { data: myTournamentTeams } = useQuery({
+    queryKey: ["my-tournament-teams", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data } = await supabase
+        .from("tournament_teams")
+        .select("tournament_id, id")
+        .eq("captain_user_id", user.id);
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const getMyTeamForTournament = (tournamentId: string) => {
+    return myTournamentTeams?.find(t => t.tournament_id === tournamentId);
+  };
 
   const actionCards = [
     {
@@ -134,12 +153,10 @@ export default function PlayPage() {
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium px-2 py-1 bg-accent/15 text-accent rounded-full">
-                            {match.total_slots} slots
-                          </span>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </div>
+                        <Button size="sm" variant="default" className="text-xs h-7 px-3">
+                          Join
+                        </Button>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
                     </CardContent>
                   </Card>
@@ -198,14 +215,24 @@ export default function PlayPage() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {tournament.entry_fee && (
-                            <span className="text-xs font-medium px-2 py-1 bg-primary/10 text-primary rounded-full">
-                              ₹{tournament.entry_fee}
-                            </span>
-                          )}
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </div>
+                        {(() => {
+                          const myTeam = getMyTeamForTournament(tournament.id);
+                          if (myTeam) {
+                            return (
+                              <Button size="sm" variant="outline" className="text-xs h-7 px-3" asChild>
+                                <Link to={`/tournaments/${tournament.id}/roster/${myTeam.id}`} onClick={(e) => e.stopPropagation()}>
+                                  Manage Roster
+                                </Link>
+                              </Button>
+                            );
+                          }
+                          return (
+                            <Button size="sm" variant="default" className="text-xs h-7 px-3">
+                              Register
+                            </Button>
+                          );
+                        })()}
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
                     </CardContent>
                   </Card>
