@@ -64,7 +64,8 @@ const App = () => (
               <Route path="/me" element={<MyProfilePage />} />
               
               {/* Existing routes - all preserved */}
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/landing" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/turf-login" element={<TurfOwnerLogin />} />
