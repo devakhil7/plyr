@@ -24,14 +24,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 
 const AVAILABLE_CITIES = [
   "Current Location",
@@ -467,45 +459,47 @@ export default function HomePage() {
             </Popover>
 
             {/* Search Bar */}
-            <Popover open={searchOpen} onOpenChange={setSearchOpen}>
-              <PopoverTrigger asChild>
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search matches, players, tournaments..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      if (e.target.value) setSearchOpen(true);
-                    }}
-                    onFocus={() => setSearchOpen(true)}
-                    className="pl-9 h-9 bg-muted/50"
-                  />
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-[calc(100vw-2rem)] max-w-md p-0" align="start">
-                <Command>
-                  <CommandList>
-                    <CommandEmpty>No results found.</CommandEmpty>
-                    <CommandGroup heading="Quick Links">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+              <Input
+                placeholder="Search matches, players, tournaments..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value) setSearchOpen(true);
+                }}
+                onFocus={() => setSearchOpen(true)}
+                onBlur={() => {
+                  // Delay closing to allow click on results
+                  setTimeout(() => setSearchOpen(false), 200);
+                }}
+                className="pl-9 h-9 bg-muted/50"
+              />
+              {searchOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border rounded-lg shadow-lg z-50 max-h-[300px] overflow-y-auto">
+                  {filteredSearchItems.length === 0 ? (
+                    <div className="p-4 text-sm text-muted-foreground text-center">No results found.</div>
+                  ) : (
+                    <div className="p-1">
+                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Quick Links</div>
                       {filteredSearchItems.map((item) => {
                         const Icon = item.icon;
                         return (
-                          <CommandItem
+                          <button
                             key={item.href}
-                            onSelect={() => handleSearchSelect(item.href)}
-                            className="flex items-center gap-2 cursor-pointer"
+                            onClick={() => handleSearchSelect(item.href)}
+                            className="flex items-center gap-2 w-full px-2 py-2 text-sm rounded-md hover:bg-accent cursor-pointer"
                           >
                             <Icon className="h-4 w-4 text-muted-foreground" />
                             {item.label}
-                          </CommandItem>
+                          </button>
                         );
                       })}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
