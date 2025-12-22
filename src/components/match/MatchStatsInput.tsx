@@ -42,12 +42,14 @@ interface GoalEvent {
 
 export function MatchStatsInput({ matchId, players, existingScore, videoUrl, existingEvents = [], onUpdate }: MatchStatsInputProps) {
   const queryClient = useQueryClient();
-  const [teamAScore, setTeamAScore] = useState(existingScore.teamA?.toString() || "0");
-  const [teamBScore, setTeamBScore] = useState(existingScore.teamB?.toString() || "0");
   const [highlightUrl, setHighlightUrl] = useState(videoUrl || "");
   const [goalEvents, setGoalEvents] = useState<GoalEvent[]>([]);
   const [uploading, setUploading] = useState(false);
   const [initialized, setInitialized] = useState(false);
+
+  // Derive scores from goal events
+  const teamAScore = goalEvents.filter(e => e.team === "A" && e.scorerId).length;
+  const teamBScore = goalEvents.filter(e => e.team === "B" && e.scorerId).length;
 
   // Initialize goal events from existing data
   useEffect(() => {
@@ -91,12 +93,12 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
 
   const saveStats = useMutation({
     mutationFn: async () => {
-      // Update match scores
+      // Update match scores (derived from goal events)
       const { error: matchError } = await supabase
         .from("matches")
         .update({
-          team_a_score: parseInt(teamAScore) || 0,
-          team_b_score: parseInt(teamBScore) || 0,
+          team_a_score: teamAScore,
+          team_b_score: teamBScore,
           video_url: highlightUrl || null,
           analytics_status: "completed",
         })
@@ -297,28 +299,19 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
           )}
         </div>
 
-        {/* Final Score */}
-        <div className="grid grid-cols-3 gap-4 items-end">
-          <div className="space-y-2">
-            <Label>Team A Score</Label>
-            <Input
-              type="number"
-              min="0"
-              value={teamAScore}
-              onChange={(e) => setTeamAScore(e.target.value)}
-            />
-          </div>
-          <div className="text-center text-2xl font-bold text-muted-foreground pb-2">
-            -
-          </div>
-          <div className="space-y-2">
-            <Label>Team B Score</Label>
-            <Input
-              type="number"
-              min="0"
-              value={teamBScore}
-              onChange={(e) => setTeamBScore(e.target.value)}
-            />
+        {/* Final Score - Derived from Goal Events */}
+        <div className="p-4 bg-muted/50 rounded-lg">
+          <Label className="text-xs text-muted-foreground">Final Score (auto-calculated from goals)</Label>
+          <div className="flex items-center justify-center gap-6 mt-2">
+            <div className="text-center">
+              <p className="text-3xl font-bold">{teamAScore}</p>
+              <p className="text-xs text-muted-foreground">Team A</p>
+            </div>
+            <span className="text-xl text-muted-foreground">-</span>
+            <div className="text-center">
+              <p className="text-3xl font-bold">{teamBScore}</p>
+              <p className="text-xs text-muted-foreground">Team B</p>
+            </div>
           </div>
         </div>
 

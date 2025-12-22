@@ -790,22 +790,35 @@ export default function MatchDetails() {
                   </div>
                 )}
 
-                {/* Score Display */}
-                {match.team_a_score !== null && (
+                {/* Score Display - Derived from match events if available */}
+                {(matchEvents.length > 0 || match.team_a_score !== null) && (
                   <Card className="glass-card bg-gradient-to-r from-primary/5 to-secondary/5">
                     <CardContent className="p-6 text-center">
                       <p className="text-xs text-muted-foreground mb-2">Final Score</p>
                       <div className="flex items-center justify-center gap-6">
                         <div>
-                          <p className="text-3xl font-bold">{match.team_a_score}</p>
+                          <p className="text-3xl font-bold">
+                            {matchEvents.length > 0 
+                              ? matchEvents.filter((e: any) => e.team === "A").length 
+                              : match.team_a_score}
+                          </p>
                           <p className="text-xs text-muted-foreground">Team A</p>
                         </div>
                         <span className="text-xl text-muted-foreground">-</span>
                         <div>
-                          <p className="text-3xl font-bold">{match.team_b_score}</p>
+                          <p className="text-3xl font-bold">
+                            {matchEvents.length > 0 
+                              ? matchEvents.filter((e: any) => e.team === "B").length 
+                              : match.team_b_score}
+                          </p>
                           <p className="text-xs text-muted-foreground">Team B</p>
                         </div>
                       </div>
+                      {matchEvents.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Based on {matchEvents.length} recorded goal{matchEvents.length !== 1 ? 's' : ''}
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
                 )}
