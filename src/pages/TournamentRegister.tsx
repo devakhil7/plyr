@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -317,40 +317,40 @@ export default function TournamentRegister() {
 
   if (!user) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 text-center">
           <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
           <h2 className="text-2xl font-bold mb-4">Please Login</h2>
           <p className="text-muted-foreground mb-6">You need to be logged in to register for a tournament.</p>
           <Link to="/auth">
-            <Button>Login / Sign Up</Button>
+            <Button className="btn-glow">Login / Sign Up</Button>
           </Link>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   if (isLoading) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   if (!tournament) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 text-center">
           <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
           <h2 className="text-2xl font-bold mb-4">Tournament not found</h2>
           <Link to="/tournaments">
-            <Button>Browse Tournaments</Button>
+            <Button className="btn-glow">Browse Tournaments</Button>
           </Link>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
@@ -363,21 +363,23 @@ export default function TournamentRegister() {
   };
 
   return (
-    <Layout>
-      <div className="container-app py-8 max-w-2xl mx-auto">
-        <Link to={`/tournaments/${id}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
+    <AppLayout>
+      <div className="container-app py-4 max-w-2xl mx-auto space-y-4">
+        <Link to={`/tournaments/${id}`} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to tournament
         </Link>
 
-        <div className="mb-8">
-          <Badge variant="sport" className="mb-2">{tournament.sport}</Badge>
-          <h1 className="text-2xl font-bold">Register for {tournament.name}</h1>
+        <div className="hero-gradient -mx-4 px-4 py-5 rounded-b-3xl">
+          <Badge variant="sport" className="mb-2 bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">
+            {tournament.sport}
+          </Badge>
+          <h1 className="text-xl font-bold text-primary-foreground">Register for {tournament.name}</h1>
         </div>
 
         {/* Progress */}
         {step !== "success" && (
-          <div className="space-y-2 mb-8">
+          <div className="space-y-2">
             <div className="flex justify-between text-sm text-muted-foreground">
               <span>Step {getStepNumber()} of 2</span>
               <span>
@@ -391,12 +393,12 @@ export default function TournamentRegister() {
 
         {/* Step 1: Team Registration */}
         {step === "team" && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Team Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
+            <Card className="glass-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
                   Team Information
                 </CardTitle>
               </CardHeader>
@@ -422,11 +424,11 @@ export default function TournamentRegister() {
                       <img 
                         src={teamLogoPreview} 
                         alt="Team logo preview" 
-                        className="w-16 h-16 rounded-lg object-cover border"
+                        className="w-14 h-14 rounded-lg object-cover border"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                        <Image className="h-6 w-6 text-muted-foreground/50" />
+                      <div className="w-14 h-14 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                        <Image className="h-5 w-5 text-muted-foreground/50" />
                       </div>
                     )}
                     <label className="cursor-pointer">
@@ -436,7 +438,7 @@ export default function TournamentRegister() {
                         onChange={handleLogoChange}
                         className="hidden"
                       />
-                      <Button variant="outline" type="button" asChild>
+                      <Button variant="outline" type="button" size="sm" asChild>
                         <span>
                           <Upload className="h-4 w-4 mr-2" />
                           Upload Logo
@@ -449,22 +451,22 @@ export default function TournamentRegister() {
             </Card>
 
             {/* Captain Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary" />
+            <Card className="glass-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
                   Captain Details
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
-                  <Avatar className="h-12 w-12">
+                <div className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                  <Avatar className="h-10 w-10">
                     <AvatarImage src={profile?.profile_photo_url || undefined} />
                     <AvatarFallback>{profile?.name?.charAt(0) || "U"}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{profile?.name || "Unknown"}</p>
-                    <p className="text-sm text-muted-foreground">Captain (You)</p>
+                    <p className="font-medium text-sm">{profile?.name || "Unknown"}</p>
+                    <p className="text-xs text-muted-foreground">Captain (You)</p>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -474,10 +476,10 @@ export default function TournamentRegister() {
             </Card>
 
             {/* Contact Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Phone className="h-5 w-5 text-primary" />
+            <Card className="glass-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-primary" />
                   Contact Information
                 </CardTitle>
               </CardHeader>
@@ -506,16 +508,16 @@ export default function TournamentRegister() {
             </Card>
 
             {/* Entry Fee Info */}
-            <Card className="bg-primary/5 border-primary/20">
+            <Card className="bg-primary/10 border-primary/20">
               <CardContent className="p-4">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">Entry Fee</span>
-                  <span className="text-xl font-bold">
+                  <span className="font-medium text-sm">Entry Fee</span>
+                  <span className="text-lg font-bold text-primary">
                     {tournament.entry_fee > 0 ? `₹${tournament.entry_fee.toLocaleString()}` : "Free"}
                   </span>
                 </div>
                 {tournament.allow_part_payment && (
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Part payment available: {tournament.advance_type === "percentage" 
                       ? `${tournament.advance_value}%` 
                       : `₹${tournament.advance_value}`} advance
@@ -525,7 +527,7 @@ export default function TournamentRegister() {
             </Card>
 
             <Button 
-              className="w-full" 
+              className="w-full btn-glow" 
               onClick={() => registerTeam.mutate()} 
               disabled={!isTeamValid || registerTeam.isPending}
             >
@@ -537,29 +539,29 @@ export default function TournamentRegister() {
 
         {/* Step 2: Payment */}
         {step === "payment" && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-primary" />
+          <div className="space-y-4">
+            <Card className="glass-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
                   Payment Options
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <RadioGroup
                   value={paymentOption}
                   onValueChange={(v) => setPaymentOption(v as "full" | "advance")}
                   className="space-y-3"
                 >
                   <label
-                    className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
                       paymentOption === "full" ? "border-primary bg-primary/5" : "border-border"
                     }`}
                   >
                     <RadioGroupItem value="full" />
                     <div className="flex-1">
-                      <p className="font-medium">Pay Full Amount</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-sm">Pay Full Amount</p>
+                      <p className="text-xs text-muted-foreground">
                         Pay ₹{tournament.entry_fee.toLocaleString()} now
                       </p>
                     </div>
@@ -567,14 +569,14 @@ export default function TournamentRegister() {
 
                   {tournament.allow_part_payment && (
                     <label
-                      className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                      className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
                         paymentOption === "advance" ? "border-primary bg-primary/5" : "border-border"
                       }`}
                     >
                       <RadioGroupItem value="advance" />
                       <div className="flex-1">
-                        <p className="font-medium">Pay Advance Only</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-medium text-sm">Pay Advance Only</p>
+                        <p className="text-xs text-muted-foreground">
                           Pay ₹{advanceAmount.toLocaleString()} now, ₹{(tournament.entry_fee - advanceAmount).toLocaleString()} later
                         </p>
                       </div>
@@ -584,9 +586,9 @@ export default function TournamentRegister() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Payment Method</CardTitle>
+            <Card className="glass-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Payment Method</CardTitle>
               </CardHeader>
               <CardContent>
                 <RadioGroup
@@ -595,50 +597,50 @@ export default function TournamentRegister() {
                   className="space-y-3"
                 >
                   <label
-                    className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
                       paymentMethod === "online" ? "border-primary bg-primary/5" : "border-border"
                     }`}
                   >
                     <RadioGroupItem value="online" />
                     <div className="flex-1">
-                      <p className="font-medium">Pay Online</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-sm">Pay Online</p>
+                      <p className="text-xs text-muted-foreground">
                         Pay now via UPI, Card, or Net Banking (Razorpay)
                       </p>
                     </div>
-                    <CreditCard className="h-5 w-5 text-muted-foreground" />
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
                   </label>
 
                   <label
-                    className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                    className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
                       paymentMethod === "ground" ? "border-primary bg-primary/5" : "border-border"
                     }`}
                   >
                     <RadioGroupItem value="ground" />
                     <div className="flex-1">
-                      <p className="font-medium">Pay at Ground</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-sm">Pay at Ground</p>
+                      <p className="text-xs text-muted-foreground">
                         Pay in cash when you arrive at the venue
                       </p>
                     </div>
-                    <IndianRupee className="h-5 w-5 text-muted-foreground" />
+                    <IndianRupee className="h-4 w-4 text-muted-foreground" />
                   </label>
                 </RadioGroup>
               </CardContent>
             </Card>
 
-            <Card className="bg-primary/5 border-primary/20">
+            <Card className="bg-primary/10 border-primary/20">
               <CardContent className="p-4">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium">
+                  <span className="font-medium text-sm">
                     {paymentMethod === "ground" ? "Amount Due at Ground" : "Amount to Pay Now"}
                   </span>
-                  <span className="text-xl font-bold text-primary">
+                  <span className="text-lg font-bold text-primary">
                     ₹{amountToPay.toLocaleString()}
                   </span>
                 </div>
                 {paymentMethod === "ground" && (
-                  <p className="text-sm text-muted-foreground mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Please pay this amount when you arrive at the venue
                   </p>
                 )}
@@ -650,7 +652,7 @@ export default function TournamentRegister() {
                 Back
               </Button>
               <Button 
-                className="flex-1" 
+                className="flex-1 btn-glow" 
                 onClick={() => {
                   if (paymentMethod === "online") {
                     handleRazorpayPayment();
@@ -669,32 +671,32 @@ export default function TournamentRegister() {
 
         {/* Step 3: Success */}
         {step === "success" && (
-          <div className="text-center space-y-6">
-            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-              <CheckCircle className="h-10 w-10 text-green-600" />
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+              <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
             
             <div>
-              <h2 className="text-2xl font-bold">Registration Successful!</h2>
-              <p className="text-muted-foreground mt-2">
+              <h2 className="text-xl font-bold">Registration Successful!</h2>
+              <p className="text-sm text-muted-foreground mt-1">
                 Your team <strong>{teamName}</strong> has been registered.
               </p>
             </div>
 
-            <Card>
+            <Card className="glass-card">
               <CardContent className="p-4 text-left space-y-3">
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Team</span>
                   <span className="font-medium">{teamName}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Payment Status</span>
                   <Badge variant={paymentMethod === "ground" ? "secondary" : (paymentStatus === "paid" ? "default" : "outline")}>
                     {paymentMethod === "ground" ? "Pay at Ground" : (paymentStatus === "paid" ? "Paid" : "Partial")}
                   </Badge>
                 </div>
                 {paymentMethod === "online" && paymentStatus !== "pay_at_ground" && (
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Amount Paid</span>
                     <span className="font-medium">₹{amountToPay.toLocaleString()}</span>
                   </div>
@@ -702,8 +704,8 @@ export default function TournamentRegister() {
               </CardContent>
             </Card>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-              <p className="text-sm text-blue-800">
+            <div className="bg-accent/10 border border-accent/20 rounded-lg p-4 text-left">
+              <p className="text-sm text-accent-foreground">
                 <strong>Next Step:</strong> Add your team roster. You can manage your players from the tournament page.
               </p>
             </div>
@@ -718,7 +720,7 @@ export default function TournamentRegister() {
               </Button>
               <Button 
                 onClick={() => navigate(`/tournaments/${id}/register/roster?team=${createdTeamId}`)}
-                className="flex-1"
+                className="flex-1 btn-glow"
               >
                 Add Players
               </Button>
@@ -726,6 +728,6 @@ export default function TournamentRegister() {
           </div>
         )}
       </div>
-    </Layout>
+    </AppLayout>
   );
 }
