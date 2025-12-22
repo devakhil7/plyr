@@ -13,9 +13,12 @@ import {
 import { QuickActionsFAB } from "@/components/home/QuickActionsFAB";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { useGeolocation, calculateDistance, formatDistance, getCityCoordinates } from "@/hooks/useGeolocation";
+import { useMemo } from "react";
 
 export default function HomePage() {
   const { user, profile } = useAuth();
+  const { latitude, longitude, loading: locationLoading } = useGeolocation();
 
   // Fetch user stats
   const { data: userStats } = useQuery({
@@ -85,22 +88,74 @@ export default function HomePage() {
   });
 
   // Fetch matches near user (public open matches)
-  const { data: nearbyMatches } = useQuery({
-    queryKey: ["home-nearby-matches", profile?.city],
+  const { data: allNearbyMatches } = useQuery({
+    queryKey: ["home-nearby-matches"],
     queryFn: async () => {
-      let query = supabase
+      const { data } = await supabase
         .from("matches")
-        .select("*, turfs(name, city)")
+        .select("*, turfs(name, city, latitude, longitude)")
         .eq("visibility", "public")
         .eq("status", "open")
         .gte("match_date", new Date().toISOString().split("T")[0])
         .order("match_date", { ascending: true })
-        .limit(3);
+        .limit(20);
 
-      const { data } = await query;
       return data || [];
     },
   });
+
+  // Sort matches by distance if we have user location
+  const nearbyMatches = useMemo(() => {
+    if (!allNearbyMatches) return [];
+
+    // Get user coordinates - either from geolocation or from profile city
+    let userLat = latitude;
+    let userLng = longitude;
+
+    if (!userLat || !userLng) {
+      // Fall back to profile city coordinates
+      if (profile?.city) {
+        const cityCoords = getCityCoordinates(profile.city);
+        if (cityCoords) {
+          userLat = cityCoords.lat;
+          userLng = cityCoords.lng;
+        }
+      }
+    }
+
+    // If we have location, calculate distances and sort
+    if (userLat && userLng) {
+      const matchesWithDistance = allNearbyMatches.map((match: any) => {
+        let distance: number | null = null;
+        
+        // First try turf coordinates
+        if (match.turfs?.latitude && match.turfs?.longitude) {
+          distance = calculateDistance(userLat!, userLng!, match.turfs.latitude, match.turfs.longitude);
+        } else if (match.turfs?.city) {
+          // Fall back to city coordinates
+          const turfCityCoords = getCityCoordinates(match.turfs.city);
+          if (turfCityCoords) {
+            distance = calculateDistance(userLat!, userLng!, turfCityCoords.lat, turfCityCoords.lng);
+          }
+        }
+        
+        return { ...match, distance };
+      });
+
+      // Sort by distance (null distances go to end)
+      return matchesWithDistance
+        .sort((a: any, b: any) => {
+          if (a.distance === null && b.distance === null) return 0;
+          if (a.distance === null) return 1;
+          if (b.distance === null) return -1;
+          return a.distance - b.distance;
+        })
+        .slice(0, 3);
+    }
+
+    // No location, just return first 3
+    return allNearbyMatches.slice(0, 3);
+  }, [allNearbyMatches, latitude, longitude, profile?.city]);
 
   // Fetch user's upcoming matches (joined or hosted)
   const { data: myUpcomingMatches } = useQuery({
@@ -292,11 +347,18 @@ export default function HomePage() {
                     <Link key={match.id} to={`/matches/${match.id}`}>
                       <Card className="glass-card hover:shadow-md transition-all">
                         <CardContent className="p-3">
-                          <p className="text-[10px] text-accent font-medium mb-1">
-                            {new Date(match.match_date).toLocaleDateString("en-IN", { 
-                              day: "2-digit", month: "short" 
-                            })}
-                          </p>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-[10px] text-accent font-medium">
+                              {new Date(match.match_date).toLocaleDateString("en-IN", { 
+                                day: "2-digit", month: "short" 
+                              })}
+                            </p>
+                            {match.distance !== null && match.distance !== undefined && (
+                              <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded">
+                                {formatDistance(match.distance)}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs font-medium line-clamp-1 mb-1">{match.match_name}</p>
                           <p className="text-[10px] text-muted-foreground truncate">
                             {match.turfs?.name}
