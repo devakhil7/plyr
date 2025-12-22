@@ -357,17 +357,17 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Quick Actions - 3 rows × 2 columns */}
-              <div className="grid grid-cols-2 gap-2">
+              {/* Quick Actions - 2 rows × 3 columns */}
+              <div className="grid grid-cols-3 gap-2">
                 {quickActions.map((action) => {
                   const Icon = action.icon;
                   return (
                     <Link key={action.label} to={action.href}>
-                      <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
+                      <div className="flex flex-col items-center gap-2 px-2 py-3 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
                         <div className={`w-9 h-9 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
                           <Icon className="h-4 w-4 text-white" />
                         </div>
-                        <span className="text-sm font-medium text-primary-foreground">
+                        <span className="text-[11px] font-medium text-primary-foreground text-center leading-tight">
                           {action.label}
                         </span>
                       </div>
