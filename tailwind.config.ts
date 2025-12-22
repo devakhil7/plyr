@@ -89,7 +89,7 @@ export default {
         "glow-accent": "var(--shadow-glow-accent)",
         "card": "var(--shadow-md)",
         "card-hover": "var(--shadow-xl)",
-        "glass": "0 8px 32px hsl(220 15% 5% / 0.2), inset 0 1px 0 hsl(220 15% 30% / 0.1)",
+        "glass": "0 8px 32px hsl(200 65% 6% / 0.3), inset 0 1px 0 hsl(204 18% 35% / 0.1)",
       },
       backdropBlur: {
         xs: "2px",
@@ -120,8 +120,8 @@ export default {
           "50%": { opacity: "0.5" },
         },
         "glow": {
-          "0%, 100%": { boxShadow: "0 0 20px hsl(152 60% 42% / 0.15)" },
-          "50%": { boxShadow: "0 0 40px hsl(152 60% 42% / 0.3)" },
+          "0%, 100%": { boxShadow: "0 0 20px hsl(195 7% 64% / 0.1)" },
+          "50%": { boxShadow: "0 0 40px hsl(195 7% 64% / 0.2)" },
         },
         "float": {
           "0%, 100%": { transform: "translateY(0)" },
@@ -140,9 +140,9 @@ export default {
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-dark": "linear-gradient(135deg, hsl(220 15% 8%) 0%, hsl(220 15% 12%) 50%, hsl(220 15% 15%) 100%)",
-        "gradient-glass": "linear-gradient(135deg, hsl(220 15% 12% / 0.95) 0%, hsl(220 15% 10% / 0.9) 100%)",
-        "hero-pattern": "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2338A169' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+        "gradient-dark": "linear-gradient(135deg, hsl(200 65% 6%) 0%, hsl(205 48% 12%) 50%, hsl(203 29% 21%) 100%)",
+        "gradient-glass": "linear-gradient(135deg, hsl(205 48% 12% / 0.95) 0%, hsl(200 65% 6% / 0.9) 100%)",
+        "hero-pattern": "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234A5C6A' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
       },
     },
   },

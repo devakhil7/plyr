@@ -133,38 +133,38 @@ export default function HomePage() {
   return (
     <AppLayout>
       <div className="min-h-screen">
-        {/* Hero Header with User Info - Dark theme */}
-        <div className="bg-gradient-to-br from-secondary via-secondary to-sidebar-background px-4 pt-6 pb-8 rounded-b-3xl">
+        {/* Hero Header - Premium dark slate */}
+        <div className="bg-gradient-to-br from-[hsl(200,65%,6%)] via-[hsl(205,48%,12%)] to-[hsl(203,29%,21%)] px-4 pt-6 pb-8 rounded-b-3xl">
           <div className="flex items-center gap-4 mb-6">
-            <Avatar className="h-14 w-14 border-2 border-primary/50 ring-2 ring-primary/20">
+            <Avatar className="h-14 w-14 border-2 border-[hsl(195,7%,64%)]/50 ring-2 ring-[hsl(195,7%,64%)]/20">
               <AvatarImage src={profile?.profile_photo_url || ""} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
+              <AvatarFallback className="bg-[hsl(203,29%,21%)] text-[hsl(160,3%,81%)] text-lg font-bold">
                 {profile?.name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-xl font-bold text-white">
+              <h1 className="text-xl font-bold text-[hsl(160,3%,81%)]">
                 Hey, {profile?.name?.split(" ")[0] || "Player"}!
               </h1>
-              <p className="text-white/60 text-sm">{profile?.city || "Ready to play?"}</p>
+              <p className="text-[hsl(195,7%,64%)] text-sm">{profile?.city || "Ready to play?"}</p>
             </div>
           </div>
 
           {/* Stats Row */}
           <div className="flex gap-3">
-            <div className="flex-1 bg-primary/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary/20">
-              <p className="text-white/60 text-xs">Level</p>
-              <p className="text-primary font-semibold text-sm">
+            <div className="flex-1 bg-[hsl(203,29%,21%)]/40 backdrop-blur-sm rounded-xl px-4 py-3 border border-[hsl(204,18%,35%)]/30">
+              <p className="text-[hsl(195,7%,64%)] text-xs">Level</p>
+              <p className="text-[hsl(160,3%,81%)] font-semibold text-sm">
                 {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
               </p>
             </div>
-            <div className="flex-1 bg-primary/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary/20">
-              <p className="text-white/60 text-xs">Matches</p>
-              <p className="text-primary font-semibold text-sm">{userStats?.matches || 0}</p>
+            <div className="flex-1 bg-[hsl(203,29%,21%)]/40 backdrop-blur-sm rounded-xl px-4 py-3 border border-[hsl(204,18%,35%)]/30">
+              <p className="text-[hsl(195,7%,64%)] text-xs">Matches</p>
+              <p className="text-[hsl(160,3%,81%)] font-semibold text-sm">{userStats?.matches || 0}</p>
             </div>
-            <div className="flex-1 bg-primary/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary/20">
-              <p className="text-white/60 text-xs">Rating</p>
-              <p className="text-primary font-semibold text-sm">
+            <div className="flex-1 bg-[hsl(203,29%,21%)]/40 backdrop-blur-sm rounded-xl px-4 py-3 border border-[hsl(204,18%,35%)]/30">
+              <p className="text-[hsl(195,7%,64%)] text-xs">Rating</p>
+              <p className="text-[hsl(160,3%,81%)] font-semibold text-sm">
                 {userStats?.rating ? userStats.rating.toFixed(1) : "—"}
               </p>
             </div>
