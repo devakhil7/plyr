@@ -8,19 +8,40 @@ import { useQuery } from "@tanstack/react-query";
 import { 
   Users, Calendar, ArrowRight, Play, Trophy, 
   BarChart3, Zap, Crown, Medal, MapPin, Target,
-  Plus, Heart, Award, Star, ChevronRight
+  Plus, Heart, Award, Star, ChevronRight, ChevronDown, Navigation
 } from "lucide-react";
 import { QuickActionsFAB } from "@/components/home/QuickActionsFAB";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useGeolocation, calculateDistance, formatDistance, getCityCoordinates } from "@/hooks/useGeolocation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { calculateWinsLosses } from "@/lib/playerStats";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+const AVAILABLE_CITIES = [
+  "Current Location",
+  "Mumbai",
+  "Bangalore", 
+  "Delhi",
+  "Gurgaon",
+  "Hyderabad",
+  "Chennai",
+  "Pune",
+  "Kolkata",
+  "Ahmedabad",
+  "Noida",
+];
 
 export default function HomePage() {
   const { user, profile } = useAuth();
   const { latitude, longitude, loading: locationLoading } = useGeolocation();
+  const [selectedCity, setSelectedCity] = useState<string>("Current Location");
+  const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
 
   // Fetch user stats for PlayerCard
   const { data: userStats } = useQuery({
@@ -157,18 +178,29 @@ export default function HomePage() {
   const nearbyMatches = useMemo(() => {
     if (!allNearbyMatches) return [];
 
-    // Get user coordinates - either from geolocation or from profile city
-    let userLat = latitude;
-    let userLng = longitude;
+    // Get user coordinates based on selected city or current location
+    let userLat: number | null = null;
+    let userLng: number | null = null;
 
-    if (!userLat || !userLng) {
-      // Fall back to profile city coordinates
-      if (profile?.city) {
-        const cityCoords = getCityCoordinates(profile.city);
-        if (cityCoords) {
-          userLat = cityCoords.lat;
-          userLng = cityCoords.lng;
+    if (selectedCity === "Current Location") {
+      // Use geolocation or fall back to profile city
+      userLat = latitude;
+      userLng = longitude;
+      if (!userLat || !userLng) {
+        if (profile?.city) {
+          const cityCoords = getCityCoordinates(profile.city);
+          if (cityCoords) {
+            userLat = cityCoords.lat;
+            userLng = cityCoords.lng;
+          }
         }
+      }
+    } else {
+      // Use selected city coordinates
+      const cityCoords = getCityCoordinates(selectedCity);
+      if (cityCoords) {
+        userLat = cityCoords.lat;
+        userLng = cityCoords.lng;
       }
     }
 
@@ -204,7 +236,7 @@ export default function HomePage() {
 
     // No location, just return first 3
     return allNearbyMatches.slice(0, 3);
-  }, [allNearbyMatches, latitude, longitude, profile?.city]);
+  }, [allNearbyMatches, latitude, longitude, profile?.city, selectedCity]);
 
   // Fetch user's upcoming matches (joined or hosted)
   const { data: myUpcomingMatches } = useQuery({
@@ -389,10 +421,40 @@ export default function HomePage() {
             {/* Matches Near Me */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-sm flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                  Near Me
-                </h3>
+                <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <button className="font-semibold text-sm flex items-center gap-1.5 hover:text-primary transition-colors">
+                      <MapPin className="h-3.5 w-3.5 text-primary" />
+                      {selectedCity === "Current Location" ? "Near Me" : selectedCity}
+                      <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-48 p-2" align="start">
+                    <div className="space-y-1">
+                      {AVAILABLE_CITIES.map((city) => (
+                        <button
+                          key={city}
+                          onClick={() => {
+                            setSelectedCity(city);
+                            setLocationPopoverOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm rounded-lg flex items-center gap-2 transition-colors ${
+                            selectedCity === city 
+                              ? "bg-primary/10 text-primary font-medium" 
+                              : "hover:bg-muted"
+                          }`}
+                        >
+                          {city === "Current Location" ? (
+                            <Navigation className="h-3.5 w-3.5" />
+                          ) : (
+                            <MapPin className="h-3.5 w-3.5" />
+                          )}
+                          {city}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <Link to="/matches" className="text-xs text-primary flex items-center">
                   All <ChevronRight className="h-3 w-3" />
                 </Link>
