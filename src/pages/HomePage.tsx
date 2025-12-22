@@ -316,32 +316,34 @@ export default function HomePage() {
       <div className="min-h-screen">
         {/* Hero Section - Player Card + Quick Actions */}
         <div className="hero-gradient px-4 pt-4 pb-6 rounded-b-3xl">
-          <div className="flex gap-4 items-start">
+          <div className="flex gap-3 items-stretch">
             {/* Player Card - Left */}
-            <Link to="/profile" className="shrink-0">
-              <PlayerCard
-                player={{
-                  name: profile?.name || null,
-                  position: profile?.position || null,
-                  city: profile?.city || null,
-                  profile_photo_url: profile?.profile_photo_url || null,
-                  favourite_club: userStats?.favourite_club || null,
-                }}
-                stats={{
-                  overall: userStats?.rating || null,
-                  pace: userStats?.pace || null,
-                  shooting: userStats?.shooting || null,
-                  passing: userStats?.passing || null,
-                  dribbling: userStats?.dribbling || null,
-                  defending: userStats?.defending || null,
-                  physical: userStats?.physical || null,
-                  matches: userStats?.matches || 0,
-                  goals: userStats?.goals || 0,
-                  assists: userStats?.assists || 0,
-                  wins: userStats?.wins || 0,
-                }}
-                className="transform scale-[0.55] origin-top-left -mb-[180px]"
-              />
+            <Link to="/profile" className="shrink-0 w-[160px]">
+              <div className="h-full flex items-center">
+                <PlayerCard
+                  player={{
+                    name: profile?.name || null,
+                    position: profile?.position || null,
+                    city: profile?.city || null,
+                    profile_photo_url: profile?.profile_photo_url || null,
+                    favourite_club: userStats?.favourite_club || null,
+                  }}
+                  stats={{
+                    overall: userStats?.rating || null,
+                    pace: userStats?.pace || null,
+                    shooting: userStats?.shooting || null,
+                    passing: userStats?.passing || null,
+                    dribbling: userStats?.dribbling || null,
+                    defending: userStats?.defending || null,
+                    physical: userStats?.physical || null,
+                    matches: userStats?.matches || 0,
+                    goals: userStats?.goals || 0,
+                    assists: userStats?.assists || 0,
+                    wins: userStats?.wins || 0,
+                  }}
+                  className="transform scale-[0.57] origin-top-left -mr-[120px] -mb-[172px]"
+                />
+              </div>
             </Link>
 
             {/* Right Side - Level + Quick Actions */}
