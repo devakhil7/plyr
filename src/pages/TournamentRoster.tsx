@@ -84,6 +84,35 @@ export default function TournamentRoster() {
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Fetch confirmed players from OTHER teams in this tournament (to prevent duplicates)
+  const { data: confirmedPlayersInTournament = [] } = useQuery({
+    queryKey: ["tournament-confirmed-players", id, teamId],
+    queryFn: async () => {
+      if (!id) return [];
+      // Get all teams in this tournament except current team
+      const { data: otherTeams } = await supabase
+        .from("tournament_teams")
+        .select("id")
+        .eq("tournament_id", id)
+        .neq("id", teamId || "");
+      
+      if (!otherTeams || otherTeams.length === 0) return [];
+      
+      const otherTeamIds = otherTeams.map(t => t.id);
+      
+      // Get confirmed players from those teams
+      const { data: confirmedPlayers } = await supabase
+        .from("tournament_team_players")
+        .select("user_id")
+        .in("tournament_team_id", otherTeamIds)
+        .eq("invite_status", "joined")
+        .not("user_id", "is", null);
+      
+      return (confirmedPlayers || []).map(p => p.user_id).filter(Boolean) as string[];
+    },
+    enabled: !!id,
+  });
+
   // Search for existing users
   const { data: searchedUsers = [], isLoading: isSearchingUsers } = useQuery({
     queryKey: ["player-search", playerSearchQuery],
@@ -100,11 +129,14 @@ export default function TournamentRoster() {
     enabled: playerSearchQuery.length >= 2,
   });
 
-  // Filter out users already in the roster
+  // Filter out users already in the roster AND confirmed players from other teams
   const filteredSearchedUsers = useMemo(() => {
     const existingUserIds = players.filter(p => p.user_id).map(p => p.user_id);
-    return searchedUsers.filter(u => !existingUserIds.includes(u.id));
-  }, [searchedUsers, players]);
+    return searchedUsers.filter(u => 
+      !existingUserIds.includes(u.id) && 
+      !confirmedPlayersInTournament.includes(u.id)
+    );
+  }, [searchedUsers, players, confirmedPlayersInTournament]);
 
   // Select a user from search results
   const selectSearchedUser = (searchedUser: SearchedUser, index: number) => {
