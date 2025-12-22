@@ -9,25 +9,25 @@
 @layer base {
   :root {
     /* Core Brand Colors - Premium Dark Slate Palette */
-    /* #06141B → Primary dark */
-    --primary: 200 65% 6%;
+    /* #11212D → Primary dark */
+    --primary: 205 48% 12%;
     --primary-foreground: 160 3% 81%;
     
-    /* #11212D → Secondary */
-    --secondary: 205 48% 12%;
+    /* #253745 → Secondary */
+    --secondary: 203 29% 21%;
     --secondary-foreground: 160 3% 81%;
     
     /* Background - Light mode uses lighter shades */
     --background: 160 3% 81%;
-    --foreground: 200 65% 6%;
+    --foreground: 205 48% 12%;
     
     /* Card surfaces - Off-white */
     --card: 160 4% 92%;
-    --card-foreground: 200 65% 6%;
+    --card-foreground: 205 48% 12%;
     
     /* Popover surfaces */
     --popover: 160 4% 92%;
-    --popover-foreground: 200 65% 6%;
+    --popover-foreground: 205 48% 12%;
     
     /* Muted elements - #9BA8AB */
     --muted: 195 7% 64%;
@@ -44,32 +44,32 @@
     /* Border & Input - #4A5C6A */
     --border: 204 18% 35%;
     --input: 195 7% 64%;
-    --ring: 200 65% 6%;
+    --ring: 205 48% 12%;
     
     /* Radius - Larger for pill-like shapes */
     --radius: 1rem;
     
-    /* Sidebar - Dark #06141B */
-    --sidebar-background: 200 65% 6%;
+    /* Sidebar - Dark #11212D */
+    --sidebar-background: 205 48% 12%;
     --sidebar-foreground: 160 3% 81%;
     --sidebar-primary: 160 3% 81%;
-    --sidebar-primary-foreground: 200 65% 6%;
-    --sidebar-accent: 205 48% 12%;
+    --sidebar-primary-foreground: 205 48% 12%;
+    --sidebar-accent: 203 29% 21%;
     --sidebar-accent-foreground: 160 3% 81%;
     --sidebar-border: 203 29% 21%;
     --sidebar-ring: 195 7% 64%;
     
     /* Custom SPORTIQ tokens */
-    --sportiq-primary: 200 65% 6%;
-    --sportiq-secondary: 205 48% 12%;
-    --sportiq-accent: 203 29% 21%;
+    --sportiq-primary: 205 48% 12%;
+    --sportiq-secondary: 203 29% 21%;
+    --sportiq-accent: 204 18% 35%;
     --sportiq-surface: 160 3% 81%;
-    --sportiq-glass: 205 48% 12%;
+    --sportiq-glass: 203 29% 21%;
     
     /* Gradient colors */
-    --gradient-start: 200 65% 6%;
-    --gradient-mid: 205 48% 12%;
-    --gradient-end: 203 29% 21%;
+    --gradient-start: 205 48% 12%;
+    --gradient-mid: 203 29% 21%;
+    --gradient-end: 204 18% 35%;
     
     /* Status colors */
     --status-open: 160 50% 45%;
@@ -79,10 +79,10 @@
     --status-cancelled: 0 72% 55%;
     
     /* Shadows - Dark slate tinted */
-    --shadow-sm: 0 1px 2px 0 hsl(200 65% 6% / 0.08);
-    --shadow-md: 0 4px 12px -2px hsl(200 65% 6% / 0.12), 0 2px 6px -2px hsl(200 65% 6% / 0.08);
-    --shadow-lg: 0 12px 24px -4px hsl(200 65% 6% / 0.15), 0 4px 8px -4px hsl(200 65% 6% / 0.1);
-    --shadow-xl: 0 24px 48px -8px hsl(200 65% 6% / 0.2), 0 8px 16px -8px hsl(200 65% 6% / 0.12);
+    --shadow-sm: 0 1px 2px 0 hsl(205 48% 12% / 0.08);
+    --shadow-md: 0 4px 12px -2px hsl(205 48% 12% / 0.12), 0 2px 6px -2px hsl(205 48% 12% / 0.08);
+    --shadow-lg: 0 12px 24px -4px hsl(205 48% 12% / 0.15), 0 4px 8px -4px hsl(205 48% 12% / 0.1);
+    --shadow-xl: 0 24px 48px -8px hsl(205 48% 12% / 0.2), 0 8px 16px -8px hsl(205 48% 12% / 0.12);
     --shadow-glow: 0 0 40px hsl(195 7% 64% / 0.15);
     --shadow-glow-accent: 0 0 30px hsl(203 29% 21% / 0.2);
   }
@@ -90,25 +90,25 @@
   .dark {
     /* Dark mode - Use the dark slate palette directly */
     --primary: 195 7% 64%;
-    --primary-foreground: 200 65% 6%;
+    --primary-foreground: 205 48% 12%;
     
     --secondary: 203 29% 21%;
     --secondary-foreground: 160 3% 81%;
     
-    /* #06141B background */
-    --background: 200 65% 6%;
+    /* #11212D background */
+    --background: 205 48% 12%;
     --foreground: 160 3% 81%;
     
-    /* #11212D card */
-    --card: 205 48% 12%;
+    /* #253745 card */
+    --card: 203 29% 21%;
     --card-foreground: 160 3% 81%;
     
-    /* #11212D popover */
-    --popover: 205 48% 12%;
+    /* #253745 popover */
+    --popover: 203 29% 21%;
     --popover-foreground: 160 3% 81%;
     
-    /* #253745 muted */
-    --muted: 203 29% 21%;
+    /* #4A5C6A muted */
+    --muted: 204 18% 35%;
     --muted-foreground: 195 7% 64%;
     
     /* #4A5C6A accent */
@@ -123,11 +123,11 @@
     --input: 203 29% 21%;
     --ring: 195 7% 64%;
     
-    --sidebar-background: 200 65% 6%;
+    --sidebar-background: 205 48% 12%;
     --sidebar-foreground: 160 3% 81%;
     --sidebar-primary: 195 7% 64%;
-    --sidebar-primary-foreground: 200 65% 6%;
-    --sidebar-accent: 205 48% 12%;
+    --sidebar-primary-foreground: 205 48% 12%;
+    --sidebar-accent: 203 29% 21%;
     --sidebar-accent-foreground: 160 3% 81%;
     --sidebar-border: 203 29% 21%;
     --sidebar-ring: 195 7% 64%;
@@ -161,12 +161,12 @@
     @apply backdrop-blur-xl border rounded-2xl;
     background: linear-gradient(
       135deg,
-      hsl(205 48% 12% / 0.95) 0%,
-      hsl(200 65% 6% / 0.9) 100%
+      hsl(203 29% 21% / 0.95) 0%,
+      hsl(205 48% 12% / 0.9) 100%
     );
-    border-color: hsl(203 29% 21% / 0.5);
+    border-color: hsl(204 18% 35% / 0.5);
     box-shadow: 
-      0 8px 32px hsl(200 65% 6% / 0.3),
+      0 8px 32px hsl(205 48% 12% / 0.3),
       inset 0 1px 0 hsl(204 18% 35% / 0.15);
   }
   
@@ -179,9 +179,9 @@
   /* Hero gradient background - Premium dark slate */
   .hero-gradient {
     background: linear-gradient(135deg, 
-      hsl(200 65% 6%) 0%, 
-      hsl(205 48% 12%) 50%, 
-      hsl(203 29% 21%) 100%
+      hsl(205 48% 12%) 0%, 
+      hsl(203 29% 21%) 50%, 
+      hsl(204 18% 35%) 100%
     );
   }
   
@@ -198,7 +198,7 @@
   .card-hover:hover {
     transform: translateY(-4px);
     box-shadow: 
-      0 16px 48px hsl(200 65% 6% / 0.2),
+      0 16px 48px hsl(205 48% 12% / 0.2),
       0 0 30px hsl(195 7% 64% / 0.1);
   }
   
@@ -310,10 +310,10 @@
     @apply relative overflow-hidden rounded-2xl p-5;
     background: linear-gradient(
       180deg,
-      hsl(205 48% 12% / 0.95) 0%,
-      hsl(200 65% 6% / 0.9) 100%
+      hsl(203 29% 21% / 0.95) 0%,
+      hsl(205 48% 12% / 0.9) 100%
     );
-    border: 1px solid hsl(203 29% 21% / 0.4);
+    border: 1px solid hsl(204 18% 35% / 0.4);
   }
   
   .stats-card::after {
