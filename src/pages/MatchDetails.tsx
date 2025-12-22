@@ -414,16 +414,33 @@ export default function MatchDetails() {
       await supabase.from("matches").update({ analytics_status: "processing" }).eq("id", match.id);
       refetch();
 
-      // Simulate video processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Upload video to storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${match.id}/${Date.now()}.${fileExt}`;
 
-      // Generate dummy analytics
-      await generateAnalytics();
+      const { error: uploadError } = await supabase.storage
+        .from('match-videos')
+        .upload(fileName, file, { upsert: true });
 
-      toast.success("Video processed! Analytics generated.");
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('match-videos')
+        .getPublicUrl(fileName);
+
+      // Update match with video URL
+      await supabase.from("matches").update({ 
+        video_url: publicUrl,
+        analytics_status: "completed" 
+      }).eq("id", match.id);
+
+      toast.success("Video uploaded successfully!");
       refetch();
     } catch (err: any) {
-      toast.error("Failed to process video");
+      console.error('Upload error:', err);
+      toast.error(err.message || "Failed to upload video");
+      // Reset analytics status on error
+      await supabase.from("matches").update({ analytics_status: "none" }).eq("id", match.id);
     } finally {
       setUploading(false);
     }

@@ -190,17 +190,33 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
     },
   });
 
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // For MVP, we'll just simulate an upload and use a placeholder
     setUploading(true);
-    setTimeout(() => {
-      setHighlightUrl("/placeholder.svg");
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${matchId}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('match-videos')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('match-videos')
+        .getPublicUrl(fileName);
+
+      setHighlightUrl(publicUrl);
+      toast.success("Video uploaded successfully!");
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      toast.error(err.message || "Failed to upload video");
+    } finally {
       setUploading(false);
-      toast.success("Video uploaded!");
-    }, 1500);
+    }
   };
 
   return (
