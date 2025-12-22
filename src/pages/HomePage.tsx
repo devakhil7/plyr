@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import { 
   Users, Calendar, ArrowRight, Play, Trophy, 
   BarChart3, Zap, Crown, Medal, MapPin, Target,
-  Plus, Heart, Award, Star, ChevronRight, ChevronDown, Navigation
+  Plus, Heart, Award, Star, ChevronRight, ChevronDown, Navigation,
+  Search, GraduationCap, Dumbbell, Shield, Crosshair, Wind
 } from "lucide-react";
 import { QuickActionsFAB } from "@/components/home/QuickActionsFAB";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +24,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 const AVAILABLE_CITIES = [
   "Current Location",
@@ -39,9 +49,12 @@ const AVAILABLE_CITIES = [
 
 export default function HomePage() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const { latitude, longitude, loading: locationLoading } = useGeolocation();
   const [selectedCity, setSelectedCity] = useState<string>("Current Location");
   const [locationPopoverOpen, setLocationPopoverOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // Fetch user stats for PlayerCard
   const { data: userStats } = useQuery({
@@ -328,6 +341,62 @@ export default function HomePage() {
     { icon: Zap, label: "Improve", href: "/improve/football", color: "bg-accent" },
   ];
 
+  const improveCategories = [
+    { 
+      icon: Shield, 
+      label: "Defending", 
+      description: "Tackling, positioning & marking",
+      href: "/improve/football",
+      color: "text-blue-500",
+      bgColor: "bg-blue-500/10"
+    },
+    { 
+      icon: Crosshair, 
+      label: "Shooting", 
+      description: "Finishing, power & accuracy",
+      href: "/improve/football",
+      color: "text-red-500",
+      bgColor: "bg-red-500/10"
+    },
+    { 
+      icon: Wind, 
+      label: "Dribbling", 
+      description: "Ball control & skill moves",
+      href: "/improve/football",
+      color: "text-purple-500",
+      bgColor: "bg-purple-500/10"
+    },
+    { 
+      icon: Target, 
+      label: "Passing", 
+      description: "Vision, accuracy & timing",
+      href: "/improve/football",
+      color: "text-green-500",
+      bgColor: "bg-green-500/10"
+    },
+  ];
+
+  const searchItems = [
+    { type: "page", label: "Browse Matches", href: "/matches", icon: Users },
+    { type: "page", label: "Tournaments", href: "/tournaments", icon: Trophy },
+    { type: "page", label: "Leaderboards", href: "/leaderboards", icon: Award },
+    { type: "page", label: "Host a Match", href: "/host-match", icon: Play },
+    { type: "page", label: "Improve Skills", href: "/improve/football", icon: GraduationCap },
+    { type: "page", label: "Analytics", href: "/get-analytics", icon: BarChart3 },
+    { type: "page", label: "Community", href: "/community", icon: Users },
+    { type: "page", label: "Find Turfs", href: "/turfs", icon: MapPin },
+  ];
+
+  const filteredSearchItems = searchItems.filter(item =>
+    item.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSearchSelect = (href: string) => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    navigate(href);
+  };
+
   const getRankIcon = (index: number) => {
     if (index === 0) return <Crown className="h-4 w-4 text-yellow-500" />;
     if (index === 1) return <Medal className="h-4 w-4 text-gray-400" />;
@@ -346,6 +415,100 @@ export default function HomePage() {
   return (
     <AppLayout>
       <div className="min-h-screen">
+        {/* Top Bar - Location + Search */}
+        <div className="bg-background/95 backdrop-blur-sm border-b px-4 py-3 sticky top-0 z-40">
+          <div className="flex items-center gap-3">
+            {/* Location Selector */}
+            <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="shrink-0 gap-1.5 h-9 px-3"
+                >
+                  {selectedCity === "Current Location" ? (
+                    <Navigation className="h-3.5 w-3.5 text-primary" />
+                  ) : (
+                    <MapPin className="h-3.5 w-3.5 text-primary" />
+                  )}
+                  <span className="max-w-[80px] truncate text-xs">
+                    {selectedCity === "Current Location" 
+                      ? (locationLoading ? "Locating..." : "Near Me") 
+                      : selectedCity}
+                  </span>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-52 p-2" align="start">
+                <div className="space-y-1 max-h-[300px] overflow-y-auto">
+                  {AVAILABLE_CITIES.map((city) => (
+                    <button
+                      key={city}
+                      onClick={() => {
+                        setSelectedCity(city);
+                        setLocationPopoverOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm rounded-lg flex items-center gap-2 transition-colors ${
+                        selectedCity === city 
+                          ? "bg-primary/10 text-primary font-medium" 
+                          : "hover:bg-muted"
+                      }`}
+                    >
+                      {city === "Current Location" ? (
+                        <Navigation className="h-3.5 w-3.5" />
+                      ) : (
+                        <MapPin className="h-3.5 w-3.5" />
+                      )}
+                      {city}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Search Bar */}
+            <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+              <PopoverTrigger asChild>
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search matches, players, tournaments..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (e.target.value) setSearchOpen(true);
+                    }}
+                    onFocus={() => setSearchOpen(true)}
+                    className="pl-9 h-9 bg-muted/50"
+                  />
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-2rem)] max-w-md p-0" align="start">
+                <Command>
+                  <CommandList>
+                    <CommandEmpty>No results found.</CommandEmpty>
+                    <CommandGroup heading="Quick Links">
+                      {filteredSearchItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <CommandItem
+                            key={item.href}
+                            onSelect={() => handleSearchSelect(item.href)}
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            {item.label}
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
         {/* Hero Section - Player Card + Quick Actions */}
         <div className="hero-gradient px-4 pt-4 pb-6 rounded-b-3xl">
           <div className="flex gap-3 items-stretch">
@@ -421,40 +584,10 @@ export default function HomePage() {
             {/* Matches Near Me */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <button className="font-semibold text-sm flex items-center gap-1.5 hover:text-primary transition-colors">
-                      <MapPin className="h-3.5 w-3.5 text-primary" />
-                      {selectedCity === "Current Location" ? "Near Me" : selectedCity}
-                      <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-48 p-2" align="start">
-                    <div className="space-y-1">
-                      {AVAILABLE_CITIES.map((city) => (
-                        <button
-                          key={city}
-                          onClick={() => {
-                            setSelectedCity(city);
-                            setLocationPopoverOpen(false);
-                          }}
-                          className={`w-full text-left px-3 py-2 text-sm rounded-lg flex items-center gap-2 transition-colors ${
-                            selectedCity === city 
-                              ? "bg-primary/10 text-primary font-medium" 
-                              : "hover:bg-muted"
-                          }`}
-                        >
-                          {city === "Current Location" ? (
-                            <Navigation className="h-3.5 w-3.5" />
-                          ) : (
-                            <MapPin className="h-3.5 w-3.5" />
-                          )}
-                          {city}
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <h3 className="font-semibold text-sm flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5 text-primary" />
+                  {selectedCity === "Current Location" ? "Near Me" : selectedCity}
+                </h3>
                 <Link to="/matches" className="text-xs text-primary flex items-center">
                   All <ChevronRight className="h-3 w-3" />
                 </Link>
@@ -627,9 +760,43 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Spacing before Community Feed */}
+          {/* Improve Your Game Section */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-foreground flex items-center gap-2">
+                <GraduationCap className="h-4 w-4 text-primary" />
+                Improve Your Game
+              </h2>
+              <Link to="/improve/football">
+                <Button variant="ghost" size="sm" className="text-primary text-xs h-7 px-2">
+                  View all
+                </Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {improveCategories.map((category) => {
+                const Icon = category.icon;
+                return (
+                  <Link key={category.label} to={category.href}>
+                    <Card className="glass-card hover:shadow-md transition-all h-full">
+                      <CardContent className="p-4">
+                        <div className={`w-10 h-10 rounded-xl ${category.bgColor} flex items-center justify-center mb-3`}>
+                          <Icon className={`h-5 w-5 ${category.color}`} />
+                        </div>
+                        <h3 className="font-semibold text-sm mb-1">{category.label}</h3>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {category.description}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Community Feed Link */}
           <div className="pt-2">
-            {/* Community Feed Link */}
             <Link to="/community">
               <Card className="glass-card hover:shadow-md transition-shadow">
                 <CardContent className="p-4 flex items-center justify-between">
