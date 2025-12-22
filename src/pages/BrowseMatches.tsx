@@ -36,8 +36,12 @@ export default function BrowseMatches() {
           match_players(user_id, join_status)
         `)
         .eq("visibility", "public" as const)
-        .gte("match_date", new Date().toISOString().split("T")[0])
-        .order("match_date", { ascending: true });
+        .order("match_date", { ascending: statusFilter === "all" || statusFilter === "completed" ? false : true });
+
+      // Only filter to future matches if not showing "all" or "completed"
+      if (statusFilter !== "all" && statusFilter !== "completed") {
+        query = query.gte("match_date", new Date().toISOString().split("T")[0]);
+      }
 
       // Exclude tournament matches
       if (tournamentMatchIds.length > 0) {
