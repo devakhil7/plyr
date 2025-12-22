@@ -583,6 +583,6 @@ export default function Profile() {
           onCropComplete={handleCropComplete}
         />
       )}
-    </Layout>
+    </AppLayout>
   );
 }
