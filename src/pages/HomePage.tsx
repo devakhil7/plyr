@@ -133,12 +133,12 @@ export default function HomePage() {
   return (
     <AppLayout>
       <div className="min-h-screen">
-        {/* Hero Header with User Info */}
-        <div className="bg-gradient-to-br from-primary via-primary to-accent px-4 pt-6 pb-8 rounded-b-3xl">
+        {/* Hero Header with User Info - Dark theme */}
+        <div className="bg-gradient-to-br from-secondary via-secondary to-sidebar-background px-4 pt-6 pb-8 rounded-b-3xl">
           <div className="flex items-center gap-4 mb-6">
-            <Avatar className="h-14 w-14 border-2 border-white/30">
+            <Avatar className="h-14 w-14 border-2 border-primary/50 ring-2 ring-primary/20">
               <AvatarImage src={profile?.profile_photo_url || ""} />
-              <AvatarFallback className="bg-white/20 text-white text-lg">
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
                 {profile?.name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
@@ -146,25 +146,25 @@ export default function HomePage() {
               <h1 className="text-xl font-bold text-white">
                 Hey, {profile?.name?.split(" ")[0] || "Player"}!
               </h1>
-              <p className="text-white/70 text-sm">{profile?.city || "Ready to play?"}</p>
+              <p className="text-white/60 text-sm">{profile?.city || "Ready to play?"}</p>
             </div>
           </div>
 
           {/* Stats Row */}
           <div className="flex gap-3">
-            <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
-              <p className="text-white/70 text-xs">Level</p>
-              <p className="text-white font-semibold text-sm">
+            <div className="flex-1 bg-primary/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary/20">
+              <p className="text-white/60 text-xs">Level</p>
+              <p className="text-primary font-semibold text-sm">
                 {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
               </p>
             </div>
-            <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
-              <p className="text-white/70 text-xs">Matches</p>
-              <p className="text-white font-semibold text-sm">{userStats?.matches || 0}</p>
+            <div className="flex-1 bg-primary/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary/20">
+              <p className="text-white/60 text-xs">Matches</p>
+              <p className="text-primary font-semibold text-sm">{userStats?.matches || 0}</p>
             </div>
-            <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
-              <p className="text-white/70 text-xs">Rating</p>
-              <p className="text-white font-semibold text-sm">
+            <div className="flex-1 bg-primary/15 backdrop-blur-sm rounded-xl px-4 py-3 border border-primary/20">
+              <p className="text-white/60 text-xs">Rating</p>
+              <p className="text-primary font-semibold text-sm">
                 {userStats?.rating ? userStats.rating.toFixed(1) : "—"}
               </p>
             </div>
