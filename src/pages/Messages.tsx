@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations, useMessages } from "@/hooks/useMessaging";
 import { cn } from "@/lib/utils";
@@ -52,16 +52,16 @@ export default function Messages() {
 
   if (loading) {
     return (
-      <Layout>
+      <AppLayout showBottomNav={false}>
         <div className="container-app py-12 flex items-center justify-center min-h-[60vh]">
           <div className="animate-pulse text-muted-foreground">Loading...</div>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   return (
-    <Layout showFooter={false}>
+    <AppLayout showBottomNav={false}>
       <div className="container-app py-4">
         <div className="flex gap-4 h-[calc(100vh-120px)]">
           {/* Conversations List */}
@@ -242,6 +242,6 @@ export default function Messages() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </AppLayout>
   );
 }

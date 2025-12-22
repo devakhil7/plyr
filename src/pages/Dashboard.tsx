@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -90,16 +90,16 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 flex items-center justify-center min-h-[60vh]">
           <div className="animate-pulse text-muted-foreground">Loading...</div>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   return (
-    <Layout>
+    <AppLayout>
       <div className="container-app py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -263,6 +263,6 @@ export default function Dashboard() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </AppLayout>
   );
 }

@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Search, IndianRupee, Star, Navigation, Loader2 } from "lucide-react";
@@ -72,8 +72,9 @@ export default function Turfs() {
   const cities = [...new Set(turfs?.map((t: any) => t.city).filter(Boolean))];
   const sports = [...new Set(turfs?.map((t: any) => t.sport_type).filter(Boolean))];
 
+
   return (
-    <Layout>
+    <AppLayout>
       <div className="container-app py-8">
         {/* Header */}
         <div className="mb-8">
@@ -198,6 +199,6 @@ export default function Turfs() {
           </div>
         )}
       </div>
-    </Layout>
+    </AppLayout>
   );
 }

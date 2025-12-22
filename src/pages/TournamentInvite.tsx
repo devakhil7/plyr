@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -119,17 +119,17 @@ export default function TournamentInvite() {
 
   if (isLoading) {
     return (
-      <Layout>
+      <AppLayout showBottomNav={false}>
         <div className="container-app py-12 flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   if (!tournament || !team) {
     return (
-      <Layout>
+      <AppLayout showBottomNav={false}>
         <div className="container-app py-12 text-center">
           <Trophy className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
           <h2 className="text-2xl font-bold mb-4">Invalid Invite</h2>
@@ -138,17 +138,17 @@ export default function TournamentInvite() {
             <Button>Browse Tournaments</Button>
           </Link>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   // Check if invite is already used
   if (playerInvite?.invite_status === "joined") {
     return (
-      <Layout>
+      <AppLayout showBottomNav={false}>
         <div className="container-app py-12 text-center max-w-md mx-auto">
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="h-8 w-8 text-green-600" />
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="h-8 w-8 text-primary" />
           </div>
           <h2 className="text-2xl font-bold mb-4">Already Joined</h2>
           <p className="text-muted-foreground mb-6">
@@ -158,14 +158,14 @@ export default function TournamentInvite() {
             <Button>View Tournament</Button>
           </Link>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   // Show login prompt if not authenticated
   if (!user) {
     return (
-      <Layout>
+      <AppLayout showBottomNav={false}>
         <div className="container-app py-12 max-w-md mx-auto">
           <Card>
             <CardHeader className="text-center">
@@ -206,12 +206,12 @@ export default function TournamentInvite() {
             </CardContent>
           </Card>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   return (
-    <Layout>
+    <AppLayout showBottomNav={false}>
       <div className="container-app py-12 max-w-md mx-auto">
         <Card>
           <CardHeader className="text-center">
@@ -247,19 +247,19 @@ export default function TournamentInvite() {
                 </div>
               )}
 
-                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                  <Users className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Team</p>
-                    <p className="font-medium">{team.team_name}</p>
-                    <p className="text-xs text-muted-foreground">Captain: {(team as any).profiles?.name || "Unknown"}</p>
-                  </div>
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <Users className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Team</p>
+                  <p className="font-medium">{team.team_name}</p>
+                  <p className="text-xs text-muted-foreground">Captain: {(team as any).profiles?.name || "Unknown"}</p>
                 </div>
+              </div>
             </div>
 
             {playerInvite && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800">
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                <p className="text-sm text-foreground">
                   You're joining as: <strong>{playerInvite.player_name}</strong>
                   {playerInvite.position && ` (${playerInvite.position})`}
                 </p>
@@ -290,6 +290,6 @@ export default function TournamentInvite() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </AppLayout>
   );
 }

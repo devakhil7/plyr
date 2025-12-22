@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -291,16 +291,16 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <Layout>
+      <AppLayout showBottomNav={false}>
         <div className="container-app py-12 flex items-center justify-center min-h-[60vh]">
           <div className="animate-pulse text-muted-foreground">Loading...</div>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   return (
-    <Layout showFooter={false}>
+    <AppLayout showBottomNav={false}>
       <div className="container-app py-8">
         <Link to="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
