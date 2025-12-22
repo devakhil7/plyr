@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -132,7 +132,7 @@ export default function CompleteProfile() {
   };
 
   return (
-    <Layout showFooter={false}>
+    <AppLayout showBottomNav={false}>
       <div className="container-app py-12">
         <div className="max-w-2xl mx-auto">
           <Card>
@@ -312,6 +312,6 @@ export default function CompleteProfile() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </AppLayout>
   );
 }

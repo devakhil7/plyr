@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useFeed, useEventBookmark } from "@/hooks/useFeed";
 import { FeedTabs } from "@/components/feed/FeedTabs";
@@ -172,8 +172,9 @@ export default function Feed() {
   const showEvents = activeTab === "events" || activeFilter === "events";
   const showPosts = !showEvents;
 
+
   return (
-    <Layout>
+    <AppLayout>
       <div className="container-app py-6">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
@@ -236,6 +237,6 @@ export default function Feed() {
           userId={user?.id || null}
         />
       )}
-    </Layout>
+    </AppLayout>
   );
 }

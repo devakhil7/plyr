@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -71,29 +71,29 @@ export default function TurfDetails() {
 
   if (isLoading) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 flex items-center justify-center min-h-[60vh]">
           <div className="animate-pulse text-muted-foreground">Loading...</div>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   if (!turf) {
     return (
-      <Layout>
+      <AppLayout>
         <div className="container-app py-12 text-center">
           <h2 className="text-2xl font-bold mb-4">Turf not found</h2>
           <Link to="/turfs">
             <Button>Browse Turfs</Button>
           </Link>
         </div>
-      </Layout>
+      </AppLayout>
     );
   }
 
   return (
-    <Layout>
+    <AppLayout>
       <div className="container-app py-8">
         <Link to="/turfs" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -333,6 +333,6 @@ export default function TurfDetails() {
           queryClient.invalidateQueries({ queryKey: ["turf-bookings"] });
         }}
       />
-    </Layout>
+    </AppLayout>
   );
 }

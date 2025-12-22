@@ -897,7 +897,7 @@ export default function MatchDetails() {
                       profiles: mp.profiles,
                       offline_player_name: mp.offline_player_name,
                     }))}
-                    onEventSaved={refetchVideoEvents}
+                    onEventAdded={refetchVideoEvents}
                   />
                 )}
               </>
