@@ -40,6 +40,11 @@ import FitnessInsights from "./pages/FitnessInsights";
 import ImproveFootball from "./pages/ImproveFootball";
 import GetAnalytics from "./pages/GetAnalytics";
 import NotFound from "./pages/NotFound";
+// New pages for simplified IA
+import HomePage from "./pages/HomePage";
+import PlayPage from "./pages/PlayPage";
+import CommunityPage from "./pages/CommunityPage";
+import MyProfilePage from "./pages/MyProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +57,13 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* New simplified IA routes */}
+              <Route path="/home" element={<HomePage />} />
+              <Route path="/play" element={<PlayPage />} />
+              <Route path="/community" element={<CommunityPage />} />
+              <Route path="/me" element={<MyProfilePage />} />
+              
+              {/* Existing routes - all preserved */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/admin-login" element={<AdminLogin />} />
