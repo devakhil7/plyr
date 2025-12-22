@@ -314,50 +314,60 @@ export default function HomePage() {
   return (
     <AppLayout>
       <div className="min-h-screen">
-        {/* Player Card Section */}
-        <div className="hero-gradient px-4 pt-6 pb-8 rounded-b-3xl">
-          <Link to="/profile">
-            <PlayerCard
-              player={{
-                name: profile?.name || null,
-                position: profile?.position || null,
-                city: profile?.city || null,
-                profile_photo_url: profile?.profile_photo_url || null,
-                favourite_club: userStats?.favourite_club || null,
-              }}
-              stats={{
-                overall: userStats?.rating || null,
-                pace: userStats?.pace || null,
-                shooting: userStats?.shooting || null,
-                passing: userStats?.passing || null,
-                dribbling: userStats?.dribbling || null,
-                defending: userStats?.defending || null,
-                physical: userStats?.physical || null,
-                matches: userStats?.matches || 0,
-                goals: userStats?.goals || 0,
-                assists: userStats?.assists || 0,
-                wins: userStats?.wins || 0,
-              }}
-              className="transform scale-[0.85] origin-top"
-            />
-          </Link>
-        </div>
+        {/* Hero Section - Player Card + Quick Actions */}
+        <div className="hero-gradient px-4 pt-4 pb-6 rounded-b-3xl">
+          <div className="flex gap-4 items-start">
+            {/* Player Card - Left */}
+            <Link to="/profile" className="shrink-0">
+              <PlayerCard
+                player={{
+                  name: profile?.name || null,
+                  position: profile?.position || null,
+                  city: profile?.city || null,
+                  profile_photo_url: profile?.profile_photo_url || null,
+                  favourite_club: userStats?.favourite_club || null,
+                }}
+                stats={{
+                  overall: userStats?.rating || null,
+                  pace: userStats?.pace || null,
+                  shooting: userStats?.shooting || null,
+                  passing: userStats?.passing || null,
+                  dribbling: userStats?.dribbling || null,
+                  defending: userStats?.defending || null,
+                  physical: userStats?.physical || null,
+                  matches: userStats?.matches || 0,
+                  goals: userStats?.goals || 0,
+                  assists: userStats?.assists || 0,
+                  wins: userStats?.wins || 0,
+                }}
+                className="transform scale-[0.55] origin-top-left -mb-[180px]"
+              />
+            </Link>
 
-        {/* Main Content */}
-        <div className="px-4 -mt-4 space-y-6 pb-24">
-          {/* Quick Actions Grid */}
-          <Card className="glass-card shadow-lg border-0">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-3 gap-4">
-                {quickActions.map((action) => {
+            {/* Right Side - Level + Quick Actions */}
+            <div className="flex-1 pt-1 space-y-3">
+              {/* Player Level Badge */}
+              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-primary-foreground/20 inline-flex items-center gap-2">
+                <Star className="h-4 w-4 text-accent" />
+                <div>
+                  <p className="text-primary-foreground/70 text-[10px]">Level</p>
+                  <p className="text-primary-foreground font-semibold text-xs">
+                    {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Compact Quick Actions */}
+              <div className="grid grid-cols-2 gap-2">
+                {quickActions.slice(0, 4).map((action) => {
                   const Icon = action.icon;
                   return (
                     <Link key={action.label} to={action.href}>
-                      <div className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors">
-                        <div className={`w-11 h-11 rounded-xl ${action.color} flex items-center justify-center`}>
-                          <Icon className="h-5 w-5 text-white" />
+                      <div className="flex items-center gap-2 p-2 rounded-xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
+                        <div className={`w-8 h-8 rounded-lg ${action.color} flex items-center justify-center shrink-0`}>
+                          <Icon className="h-4 w-4 text-white" />
                         </div>
-                        <span className="text-xs font-medium text-center text-foreground">
+                        <span className="text-[11px] font-medium text-primary-foreground leading-tight">
                           {action.label}
                         </span>
                       </div>
@@ -365,8 +375,31 @@ export default function HomePage() {
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
+
+              {/* More Actions Row */}
+              <div className="flex gap-2">
+                {quickActions.slice(4).map((action) => {
+                  const Icon = action.icon;
+                  return (
+                    <Link key={action.label} to={action.href} className="flex-1">
+                      <div className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
+                        <div className={`w-6 h-6 rounded-md ${action.color} flex items-center justify-center shrink-0`}>
+                          <Icon className="h-3 w-3 text-white" />
+                        </div>
+                        <span className="text-[10px] font-medium text-primary-foreground">
+                          {action.label}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="px-4 mt-2 space-y-6 pb-24">
 
           {/* Matches Section - Split into Two */}
           <div className="grid grid-cols-2 gap-3">
