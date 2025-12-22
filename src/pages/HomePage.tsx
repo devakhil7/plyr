@@ -345,48 +345,29 @@ export default function HomePage() {
             </Link>
 
             {/* Right Side - Level + Quick Actions */}
-            <div className="flex-1 pt-1 space-y-3">
+            <div className="flex-1 pt-1 space-y-2">
               {/* Player Level Badge */}
-              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-primary-foreground/20 inline-flex items-center gap-2">
-                <Star className="h-4 w-4 text-accent" />
+              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-2xl px-4 py-2.5 border border-primary-foreground/20 inline-flex items-center gap-2">
+                <Star className="h-5 w-5 text-accent" />
                 <div>
                   <p className="text-primary-foreground/70 text-[10px]">Level</p>
-                  <p className="text-primary-foreground font-semibold text-xs">
+                  <p className="text-primary-foreground font-semibold text-sm">
                     {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
                   </p>
                 </div>
               </div>
 
-              {/* Compact Quick Actions */}
+              {/* Quick Actions - 3 rows × 2 columns */}
               <div className="grid grid-cols-2 gap-2">
-                {quickActions.slice(0, 4).map((action) => {
+                {quickActions.map((action) => {
                   const Icon = action.icon;
                   return (
                     <Link key={action.label} to={action.href}>
-                      <div className="flex items-center gap-2 p-2 rounded-xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
-                        <div className={`w-8 h-8 rounded-lg ${action.color} flex items-center justify-center shrink-0`}>
+                      <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
+                        <div className={`w-9 h-9 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
                           <Icon className="h-4 w-4 text-white" />
                         </div>
-                        <span className="text-[11px] font-medium text-primary-foreground leading-tight">
-                          {action.label}
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              {/* More Actions Row */}
-              <div className="flex gap-2">
-                {quickActions.slice(4).map((action) => {
-                  const Icon = action.icon;
-                  return (
-                    <Link key={action.label} to={action.href} className="flex-1">
-                      <div className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
-                        <div className={`w-6 h-6 rounded-md ${action.color} flex items-center justify-center shrink-0`}>
-                          <Icon className="h-3 w-3 text-white" />
-                        </div>
-                        <span className="text-[10px] font-medium text-primary-foreground">
+                        <span className="text-sm font-medium text-primary-foreground">
                           {action.label}
                         </span>
                       </div>
