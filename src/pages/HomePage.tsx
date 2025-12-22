@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,13 +7,42 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Users, Calendar, ArrowRight, Play, Trophy, 
-  BarChart3, Zap, Target, Crown, Medal, Plus,
-  MapPin
+  BarChart3, Zap, Crown, Medal, MapPin, Target,
+  Plus, Heart, Award
 } from "lucide-react";
 import { QuickActionsFAB } from "@/components/home/QuickActionsFAB";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export default function HomePage() {
   const { user, profile } = useAuth();
+
+  // Fetch user stats
+  const { data: userStats } = useQuery({
+    queryKey: ["user-stats", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return { matches: 0, rating: 0 };
+      
+      const { count: matchCount } = await supabase
+        .from("match_players")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("join_status", "confirmed");
+
+      const { data: ratings } = await supabase
+        .from("player_ratings")
+        .select("rating")
+        .eq("rated_user_id", user.id)
+        .eq("moderation_status", "approved");
+
+      const avgRating = ratings?.length 
+        ? ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length 
+        : 0;
+
+      return { matches: matchCount || 0, rating: avgRating };
+    },
+    enabled: !!user?.id,
+  });
 
   // Fetch top 3 leaderboard players
   const { data: topPlayers } = useQuery({
@@ -31,7 +59,6 @@ export default function HomePage() {
 
       if (!data) return [];
 
-      // Aggregate ratings by player
       const playerRatings: Record<string, { total: number; count: number; profile: any }> = {};
       data.forEach((r: any) => {
         if (!r.profiles) return;
@@ -43,7 +70,6 @@ export default function HomePage() {
         playerRatings[id].count += 1;
       });
 
-      // Sort by average rating and take top 3
       return Object.entries(playerRatings)
         .map(([id, data]) => ({
           id,
@@ -68,7 +94,7 @@ export default function HomePage() {
         .eq("status", "open")
         .gte("match_date", new Date().toISOString().split("T")[0])
         .order("match_date", { ascending: true })
-        .limit(3);
+        .limit(5);
 
       if (profile?.city) {
         query = query.eq("turfs.city", profile.city);
@@ -80,30 +106,12 @@ export default function HomePage() {
   });
 
   const quickActions = [
-    { 
-      icon: Play, 
-      label: "Start Match", 
-      href: "/host-match",
-      color: "from-primary to-accent"
-    },
-    { 
-      icon: Trophy, 
-      label: "Tournaments", 
-      href: "/tournaments",
-      color: "from-accent to-primary"
-    },
-    { 
-      icon: BarChart3, 
-      label: "Analytics", 
-      href: "/get-analytics",
-      color: "from-primary/80 to-accent/80"
-    },
-    { 
-      icon: Zap, 
-      label: "Improve", 
-      href: "/improve/football",
-      color: "from-accent/80 to-primary"
-    },
+    { icon: Plus, label: "Join Match", href: "/matches", color: "bg-primary" },
+    { icon: Play, label: "Start Match", href: "/host-match", color: "bg-accent" },
+    { icon: Trophy, label: "Tournaments", href: "/tournaments", color: "bg-primary" },
+    { icon: Award, label: "Leaderboard", href: "/leaderboards", color: "bg-accent" },
+    { icon: BarChart3, label: "Analytics", href: "/get-analytics", color: "bg-primary" },
+    { icon: Zap, label: "Improve", href: "/improve/football", color: "bg-accent" },
   ];
 
   const getRankIcon = (index: number) => {
@@ -113,172 +121,197 @@ export default function HomePage() {
     return null;
   };
 
+  const getSkillLabel = (rating: number) => {
+    if (rating >= 4.5) return "Pro";
+    if (rating >= 3.5) return "Advanced";
+    if (rating >= 2.5) return "Intermediate";
+    if (rating >= 1.5) return "Beginner";
+    return "New Player";
+  };
+
   return (
     <AppLayout>
-      <div className="container-app py-6 space-y-8">
-        {/* Welcome Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {profile?.name ? `Hey, ${profile.name.split(" ")[0]}!` : "Welcome!"}
-            </h1>
-            <p className="text-muted-foreground mt-1">Ready to play?</p>
+      <div className="min-h-screen">
+        {/* Hero Header with User Info */}
+        <div className="bg-gradient-to-br from-primary via-primary to-accent px-4 pt-6 pb-8 rounded-b-3xl">
+          <div className="flex items-center gap-4 mb-6">
+            <Avatar className="h-14 w-14 border-2 border-white/30">
+              <AvatarImage src={profile?.profile_photo_url || ""} />
+              <AvatarFallback className="bg-white/20 text-white text-lg">
+                {profile?.name?.charAt(0) || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-xl font-bold text-white">
+                Hey, {profile?.name?.split(" ")[0] || "Player"}!
+              </h1>
+              <p className="text-white/70 text-sm">{profile?.city || "Ready to play?"}</p>
+            </div>
+          </div>
+
+          {/* Stats Row */}
+          <div className="flex gap-3">
+            <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
+              <p className="text-white/70 text-xs">Level</p>
+              <p className="text-white font-semibold text-sm">
+                {getSkillLabel(userStats?.rating || 0)}
+              </p>
+            </div>
+            <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
+              <p className="text-white/70 text-xs">Matches</p>
+              <p className="text-white font-semibold text-sm">{userStats?.matches || 0}</p>
+            </div>
+            <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
+              <p className="text-white/70 text-xs">Rating</p>
+              <p className="text-white font-semibold text-sm">
+                {userStats?.rating ? userStats.rating.toFixed(1) : "—"}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Primary Action Card - Join a Match */}
-        <Link to="/matches">
-          <Card className="bg-gradient-to-br from-primary via-primary/90 to-accent text-primary-foreground overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-shadow">
-            <CardContent className="p-6 relative min-h-[120px]">
-              <div className="absolute -right-6 -bottom-6 opacity-15">
-                <Users className="h-28 w-28" />
-              </div>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-20">
-                <div className="w-24 h-24 rounded-full border-2 border-white/30" />
-                <div className="w-16 h-16 rounded-full border-2 border-white/20 absolute top-8 -right-4" />
-              </div>
-              <div className="relative z-10 flex items-center justify-between h-full">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                    <Users className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold">Join a Match</h2>
-                    <p className="text-sm text-primary-foreground/80">Matches happening near you</p>
-                  </div>
-                </div>
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+        {/* Main Content */}
+        <div className="px-4 -mt-4 space-y-6 pb-24">
+          {/* Quick Actions Grid */}
+          <Card className="shadow-lg border-0">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-3 gap-4">
+                {quickActions.map((action) => {
+                  const Icon = action.icon;
+                  return (
+                    <Link key={action.label} to={action.href}>
+                      <div className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-muted/50 transition-colors">
+                        <div className={`w-11 h-11 rounded-xl ${action.color} flex items-center justify-center`}>
+                          <Icon className="h-5 w-5 text-white" />
+                        </div>
+                        <span className="text-xs font-medium text-center text-foreground">
+                          {action.label}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
-        </Link>
 
-        {/* Quick Actions Grid */}
-        <div className="grid grid-cols-4 gap-4">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <Link key={action.label} to={action.href}>
-                <div className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:bg-muted/50 transition-all">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md`}>
-                    <Icon className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-xs font-medium text-center">{action.label}</span>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Community Highlights - Top Players */}
-        {topPlayers && topPlayers.length > 0 && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold">Top Players</h3>
-                </div>
-                <Link to="/leaderboards">
-                  <Button variant="ghost" size="sm" className="text-xs h-7">
-                    View All <ArrowRight className="h-3 w-3 ml-1" />
+          {/* Upcoming Matches */}
+          {upcomingMatches && upcomingMatches.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-foreground">Upcoming Matches</h2>
+                <Link to="/matches">
+                  <Button variant="ghost" size="sm" className="text-primary text-xs h-7 px-2">
+                    View all
                   </Button>
                 </Link>
               </div>
-              <div className="space-y-3">
-                {topPlayers.map((player, index) => (
-                  <Link
-                    key={player.id}
-                    to={`/players/${player.id}`}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center justify-center w-6">
-                      {getRankIcon(index)}
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                      {player.profile_photo_url ? (
-                        <img src={player.profile_photo_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-xs font-medium text-primary">
-                          {player.name?.charAt(0) || "?"}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{player.name || "Unknown"}</p>
-                      <p className="text-xs text-muted-foreground">{player.city || "India"}</p>
-                    </div>
-                    <div className="text-sm font-bold text-primary">
-                      {player.avgRating.toFixed(1)}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Upcoming Matches Near You */}
-        {upcomingMatches && upcomingMatches.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">Matches Near You</h3>
-              <Link to="/matches">
-                <Button variant="ghost" size="sm" className="text-xs h-7">
-                  View All <ArrowRight className="h-3 w-3 ml-1" />
-                </Button>
-              </Link>
+              <ScrollArea className="w-full">
+                <div className="flex gap-3 pb-2">
+                  {upcomingMatches.map((match: any) => (
+                    <Link key={match.id} to={`/matches/${match.id}`}>
+                      <Card className="w-[260px] flex-shrink-0 hover:shadow-md transition-shadow border">
+                        <CardContent className="p-4">
+                          <div className="text-xs text-primary font-medium mb-2">
+                            {new Date(match.match_date).toLocaleDateString("en-IN", { 
+                              day: "2-digit",
+                              month: "short" 
+                            })} • {match.match_time?.slice(0, 5)}
+                          </div>
+                          <h3 className="font-medium text-sm mb-2 line-clamp-2 text-foreground">
+                            {match.match_name}
+                          </h3>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                            <MapPin className="h-3 w-3" />
+                            <span className="truncate">{match.turfs?.name || "TBD"}</span>
+                          </div>
+                          <div className="flex items-center justify-between pt-2 border-t border-border">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                                  {match.turfs?.name?.charAt(0) || "M"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-muted-foreground">Open</span>
+                            </div>
+                            <Button variant="ghost" size="sm" className="text-primary text-xs h-6 px-2">
+                              Join
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
             </div>
-            <div className="space-y-3">
-              {upcomingMatches.map((match: any) => (
-                <Link key={match.id} to={`/matches/${match.id}`}>
-                  <Card className="hover:bg-muted/50 transition-colors">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-medium text-sm">{match.match_name}</h4>
-                        <span className="text-xs text-accent font-medium">Open</span>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {match.turfs?.name}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(match.match_date).toLocaleDateString("en-IN", { 
-                            month: "short", 
-                            day: "numeric" 
-                          })} at {match.match_time?.slice(0, 5)}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
+          )}
+
+          {/* Top Players */}
+          {topPlayers && topPlayers.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-semibold text-foreground">Top Players</h2>
+                <Link to="/leaderboards">
+                  <Button variant="ghost" size="sm" className="text-primary text-xs h-7 px-2">
+                    View all
+                  </Button>
                 </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Community Feed Link */}
-        <Link to="/community">
-          <Card className="border-dashed">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                  <Users className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm">Community Feed</h3>
-                  <p className="text-xs text-muted-foreground">See highlights & events</p>
-                </div>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </CardContent>
-          </Card>
-        </Link>
+              <Card className="border">
+                <CardContent className="p-4 space-y-1">
+                  {topPlayers.map((player, index) => (
+                    <Link
+                      key={player.id}
+                      to={`/players/${player.id}`}
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="w-6 flex items-center justify-center">
+                        {getRankIcon(index)}
+                      </div>
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={player.profile_photo_url || ""} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                          {player.name?.charAt(0) || "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate text-foreground">
+                          {player.name || "Unknown"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{player.city || "India"}</p>
+                      </div>
+                      <div className="text-sm font-bold text-primary">
+                        {player.avgRating.toFixed(1)}
+                      </div>
+                    </Link>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Community Feed Link */}
+          <Link to="/community">
+            <Card className="border hover:shadow-md transition-shadow">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-sm text-foreground">Community Feed</h3>
+                    <p className="text-xs text-muted-foreground">See highlights & connect</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
       </div>
 
-      {/* Floating Action Button */}
       <QuickActionsFAB />
     </AppLayout>
   );
