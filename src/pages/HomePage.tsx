@@ -570,8 +570,18 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Tagline Section */}
+        <div className="px-4 py-4 text-center">
+          <h1 className="text-lg font-bold text-foreground">
+            SportsIQ
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Join, Host & Analyze Local Sports Matches
+          </p>
+        </div>
+
         {/* Main Content */}
-        <div className="px-4 mt-2 space-y-6 pb-24">
+        <div className="px-4 space-y-6 pb-24">
 
           {/* Matches Section - Split into Two */}
           <div className="grid grid-cols-2 gap-3">
