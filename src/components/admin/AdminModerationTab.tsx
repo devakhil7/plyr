@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import { toast } from "sonner";
 import { Flag, Check, X, AlertTriangle, Star, MessageSquare } from "lucide-react";
+import { createNotification } from "@/hooks/useNotifications";
 
 export function AdminModerationTab() {
   const { isAdmin } = useUserRoles();
@@ -32,7 +33,7 @@ export function AdminModerationTab() {
   });
 
   const moderateMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "approved" | "rejected" }) => {
+    mutationFn: async ({ id, status, rating }: { id: string; status: "approved" | "rejected"; rating?: any }) => {
       const { error } = await supabase
         .from("player_ratings")
         .update({
@@ -41,6 +42,24 @@ export function AdminModerationTab() {
         })
         .eq("id", id);
       if (error) throw error;
+
+      // Send notification to the rated user
+      if (rating?.rated_user_id) {
+        try {
+          await createNotification({
+            userId: rating.rated_user_id,
+            type: status === "approved" ? "rating_approved" : "rating_rejected",
+            title: status === "approved" ? "New Rating Received" : "Rating Update",
+            message: status === "approved"
+              ? `You received a new rating from ${rating.rater?.name || "a player"} for the match "${rating.matches?.match_name || "a match"}".`
+              : `A rating you received has been reviewed and removed for policy violations.`,
+            link: "/profile",
+            metadata: { matchId: rating.match_id, raterId: rating.rater_user_id },
+          });
+        } catch (notifError) {
+          console.error("Failed to create notification:", notifError);
+        }
+      }
     },
     onSuccess: () => {
       toast.success("Rating moderated");
@@ -125,7 +144,7 @@ export function AdminModerationTab() {
                           size="sm"
                           variant="outline"
                           className="text-green-600"
-                          onClick={() => moderateMutation.mutate({ id: rating.id, status: "approved" })}
+                          onClick={() => moderateMutation.mutate({ id: rating.id, status: "approved", rating })}
                         >
                           <Check className="h-4 w-4" />
                         </Button>
@@ -133,7 +152,7 @@ export function AdminModerationTab() {
                           size="sm"
                           variant="outline"
                           className="text-red-600"
-                          onClick={() => moderateMutation.mutate({ id: rating.id, status: "rejected" })}
+                          onClick={() => moderateMutation.mutate({ id: rating.id, status: "rejected", rating })}
                         >
                           <X className="h-4 w-4" />
                         </Button>
