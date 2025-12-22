@@ -85,64 +85,81 @@ export default {
         "3xl": "calc(var(--radius) + 12px)",
       },
       boxShadow: {
-        "glow": "var(--shadow-glow)",
-        "glow-accent": "var(--shadow-glow-accent)",
-        "card": "var(--shadow-md)",
-        "card-hover": "var(--shadow-xl)",
-        "glass": "0 8px 32px hsl(210 55% 5% / 0.4), inset 0 1px 0 hsl(210 30% 40% / 0.15)",
-      },
-      backdropBlur: {
-        xs: "2px",
+        'sm': 'var(--shadow-sm)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+        'glow': 'var(--shadow-glow)',
+        'premium': '0 10px 40px hsla(245, 70%, 23%, 0.15), 0 2px 10px hsla(245, 70%, 23%, 0.1)',
+        'premium-lg': '0 20px 60px hsla(245, 70%, 23%, 0.2), 0 4px 20px hsla(245, 70%, 23%, 0.12)',
+        'inner-glow': 'inset 0 2px 20px hsla(60, 21%, 95%, 0.1)',
       },
       keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
+        'accordion-down': {
+          from: { height: '0', opacity: '0' },
+          to: { height: 'var(--radix-accordion-content-height)', opacity: '1' },
         },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)', opacity: '1' },
+          to: { height: '0', opacity: '0' },
         },
-        "fade-in": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
+        'fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        "slide-up": {
-          from: { opacity: "0", transform: "translateY(20px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
+        'fade-out': {
+          '0%': { opacity: '1', transform: 'translateY(0)' },
+          '100%': { opacity: '0', transform: 'translateY(10px)' },
         },
-        "scale-in": {
-          from: { opacity: "0", transform: "scale(0.95)" },
-          to: { opacity: "1", transform: "scale(1)" },
+        'scale-in': {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
         },
-        "pulse-slow": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.5" },
+        'scale-out': {
+          from: { transform: 'scale(1)', opacity: '1' },
+          to: { transform: 'scale(0.95)', opacity: '0' },
         },
-        "glow": {
-          "0%, 100%": { boxShadow: "0 0 20px hsl(142 71% 45% / 0.15)" },
-          "50%": { boxShadow: "0 0 40px hsl(142 71% 45% / 0.3)" },
+        'slide-in-right': {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
         },
-        "float": {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-10px)" },
+        'slide-out-right': {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        'glow': {
+          '0%, 100%': { 
+            boxShadow: '0 0 20px hsla(245, 70%, 23%, 0.3), 0 0 40px hsla(245, 60%, 35%, 0.15)' 
+          },
+          '50%': { 
+            boxShadow: '0 0 30px hsla(245, 70%, 23%, 0.4), 0 0 60px hsla(245, 60%, 35%, 0.25)' 
+          },
+        },
+        'shimmer': {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.5s ease-out forwards",
-        "slide-up": "slide-up 0.5s ease-out forwards",
-        "scale-in": "scale-in 0.3s ease-out forwards",
-        "pulse-slow": "pulse-slow 2s ease-in-out infinite",
-        "glow": "glow 2s ease-in-out infinite alternate",
-        "float": "float 6s ease-in-out infinite",
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+        'fade-in': 'fade-in 0.3s ease-out',
+        'fade-out': 'fade-out 0.3s ease-out',
+        'scale-in': 'scale-in 0.2s ease-out',
+        'scale-out': 'scale-out 0.2s ease-out',
+        'slide-in-right': 'slide-in-right 0.3s ease-out',
+        'slide-out-right': 'slide-out-right 0.3s ease-out',
+        'enter': 'fade-in 0.3s ease-out, scale-in 0.2s ease-out',
+        'exit': 'fade-out 0.3s ease-out, scale-out 0.2s ease-out',
+        'glow': 'glow 3s ease-in-out infinite',
+        'shimmer': 'shimmer 2s linear infinite',
       },
       backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-dark": "linear-gradient(180deg, hsl(210 55% 11%) 0%, hsl(210 40% 16%) 50%, hsl(210 35% 20%) 100%)",
-        "gradient-glass": "linear-gradient(135deg, hsl(210 40% 16% / 0.85) 0%, hsl(210 35% 20% / 0.75) 100%)",
-        "hero-pattern": "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2322C55E' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+        'gradient-premium': 'linear-gradient(135deg, hsl(245 70% 23%) 0%, hsl(245 60% 35%) 50%, hsl(245 70% 23%) 100%)',
+        'gradient-premium-light': 'linear-gradient(135deg, hsl(60 21% 90%) 0%, hsl(60 18% 85%) 50%, hsl(60 21% 90%) 100%)',
+        'gradient-glass': 'linear-gradient(145deg, hsla(60, 21%, 95%, 0.15) 0%, hsla(60, 21%, 90%, 0.05) 100%)',
+        'gradient-dark-glass': 'linear-gradient(145deg, hsla(245, 60%, 25%, 0.4) 0%, hsla(245, 70%, 15%, 0.2) 100%)',
+        'hero-pattern': 'radial-gradient(ellipse at 30% 20%, hsla(245, 70%, 23%, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, hsla(245, 60%, 35%, 0.06) 0%, transparent 50%)',
+        'hero-pattern-dark': 'radial-gradient(ellipse at 30% 20%, hsla(60, 21%, 90%, 0.05) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, hsla(60, 15%, 85%, 0.03) 0%, transparent 50%)',
       },
     },
   },
