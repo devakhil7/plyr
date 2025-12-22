@@ -115,27 +115,31 @@ export default function HomePage() {
 
   return (
     <AppLayout>
-      <div className="container-app py-4 space-y-6">
+      <div className="container-app py-6 space-y-8">
         {/* Welcome Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">
+            <h1 className="text-2xl font-bold tracking-tight">
               {profile?.name ? `Hey, ${profile.name.split(" ")[0]}!` : "Welcome!"}
             </h1>
-            <p className="text-sm text-muted-foreground">Ready to play?</p>
+            <p className="text-muted-foreground mt-1">Ready to play?</p>
           </div>
         </div>
 
         {/* Primary Action Card - Join a Match */}
         <Link to="/matches">
-          <Card className="bg-gradient-to-br from-primary to-accent text-primary-foreground overflow-hidden group cursor-pointer">
-            <CardContent className="p-6 relative">
-              <div className="absolute -right-8 -bottom-8 opacity-10">
-                <Users className="h-32 w-32" />
+          <Card className="bg-gradient-to-br from-primary via-primary/90 to-accent text-primary-foreground overflow-hidden group cursor-pointer shadow-lg hover:shadow-xl transition-shadow">
+            <CardContent className="p-6 relative min-h-[120px]">
+              <div className="absolute -right-6 -bottom-6 opacity-15">
+                <Users className="h-28 w-28" />
               </div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-20">
+                <div className="w-24 h-24 rounded-full border-2 border-white/30" />
+                <div className="w-16 h-16 rounded-full border-2 border-white/20 absolute top-8 -right-4" />
+              </div>
+              <div className="relative z-10 flex items-center justify-between h-full">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                     <Users className="h-6 w-6" />
                   </div>
                   <div>
@@ -143,22 +147,20 @@ export default function HomePage() {
                     <p className="text-sm text-primary-foreground/80">Matches happening near you</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-end mt-4">
-                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </div>
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </div>
             </CardContent>
           </Card>
         </Link>
 
-        {/* Quick Actions Row */}
-        <div className="grid grid-cols-4 gap-3">
+        {/* Quick Actions Grid */}
+        <div className="grid grid-cols-4 gap-4">
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (
               <Link key={action.label} to={action.href}>
-                <div className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-border/50 hover:bg-muted/50 transition-colors">
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center`}>
+                <div className="flex flex-col items-center gap-3 p-4 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:bg-muted/50 transition-all">
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-md`}>
                     <Icon className="h-5 w-5 text-white" />
                   </div>
                   <span className="text-xs font-medium text-center">{action.label}</span>
