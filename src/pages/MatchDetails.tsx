@@ -791,38 +791,68 @@ export default function MatchDetails() {
                   </div>
                 )}
 
-                {/* Score Display - Derived from match events if available */}
-                {(matchEvents.length > 0 || match.team_a_score !== null) && (
-                  <Card className="glass-card bg-gradient-to-r from-primary/5 to-secondary/5">
-                    <CardContent className="p-6 text-center">
-                      <p className="text-xs text-muted-foreground mb-2">Final Score</p>
-                      <div className="flex items-center justify-center gap-6">
-                        <div>
-                          <p className="text-3xl font-bold">
-                            {matchEvents.length > 0 
-                              ? matchEvents.filter((e: any) => e.team === "A").length 
-                              : match.team_a_score}
-                          </p>
-                          <p className="text-xs text-muted-foreground">Team A</p>
+                {/* Score Display - Priority: videoEvents goals > matchEvents count > manual score */}
+                {(() => {
+                  // Calculate goals from video events (match_video_events - "Match Key Events")
+                  const videoGoalsA = videoEvents.filter((e: any) => e.event_type === "goal" && e.team === "A").length;
+                  const videoGoalsB = videoEvents.filter((e: any) => e.event_type === "goal" && e.team === "B").length;
+                  const hasVideoGoals = videoGoalsA > 0 || videoGoalsB > 0;
+
+                  // Calculate goals from match events (match_events - "Goal Scorers & Assists")
+                  const matchGoalsA = matchEvents.filter((e: any) => e.team === "A").length;
+                  const matchGoalsB = matchEvents.filter((e: any) => e.team === "B").length;
+                  const hasMatchEvents = matchEvents.length > 0;
+
+                  // Determine final score: video events take priority
+                  let finalScoreA: number;
+                  let finalScoreB: number;
+                  let scoreSource: string;
+
+                  if (hasVideoGoals) {
+                    finalScoreA = videoGoalsA;
+                    finalScoreB = videoGoalsB;
+                    scoreSource = "video events";
+                  } else if (hasMatchEvents) {
+                    finalScoreA = matchGoalsA;
+                    finalScoreB = matchGoalsB;
+                    scoreSource = "match events";
+                  } else {
+                    finalScoreA = match.team_a_score ?? 0;
+                    finalScoreB = match.team_b_score ?? 0;
+                    scoreSource = "manual";
+                  }
+
+                  const showCard = hasVideoGoals || hasMatchEvents || match.team_a_score !== null;
+
+                  if (!showCard) return null;
+
+                  return (
+                    <Card className="glass-card bg-gradient-to-r from-primary/5 to-secondary/5">
+                      <CardContent className="p-6 text-center">
+                        <p className="text-xs text-muted-foreground mb-2">Final Score</p>
+                        <div className="flex items-center justify-center gap-6">
+                          <div>
+                            <p className="text-3xl font-bold">{finalScoreA}</p>
+                            <p className="text-xs text-muted-foreground">Team A</p>
+                          </div>
+                          <span className="text-xl text-muted-foreground">-</span>
+                          <div>
+                            <p className="text-3xl font-bold">{finalScoreB}</p>
+                            <p className="text-xs text-muted-foreground">Team B</p>
+                          </div>
                         </div>
-                        <span className="text-xl text-muted-foreground">-</span>
-                        <div>
-                          <p className="text-3xl font-bold">
-                            {matchEvents.length > 0 
-                              ? matchEvents.filter((e: any) => e.team === "B").length 
-                              : match.team_b_score}
+                        {scoreSource !== "manual" && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Based on {scoreSource === "video events" 
+                              ? `${videoGoalsA + videoGoalsB} tagged goal${(videoGoalsA + videoGoalsB) !== 1 ? 's' : ''}`
+                              : `${matchEvents.length} recorded goal${matchEvents.length !== 1 ? 's' : ''}`
+                            }
                           </p>
-                          <p className="text-xs text-muted-foreground">Team B</p>
-                        </div>
-                      </div>
-                      {matchEvents.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Based on {matchEvents.length} recorded goal{matchEvents.length !== 1 ? 's' : ''}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
 
                 {/* Goal Scorers & Assists Display */}
                 {matchEvents.length > 0 && (
