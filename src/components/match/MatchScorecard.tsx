@@ -16,6 +16,14 @@ interface MatchEvent {
   assist?: { id: string; name: string } | null;
 }
 
+interface VideoEvent {
+  id: string;
+  event_type: string;
+  team: string;
+  player_id: string | null;
+  player_name: string | null;
+}
+
 interface PlayerRating {
   rated_user_id: string;
   rating: number;
@@ -39,6 +47,7 @@ interface MatchScorecardProps {
   teamAScore: number;
   teamBScore: number;
   matchEvents: MatchEvent[];
+  videoEvents?: VideoEvent[];
   players: Player[];
   playerRatings: PlayerRating[];
 }
@@ -148,19 +157,36 @@ function calculateMOTM(
   return motm;
 }
 
-function getTopScorers(matchEvents: MatchEvent[]): { name: string; goals: number }[] {
+function getTopScorers(matchEvents: MatchEvent[], videoEvents?: VideoEvent[]): { name: string; goals: number }[] {
   const scorerMap: Map<string, { name: string; goals: number }> = new Map();
 
-  matchEvents.forEach((event) => {
-    const scorerName = event.scorer?.name || "Unknown";
-    const scorerId = event.scorer_user_id;
-    if (scorerId) {
-      if (!scorerMap.has(scorerId)) {
-        scorerMap.set(scorerId, { name: scorerName, goals: 0 });
+  // Prioritize video events (match key events) if available
+  const videoGoals = videoEvents?.filter(e => e.event_type === "goal") || [];
+  
+  if (videoGoals.length > 0) {
+    videoGoals.forEach((event) => {
+      const scorerName = event.player_name || "Unknown";
+      const scorerId = event.player_id || scorerName;
+      if (scorerId) {
+        if (!scorerMap.has(scorerId)) {
+          scorerMap.set(scorerId, { name: scorerName, goals: 0 });
+        }
+        scorerMap.get(scorerId)!.goals += 1;
       }
-      scorerMap.get(scorerId)!.goals += 1;
-    }
-  });
+    });
+  } else {
+    // Fallback to match events
+    matchEvents.forEach((event) => {
+      const scorerName = event.scorer?.name || "Unknown";
+      const scorerId = event.scorer_user_id;
+      if (scorerId) {
+        if (!scorerMap.has(scorerId)) {
+          scorerMap.set(scorerId, { name: scorerName, goals: 0 });
+        }
+        scorerMap.get(scorerId)!.goals += 1;
+      }
+    });
+  }
 
   return Array.from(scorerMap.values())
     .sort((a, b) => b.goals - a.goals)
@@ -194,13 +220,14 @@ export function MatchScorecard({
   teamAScore,
   teamBScore,
   matchEvents,
+  videoEvents,
   players,
   playerRatings,
 }: MatchScorecardProps) {
   const scorecardRef = useRef<HTMLDivElement>(null);
 
   const motm = calculateMOTM(players, matchEvents, playerRatings);
-  const topScorers = getTopScorers(matchEvents);
+  const topScorers = getTopScorers(matchEvents, videoEvents);
   const topAssists = getTopAssists(matchEvents);
 
   const winningTeam =
