@@ -8,57 +8,57 @@
 
 @layer base {
   :root {
-    /* Light mode - Fresh and clean */
-    --background: 166 30% 96%;
-    --foreground: 166 64% 13%;
-    --card: 0 0% 100%;
-    --card-foreground: 166 64% 13%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 166 64% 13%;
+    /* Root uses dark teal theme by default (Gradient 3) */
+    --background: 166 64% 13%;
+    --foreground: 166 20% 92%;
+    --card: 166 87% 18%;
+    --card-foreground: 166 20% 92%;
+    --popover: 166 87% 18%;
+    --popover-foreground: 166 20% 92%;
     --primary: 65 86% 54%;
     --primary-foreground: 166 64% 10%;
-    --secondary: 166 40% 90%;
-    --secondary-foreground: 166 64% 18%;
-    --muted: 166 25% 88%;
-    --muted-foreground: 166 30% 40%;
-    --accent: 166 87% 18%;
-    --accent-foreground: 65 86% 54%;
-    --destructive: 0 84% 60%;
+    --secondary: 166 50% 22%;
+    --secondary-foreground: 166 20% 88%;
+    --muted: 166 45% 20%;
+    --muted-foreground: 166 20% 60%;
+    --accent: 65 86% 54%;
+    --accent-foreground: 166 64% 10%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 166 25% 85%;
-    --input: 166 25% 85%;
+    --border: 166 50% 24%;
+    --input: 166 50% 24%;
     --ring: 65 86% 54%;
     --radius: 0.75rem;
 
     /* SPORTIQ Custom */
     --sportiq-primary: 65 86% 54%;
     --sportiq-secondary: 166 87% 18%;
-    --sportiq-accent: 166 87% 18%;
-    --sportiq-surface: 166 30% 94%;
+    --sportiq-accent: 65 86% 54%;
+    --sportiq-surface: 166 60% 16%;
 
     /* Match status colors */
     --status-open: 65 86% 54%;
-    --status-full: 166 87% 18%;
+    --status-full: 166 60% 35%;
     --status-progress: 45 93% 47%;
-    --status-completed: 166 40% 50%;
-    --status-cancelled: 0 84% 60%;
+    --status-completed: 166 40% 45%;
+    --status-cancelled: 0 72% 51%;
 
     /* Premium shadows */
-    --shadow-sm: 0 1px 2px hsl(166 64% 13% / 0.05);
-    --shadow-md: 0 4px 12px hsl(166 64% 13% / 0.08);
-    --shadow-lg: 0 8px 24px hsl(166 64% 13% / 0.12);
-    --shadow-xl: 0 16px 48px hsl(166 64% 13% / 0.16);
-    --shadow-glow: 0 0 30px hsl(65 86% 54% / 0.25);
-    --shadow-glow-accent: 0 0 30px hsl(166 87% 18% / 0.3);
+    --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.25);
+    --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.35);
+    --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.45);
+    --shadow-xl: 0 16px 48px hsl(0 0% 0% / 0.55);
+    --shadow-glow: 0 0 40px hsl(65 86% 54% / 0.2);
+    --shadow-glow-accent: 0 0 40px hsl(65 86% 54% / 0.15);
 
     /* Sidebar */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 166 64% 13%;
+    --sidebar-background: 166 64% 13%;
+    --sidebar-foreground: 166 20% 92%;
     --sidebar-primary: 65 86% 54%;
     --sidebar-primary-foreground: 166 64% 10%;
     --sidebar-accent: 166 87% 18%;
     --sidebar-accent-foreground: 65 86% 54%;
-    --sidebar-border: 166 25% 85%;
+    --sidebar-border: 166 50% 24%;
     --sidebar-ring: 65 86% 54%;
   }
 
