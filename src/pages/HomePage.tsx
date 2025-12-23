@@ -508,8 +508,6 @@ export default function HomePage() {
           <div className="flex gap-3 items-stretch">
             {/* Player Card - Left */}
             <div className="shrink-0 w-[160px] flex flex-col">
-              <h3 className="text-primary-foreground font-semibold text-sm mb-0.5">Sample Player Profile</h3>
-              <p className="text-primary-foreground/70 text-[10px] mb-2 leading-tight">Track your matches, stats, and level as you play</p>
               <Link to="/profile" className="flex-1">
                 <div className="h-full flex items-center">
                   <PlayerCard
