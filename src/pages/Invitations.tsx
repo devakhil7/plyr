@@ -142,7 +142,7 @@ export default function Invitations() {
           )
         `)
         .eq("user_id", user.id)
-        .eq("join_status", "invited");
+        .eq("join_status", "invited" as any); // Type will be updated after types regenerate
 
       if (error) throw error;
       return (data || []) as unknown as MatchInvite[];

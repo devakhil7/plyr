@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { createNotification } from '@/hooks/useNotifications';
 
 interface Message {
   id: string;
@@ -303,6 +304,7 @@ export function useSendMatchInvite(userId: string | null) {
       if (!userId) throw new Error('Not authenticated');
 
       for (const recipientId of recipientIds) {
+        // 1. Send a chat message
         const conversationId = await createConversation.mutateAsync(recipientId);
 
         await supabase.from('messages').insert({
@@ -312,6 +314,41 @@ export function useSendMatchInvite(userId: string | null) {
           message_type: 'match_invite',
           match_id: matchId,
         });
+
+        // 2. Add them to match_players with 'invited' status (if not already in the match)
+        const { data: existingPlayer } = await supabase
+          .from('match_players')
+          .select('id')
+          .eq('match_id', matchId)
+          .eq('user_id', recipientId)
+          .maybeSingle();
+
+        if (!existingPlayer) {
+          await supabase.from('match_players').insert({
+            match_id: matchId,
+            user_id: recipientId,
+            join_status: 'invited' as any, // Enum will be updated after types regenerate
+            role: 'player',
+            team: 'unassigned',
+          });
+        }
+
+        // 3. Create a notification for the recipient
+        try {
+          await createNotification({
+            userId: recipientId,
+            type: 'match_invite',
+            title: 'Match Invite',
+            message: `You've been invited to ${matchDetails.name} on ${matchDetails.date}. Tap to respond.`,
+            link: `/invitations`,
+            metadata: {
+              matchId,
+              invitedBy: userId,
+            },
+          });
+        } catch (err) {
+          console.error('Failed to create notification:', err);
+        }
       }
     },
     onSuccess: () => {
