@@ -46,6 +46,7 @@ import PlayPage from "./pages/PlayPage";
 import CommunityPage from "./pages/CommunityPage";
 import MyProfilePage from "./pages/MyProfilePage";
 import Invitations from "./pages/Invitations";
+import About from "./pages/About";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +102,7 @@ const App = () => (
               <Route path="/fitness-insights" element={<FitnessInsights />} />
               <Route path="/improve/football" element={<ImproveFootball />} />
               <Route path="/get-analytics" element={<GetAnalytics />} />
+              <Route path="/about" element={<About />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
