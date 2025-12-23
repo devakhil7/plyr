@@ -16,6 +16,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!loading && !user) {
+      sessionStorage.setItem("redirectAfterAuth", window.location.pathname + window.location.search);
       navigate("/auth");
     } else if (!loading && user && profile && !profile.profile_completed) {
       navigate("/complete-profile");

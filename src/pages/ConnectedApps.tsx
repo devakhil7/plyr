@@ -93,6 +93,7 @@ export default function ConnectedApps() {
 
   useEffect(() => {
     if (!authLoading && !user) {
+      sessionStorage.setItem("redirectAfterAuth", window.location.pathname + window.location.search);
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);

@@ -66,6 +66,7 @@ export default function Profile() {
 
   useEffect(() => {
     if (!loading && !user) {
+      sessionStorage.setItem("redirectAfterAuth", window.location.pathname + window.location.search);
       navigate("/auth");
     } else if (profile) {
       const savedClub = (profile as any).favourite_club || "";
