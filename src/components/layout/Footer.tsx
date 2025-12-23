@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import sportqLogo from "@/assets/sportq-logo.png";
 
 export function Footer() {
   return (
@@ -8,13 +9,10 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary">
-                <span className="text-lg font-bold text-primary-foreground">S</span>
-              </div>
-              <span className="text-xl font-bold font-display text-foreground">SPORTIQ</span>
+              <img src={sportqLogo} alt="SportQ Logo" className="h-12 w-auto object-contain" />
             </Link>
             <p className="text-sm text-muted-foreground">
-              Host, join, and analyze local matches. Build your sports identity.
+              Home of local matches & tournaments. Build your sports identity.
             </p>
           </div>
 
@@ -53,7 +51,7 @@ export function Footer() {
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} SPORTIQ. All rights reserved.
+            © {new Date().getFullYear()} SPORTQ. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">Made with ❤️ for Indian sports</span>

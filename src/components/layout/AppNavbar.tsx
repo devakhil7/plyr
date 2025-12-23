@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { useUnreadMessageCount } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
+import sportqLogo from "@/assets/sportq-logo.png";
 
 const desktopNav = [
   { name: "Home", href: "/home" },
@@ -40,10 +41,8 @@ export function AppNavbar() {
       <nav className="container-app flex h-14 items-center justify-between">
         {/* Logo */}
         <Link to="/home" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent shadow-glow">
-            <span className="text-sm font-bold text-primary-foreground">S</span>
-          </div>
-          <span className="text-lg font-bold font-display text-foreground hidden sm:block">SPORTIQ</span>
+          <img src={sportqLogo} alt="SportQ Logo" className="h-9 w-auto object-contain" />
+          <span className="text-lg font-bold font-display text-foreground hidden sm:block">SPORTQ</span>
         </Link>
 
         {/* Desktop Navigation */}
