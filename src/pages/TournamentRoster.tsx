@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { createNotification } from "@/hooks/useNotifications";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -363,6 +364,40 @@ export default function TournamentRoster() {
           .from("tournament_teams")
           .update({ team_status: "pending_verification" })
           .eq("id", teamId);
+      }
+
+      // Send notifications to newly linked players
+      const { data: teamData } = await supabase
+        .from("tournament_teams")
+        .select("team_name")
+        .eq("id", teamId)
+        .maybeSingle();
+
+      const { data: savedPlayers } = await supabase
+        .from("tournament_team_players")
+        .select("id, user_id, player_name, invite_status, temp_invite_id")
+        .eq("tournament_team_id", teamId);
+
+      for (const player of savedPlayers || []) {
+        // Only notify players with user_id who are still pending
+        if (player.user_id && player.invite_status === "pending") {
+          try {
+            await createNotification({
+              userId: player.user_id,
+              type: "tournament_invite",
+              title: "Tournament Team Invite",
+              message: `You've been invited to join "${teamData?.team_name || 'a team'}" for ${tournament?.name}. Tap to respond.`,
+              link: `/tournament-invite?tournament=${id}&team=${teamId}&player=${player.temp_invite_id}`,
+              metadata: {
+                tournamentId: id,
+                teamId,
+                playerId: player.id,
+              },
+            });
+          } catch (err) {
+            console.error("Failed to send notification:", err);
+          }
+        }
       }
 
       return true;
