@@ -150,8 +150,8 @@ export default function About() {
               What is <span className="gradient-text">SportsIQ</span>?
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              SportsIQ is India's premier digital platform designed for amateur sports players. 
-              Whether you're looking for a casual pickup game, want to organize a weekend tournament, 
+              SportsIQ is India's premier digital platform designed for local sports players. 
+              Whether you're looking for a casual game, want to organize a weekend tournament, 
               or need to book a turf for your team — we've got you covered. Our platform connects 
               players with venues, provides powerful analytics, and helps build a vibrant sports community.
             </p>
