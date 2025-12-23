@@ -99,7 +99,7 @@ export function MatchInviteDialog({ matchId, matchDetails, userId, existingPlaye
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className="text-white border-white/50 hover:bg-white/10 hover:text-white">
           <Users className="h-4 w-4 mr-2" />
           Invite Players
         </Button>
