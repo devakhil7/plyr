@@ -205,15 +205,26 @@ export function NotificationsDropdown() {
         )}
 
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link 
-            to="/messages" 
-            className="flex items-center justify-center gap-2 p-2 cursor-pointer text-primary"
-          >
-            <MessageSquare className="h-4 w-4" />
-            <span className="text-sm font-medium">View all messages</span>
-          </Link>
-        </DropdownMenuItem>
+        <div className="flex">
+          <DropdownMenuItem asChild className="flex-1">
+            <Link 
+              to="/invitations" 
+              className="flex items-center justify-center gap-2 p-2 cursor-pointer text-primary"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span className="text-sm font-medium">Invitations</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="flex-1">
+            <Link 
+              to="/messages" 
+              className="flex items-center justify-center gap-2 p-2 cursor-pointer text-primary"
+            >
+              <MessageSquare className="h-4 w-4" />
+              <span className="text-sm font-medium">Messages</span>
+            </Link>
+          </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -2577,7 +2577,12 @@ export type Database = {
     Enums: {
       analytics_status: "none" | "processing" | "completed" | "failed"
       app_role: "player" | "admin" | "turf_owner"
-      join_status: "requested" | "confirmed" | "rejected" | "cancelled"
+      join_status:
+        | "requested"
+        | "confirmed"
+        | "rejected"
+        | "cancelled"
+        | "invited"
       match_status: "open" | "full" | "in_progress" | "completed" | "cancelled"
       player_role: "host" | "player" | "substitute"
       post_type: "highlight" | "announcement" | "stat"
@@ -2716,7 +2721,13 @@ export const Constants = {
     Enums: {
       analytics_status: ["none", "processing", "completed", "failed"],
       app_role: ["player", "admin", "turf_owner"],
-      join_status: ["requested", "confirmed", "rejected", "cancelled"],
+      join_status: [
+        "requested",
+        "confirmed",
+        "rejected",
+        "cancelled",
+        "invited",
+      ],
       match_status: ["open", "full", "in_progress", "completed", "cancelled"],
       player_role: ["host", "player", "substitute"],
       post_type: ["highlight", "announcement", "stat"],
