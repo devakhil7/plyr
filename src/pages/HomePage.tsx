@@ -325,12 +325,12 @@ export default function HomePage() {
   });
 
   const quickActions = [
-    { icon: Plus, label: "Join Match", href: "/matches", color: "bg-primary" },
-    { icon: Play, label: "Start Match", href: "/host-match", color: "bg-accent" },
-    { icon: Trophy, label: "Tournaments", href: "/tournaments", color: "bg-primary" },
-    { icon: Award, label: "Leaderboard", href: "/leaderboards", color: "bg-accent" },
-    { icon: BarChart3, label: "Analytics", href: "/get-analytics", color: "bg-primary" },
-    { icon: Zap, label: "Improve", href: "/improve/football", color: "bg-accent" },
+    { icon: Plus, label: "Join Match", description: "Join open games near you", href: "/matches", color: "bg-primary" },
+    { icon: Play, label: "Host Match", description: "Organise a game at your venue", href: "/host-match", color: "bg-accent" },
+    { icon: Trophy, label: "Tournaments", description: "Join leagues or host tournaments", href: "/tournaments", color: "bg-primary" },
+    { icon: Award, label: "Leaderboards", description: "See top players and teams", href: "/leaderboards", color: "bg-accent" },
+    { icon: BarChart3, label: "Analytics", description: "Track your match performance", href: "/get-analytics", color: "bg-primary" },
+    { icon: Zap, label: "Improve", description: "Learn skills and train better", href: "/improve/football", color: "bg-accent" },
   ];
 
   const improveCategories = [
@@ -553,13 +553,16 @@ export default function HomePage() {
                 {quickActions.map((action) => {
                   const Icon = action.icon;
                   return (
-                    <Link key={action.label} to={action.href} className="h-full">
-                      <div className="flex flex-col items-center justify-center gap-2 px-3 py-4 h-full rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
-                        <div className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
-                          <Icon className="h-5 w-5 text-white" />
+                    <Link key={action.label} to={action.href} className="h-full group">
+                      <div className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 h-full rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
+                        <div className={`w-9 h-9 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
+                          <Icon className="h-4 w-4 text-white" />
                         </div>
-                        <span className="text-xs font-medium text-primary-foreground text-center leading-tight">
+                        <span className="text-[11px] font-medium text-primary-foreground text-center leading-tight">
                           {action.label}
+                        </span>
+                        <span className="text-[9px] text-primary-foreground/60 text-center leading-tight line-clamp-2 px-0.5">
+                          {action.description}
                         </span>
                       </div>
                     </Link>
