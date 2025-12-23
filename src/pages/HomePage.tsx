@@ -507,33 +507,38 @@ export default function HomePage() {
         <div className="hero-gradient px-4 pt-4 pb-6 rounded-b-3xl">
           <div className="flex gap-3 items-stretch">
             {/* Player Card - Left */}
-            <Link to="/profile" className="shrink-0 w-[160px]">
-              <div className="h-full flex items-center">
-                <PlayerCard
-                  player={{
-                    name: profile?.name || null,
-                    position: profile?.position || null,
-                    city: profile?.city || null,
-                    profile_photo_url: profile?.profile_photo_url || null,
-                    favourite_club: userStats?.favourite_club || null,
-                  }}
-                  stats={{
-                    overall: userStats?.rating || null,
-                    pace: userStats?.pace || null,
-                    shooting: userStats?.shooting || null,
-                    passing: userStats?.passing || null,
-                    dribbling: userStats?.dribbling || null,
-                    defending: userStats?.defending || null,
-                    physical: userStats?.physical || null,
-                    matches: userStats?.matches || 0,
-                    goals: userStats?.goals || 0,
-                    assists: userStats?.assists || 0,
-                    wins: userStats?.wins || 0,
-                  }}
-                  className="transform scale-[0.57] origin-top-left -mr-[120px] -mb-[172px]"
-                />
-              </div>
-            </Link>
+            <div className="shrink-0 w-[160px] flex flex-col">
+              <h3 className="text-primary-foreground font-semibold text-sm mb-0.5">Sample Player Profile</h3>
+              <p className="text-primary-foreground/70 text-[10px] mb-2 leading-tight">Track your matches, stats, and level as you play</p>
+              <Link to="/profile" className="flex-1">
+                <div className="h-full flex items-center">
+                  <PlayerCard
+                    player={{
+                      name: profile?.name || null,
+                      position: profile?.position || null,
+                      city: profile?.city || null,
+                      profile_photo_url: profile?.profile_photo_url || null,
+                      favourite_club: userStats?.favourite_club || null,
+                    }}
+                    stats={{
+                      overall: userStats?.rating || null,
+                      pace: userStats?.pace || null,
+                      shooting: userStats?.shooting || null,
+                      passing: userStats?.passing || null,
+                      dribbling: userStats?.dribbling || null,
+                      defending: userStats?.defending || null,
+                      physical: userStats?.physical || null,
+                      matches: userStats?.matches || 0,
+                      goals: userStats?.goals || 0,
+                      assists: userStats?.assists || 0,
+                      wins: userStats?.wins || 0,
+                    }}
+                    className="transform scale-[0.57] origin-top-left -mr-[120px] -mb-[172px]"
+                  />
+                </div>
+              </Link>
+              <p className="text-primary-foreground/60 text-[9px] mt-1 italic">Start playing to build your profile</p>
+            </div>
 
             {/* Right Side - Level + Quick Actions */}
             <div className="flex-1 flex flex-col gap-2">
