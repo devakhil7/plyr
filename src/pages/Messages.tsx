@@ -25,6 +25,7 @@ export default function Messages() {
 
   useEffect(() => {
     if (!loading && !user) {
+      sessionStorage.setItem("redirectAfterAuth", window.location.pathname + window.location.search);
       navigate("/auth");
     }
   }, [user, loading, navigate]);

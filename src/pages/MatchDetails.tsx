@@ -652,9 +652,16 @@ export default function MatchDetails() {
                   </Button>
                 )
               ) : (
-                <Link to="/auth">
-                  <Button className="w-full btn-glow" size="sm">Sign in to Join</Button>
-                </Link>
+                <Button 
+                  className="w-full btn-glow" 
+                  size="sm"
+                  onClick={() => {
+                    sessionStorage.setItem("redirectAfterAuth", window.location.pathname + window.location.search);
+                    navigate("/auth");
+                  }}
+                >
+                  Sign in to Join
+                </Button>
               )}
             </CardContent>
           </Card>

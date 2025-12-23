@@ -37,8 +37,8 @@ export default function AuthPage() {
           }
         } else {
           toast.success("Account created! Redirecting...");
-          sessionStorage.removeItem("redirectAfterAuth");
-          navigate(redirectUrl || "/complete-profile");
+          // Keep redirectAfterAuth for CompleteProfile to use after profile completion
+          navigate("/complete-profile");
         }
       } else {
         const { error } = await signIn(email, password);
@@ -47,7 +47,7 @@ export default function AuthPage() {
         } else {
           toast.success("Welcome back!");
           sessionStorage.removeItem("redirectAfterAuth");
-          navigate(redirectUrl || "/dashboard");
+          navigate(redirectUrl || "/home");
         }
       }
     } catch (err) {

@@ -123,7 +123,11 @@ export default function CompleteProfile() {
 
       await refreshProfile();
       toast.success("Profile completed!");
-      navigate("/dashboard");
+      
+      // Check for saved redirect URL, otherwise go to home
+      const redirectUrl = sessionStorage.getItem("redirectAfterAuth");
+      sessionStorage.removeItem("redirectAfterAuth");
+      navigate(redirectUrl || "/home");
     } catch (err: any) {
       toast.error(err.message || "Failed to update profile");
     } finally {
