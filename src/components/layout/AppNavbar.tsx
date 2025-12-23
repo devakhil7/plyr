@@ -20,6 +20,7 @@ const desktopNav = [
   { name: "Home", href: "/home" },
   { name: "Play", href: "/play" },
   { name: "Community", href: "/community" },
+  { name: "About", href: "/about" },
 ];
 
 export function AppNavbar() {
