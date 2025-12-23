@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { useUnreadMessageCount } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
-import sportqLogo from "@/assets/sportq-logo.png";
 
 const navigation = [
   { name: "Feed", href: "/feed" },
@@ -44,9 +43,11 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-border/30 bg-background/60 backdrop-blur-xl">
       <nav className="container-app flex h-16 items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <img src={sportqLogo} alt="SportQ Logo" className="h-10 w-auto object-contain" />
-          <span className="text-xl font-bold font-display text-foreground">SPORTQ</span>
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-glow">
+            <span className="text-lg font-bold text-primary-foreground">S</span>
+          </div>
+          <span className="text-xl font-bold font-display text-foreground">SPORTIQ</span>
         </Link>
 
         {/* Desktop Navigation */}
