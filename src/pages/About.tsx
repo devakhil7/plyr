@@ -1,4 +1,4 @@
-import { Layout } from "@/components/layout/Layout";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { 
@@ -92,7 +92,7 @@ const stats = [
 
 export default function About() {
   return (
-    <Layout>
+    <AppLayout showBottomNav={false}>
       <Helmet>
         <title>About SportsIQ - Your Complete Sports Companion</title>
         <meta 
@@ -288,6 +288,6 @@ export default function About() {
           </div>
         </div>
       </section>
-    </Layout>
+    </AppLayout>
   );
 }
