@@ -30,6 +30,8 @@ export function NotificationsDropdown() {
       case "match_join_approved":
       case "match_join_rejected":
         return <Users className="h-4 w-4 text-green-500" />;
+      case "match_invite":
+        return <UserPlus className="h-4 w-4 text-green-500" />;
       case "match_reminder":
       case "match_completed":
       case "match_cancelled":
@@ -39,6 +41,8 @@ export function NotificationsDropdown() {
       case "tournament_reminder":
       case "tournament_match_scheduled":
         return <Trophy className="h-4 w-4 text-yellow-500" />;
+      case "tournament_invite":
+        return <Trophy className="h-4 w-4 text-green-500" />;
       case "rating_received":
       case "rating_approved":
       case "rating_rejected":
@@ -57,6 +61,7 @@ export function NotificationsDropdown() {
       case "match_join_request":
       case "match_join_approved":
       case "match_join_rejected":
+      case "match_invite":
         return "bg-green-500/10";
       case "match_reminder":
       case "match_completed":
@@ -67,6 +72,8 @@ export function NotificationsDropdown() {
       case "tournament_reminder":
       case "tournament_match_scheduled":
         return "bg-yellow-500/10";
+      case "tournament_invite":
+        return "bg-green-500/10";
       case "rating_received":
       case "rating_approved":
       case "rating_rejected":
