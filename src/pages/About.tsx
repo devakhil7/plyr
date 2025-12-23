@@ -108,7 +108,7 @@ export default function About() {
             About <span className="text-accent">SportsIQ</span>
           </h1>
           <p className="text-lg md:text-xl text-primary-foreground/80 max-w-3xl mx-auto mb-8 animate-slide-up">
-            The ultimate platform for neighbourhood sports enthusiasts. Host matches, discover turfs, 
+            The ultimate platform for local sports enthusiasts. Host matches, discover turfs, 
             compete in tournaments, and build your sports identity — all in one place.
           </p>
           <div className="flex flex-wrap justify-center gap-4 animate-slide-up delay-200">
