@@ -18,6 +18,7 @@ import { useUnreadMessageCount } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
 
 const navigation = [
+  { name: "About", href: "/about" },
   { name: "Feed", href: "/feed" },
   { name: "Matches", href: "/matches" },
   { name: "Turfs", href: "/turfs" },
