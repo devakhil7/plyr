@@ -674,7 +674,10 @@ export default function HomePage() {
           {topPlayers && topPlayers.length > 0 && (
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold text-foreground">Top Players</h2>
+                <h2 className="font-semibold text-foreground flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-accent" />
+                  Top Players
+                </h2>
                 <Link to="/leaderboards">
                   <Button variant="ghost" size="sm" className="text-primary text-xs h-7 px-2">
                     View all
