@@ -18,7 +18,15 @@ export default function Dashboard() {
     if (!loading && !user) {
       sessionStorage.setItem("redirectAfterAuth", window.location.pathname + window.location.search);
       navigate("/auth");
-    } else if (!loading && user && profile && !profile.profile_completed) {
+      return;
+    }
+
+    if (!loading && user && profile && !profile.profile_completed) {
+      const skip = sessionStorage.getItem("skipProfileCompletionRedirect");
+      if (skip) {
+        sessionStorage.removeItem("skipProfileCompletionRedirect");
+        return;
+      }
       navigate("/complete-profile");
     }
   }, [user, profile, loading, navigate]);
