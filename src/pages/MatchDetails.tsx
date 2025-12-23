@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import { PlayerRatingsSection } from "@/components/match/PlayerRatingsSection";
 import { AdminVideoTagger } from "@/components/match/AdminVideoTagger";
 import { VideoHighlightEvents } from "@/components/match/VideoHighlightEvents";
 import { MatchEventsShareDialog } from "@/components/match/MatchEventsShareDialog";
+import { computeMatchStatus, type ComputedMatchStatus } from "@/lib/matchStatus";
 
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
   open: "open",
@@ -133,6 +134,31 @@ export default function MatchDetails() {
   const isJoined = confirmedPlayers.some((p: any) => p.user_id === user?.id);
   const slotsLeft = (match?.total_slots || 0) - confirmedPlayers.length;
   const analytics = match?.analytics?.[0];
+
+  // Compute the real-time status based on match date/time/duration
+  const computedStatus: ComputedMatchStatus = useMemo(() => {
+    if (!match) return 'upcoming';
+    return computeMatchStatus({
+      match_date: match.match_date,
+      match_time: match.match_time,
+      duration_minutes: match.duration_minutes || 60,
+    });
+  }, [match?.match_date, match?.match_time, match?.duration_minutes]);
+
+  // Effective status: use computed status if the DB status is still "open" but match has actually started/ended
+  const effectiveStatus = useMemo(() => {
+    if (!match) return 'open';
+    // If the database says "open" but time says it should be in_progress or completed, use computed
+    if (match.status === 'open' && computedStatus !== 'upcoming') {
+      return computedStatus === 'in_progress' ? 'in_progress' : 'completed';
+    }
+    // Otherwise use database status
+    return match.status;
+  }, [match?.status, computedStatus]);
+
+  // Check if joining is allowed (only if effectively open and upcoming)
+  const canJoin = effectiveStatus === 'open' && slotsLeft > 0;
+  const canLeave = effectiveStatus === 'open';
 
   // Fetch match events (goals/assists)
   const { data: matchEvents = [] } = useQuery({
@@ -491,8 +517,8 @@ export default function MatchDetails() {
                 <Badge variant="sport" className="bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30">
                   {match.sport}
                 </Badge>
-                <Badge variant={statusVariants[match.status] || "secondary"}>
-                  {match.status === "in_progress" ? "In Progress" : match.status.charAt(0).toUpperCase() + match.status.slice(1)}
+                <Badge variant={statusVariants[effectiveStatus] || "secondary"}>
+                  {effectiveStatus === "in_progress" ? "In Progress" : effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1)}
                 </Badge>
               </div>
               <h1 className="text-xl font-bold text-primary-foreground mb-4">{match.match_name}</h1>
@@ -522,7 +548,7 @@ export default function MatchDetails() {
 
               {/* Invite & Share Buttons */}
               <div className="flex flex-wrap gap-2 mt-4">
-                {user && (isHost || isJoined) && match.status === "open" && (
+                {user && (isHost || isJoined) && effectiveStatus === "open" && (
                   <MatchInviteDialog
                     matchId={match.id}
                     matchDetails={{
@@ -600,13 +626,13 @@ export default function MatchDetails() {
                       )
                     )}
                     
-                    {match.status === "open" && (
+                    {effectiveStatus === "open" && (
                       <Button className="w-full btn-glow" size="sm" onClick={() => updateStatusMutation.mutate("in_progress")}>
                         <Play className="h-4 w-4 mr-2" />
                         Start Match
                       </Button>
                     )}
-                    {match.status === "in_progress" && (
+                    {effectiveStatus === "in_progress" && (
                       <Button className="w-full btn-glow" size="sm" onClick={() => updateStatusMutation.mutate("completed")}>
                         Complete Match
                       </Button>
@@ -615,14 +641,14 @@ export default function MatchDetails() {
                   </div>
                 ) : isJoined ? (
                   <div className="space-y-2">
-                    <Button
+                  <Button
                       variant="outline"
                       className="w-full"
                       size="sm"
                       onClick={() => leaveMutation.mutate()}
-                      disabled={leaveMutation.isPending || match.status !== "open"}
+                      disabled={leaveMutation.isPending || !canLeave}
                     >
-                      {leaveMutation.isPending ? "Leaving..." : "Leave Match"}
+                      {leaveMutation.isPending ? "Leaving..." : !canLeave ? "Match Started" : "Leave Match"}
                     </Button>
                     <p className="text-xs text-center text-muted-foreground">You're in this match!</p>
                   </div>
@@ -646,9 +672,9 @@ export default function MatchDetails() {
                     className="w-full btn-glow"
                     size="sm"
                     onClick={() => joinMutation.mutate()}
-                    disabled={joinMutation.isPending || slotsLeft === 0 || match.status !== "open"}
+                    disabled={joinMutation.isPending || !canJoin}
                   >
-                    {joinMutation.isPending ? "Joining..." : slotsLeft === 0 ? "Match Full" : "Join Match"}
+                    {joinMutation.isPending ? "Joining..." : slotsLeft === 0 ? "Match Full" : effectiveStatus !== "open" ? "Match Started" : "Join Match"}
                   </Button>
                 )
               ) : (
