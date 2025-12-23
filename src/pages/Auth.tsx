@@ -46,6 +46,8 @@ export default function AuthPage() {
           toast.error("Invalid email or password");
         } else {
           toast.success("Welcome back!");
+          // Prevent an immediate forced redirect to Complete Profile right after login
+          sessionStorage.setItem("skipProfileCompletionRedirect", "1");
           sessionStorage.removeItem("redirectAfterAuth");
           navigate(redirectUrl || "/home");
         }
