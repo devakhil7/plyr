@@ -30,6 +30,7 @@ import {
 import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
 import { TournamentShareDialog } from "@/components/tournaments/TournamentShareDialog";
 import { TournamentStatsSection } from "@/components/tournaments/TournamentStatsSection";
+import { TournamentPlayerCard } from "@/components/player/TournamentPlayerCard";
 
 export default function TournamentDetails() {
   const { id } = useParams<{ id: string }>();
@@ -51,7 +52,10 @@ export default function TournamentDetails() {
           tournament_teams (
             id, team_name, captain_user_id, payment_status, total_fee, total_paid, verification_notes, team_status,
             profiles:captain_user_id (id, name, profile_photo_url),
-            tournament_team_players (id, player_name, jersey_number, position)
+            tournament_team_players (
+              id, player_name, jersey_number, position, user_id,
+              profiles:user_id (profile_photo_url, skill_level)
+            )
           ),
           tournament_matches (
             id, round, match_id, slot_a, slot_b, team_a_id, team_b_id, match_order, group_name,
@@ -471,21 +475,18 @@ export default function TournamentDetails() {
                             </CollapsibleTrigger>
                             
                             <CollapsibleContent>
-                              <div className="border-t px-3 py-2 bg-muted/30">
+                              <div className="border-t px-3 py-3 bg-muted/30">
                                 {players.length > 0 ? (
-                                  <div className="space-y-1.5">
+                                  <div className="grid grid-cols-1 gap-2">
                                     {players.map((player: any, index: number) => (
-                                      <div key={player.id} className="flex items-center gap-2 text-xs">
-                                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                                          {player.jersey_number || index + 1}
-                                        </div>
-                                        <span className="flex-1">{player.player_name}</span>
-                                        {player.position && (
-                                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                            {player.position}
-                                          </Badge>
-                                        )}
-                                      </div>
+                                      <TournamentPlayerCard 
+                                        key={player.id} 
+                                        player={{
+                                          ...player,
+                                          profile: player.profiles
+                                        }} 
+                                        index={index} 
+                                      />
                                     ))}
                                   </div>
                                 ) : (
@@ -497,7 +498,7 @@ export default function TournamentDetails() {
                                 {isMyTeam && (
                                   <Link 
                                     to={`/tournaments/${id}/register/roster?team=${team.id}`}
-                                    className="block mt-2 text-xs text-primary hover:underline text-center"
+                                    className="block mt-3 text-xs text-primary hover:underline text-center"
                                   >
                                     Manage roster →
                                   </Link>
