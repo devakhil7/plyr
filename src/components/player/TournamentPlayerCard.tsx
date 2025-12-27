@@ -14,6 +14,7 @@ interface TournamentPlayerCardProps {
     } | null;
   };
   index: number;
+  rating?: number; // Actual rating from player_ratings table (1-100 scale)
 }
 
 type CardTier = "gold" | "silver" | "bronze";
@@ -69,35 +70,24 @@ const getPositionAbbrev = (position: string | null | undefined) => {
   return abbrevMap[position] || position.substring(0, 3).toUpperCase();
 };
 
-// Same tier logic as PlayerCard - based on skill_level
-const getTier = (skillLevel: string | null | undefined): CardTier => {
-  switch (skillLevel) {
-    case "pro": return "gold";
-    case "advanced": return "silver";
-    case "intermediate": return "bronze";
-    case "beginner": return "bronze";
-    default: return "bronze";
-  }
+// Tier based on actual rating
+const getTierFromRating = (rating: number | undefined): CardTier => {
+  if (!rating) return "bronze";
+  if (rating >= 80) return "gold";
+  if (rating >= 60) return "silver";
+  return "bronze";
 };
 
-const getOverallRating = (skillLevel: string | null | undefined): string => {
-  switch (skillLevel) {
-    case "pro": return "90";
-    case "advanced": return "78";
-    case "intermediate": return "65";
-    case "beginner": return "52";
-    default: return "--";
-  }
-};
-
-export function TournamentPlayerCard({ player, index }: TournamentPlayerCardProps) {
+export function TournamentPlayerCard({ player, index, rating }: TournamentPlayerCardProps) {
   const isRegisteredUser = !!player.user_id;
   const positionAbbrev = getPositionAbbrev(player.position);
   
-  // Use same tier system as PlayerCard
-  const tier = isRegisteredUser ? getTier(player.profile?.skill_level) : "bronze";
+  // Use actual rating to determine tier
+  const tier = getTierFromRating(rating);
   const colors = tierColors[tier];
-  const overallRating = isRegisteredUser ? getOverallRating(player.profile?.skill_level) : "--";
+  
+  // Display actual rating or "-" if not available
+  const displayRating = rating ? rating.toString() : "-";
 
   return (
     <div className="relative w-[100px] mx-auto group">
@@ -177,7 +167,7 @@ export function TournamentPlayerCard({ player, index }: TournamentPlayerCardProp
                 textShadow: `0 0 10px hsl(${colors.primary} / 0.5)`
               }}
             >
-              {overallRating}
+              {displayRating}
             </div>
             <div 
               className="text-[8px] font-bold tracking-wider"
