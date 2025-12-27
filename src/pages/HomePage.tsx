@@ -647,63 +647,63 @@ export default function HomePage() {
         <div className="px-4 pt-4 space-y-6 pb-24">
 
           {/* Three-Column Discovery Section */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Section Header */}
-            <h2 className="font-bold text-lg text-foreground">Discover</h2>
+            <h2 className="font-bold text-xl text-foreground">Discover</h2>
 
             {/* Horizontal Scroll on Mobile, Grid on larger screens */}
-            <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide lg:grid lg:grid-cols-3 lg:overflow-visible">
+            <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide lg:grid lg:grid-cols-3 lg:overflow-visible">
               
               {/* Column 1: Matches Near You */}
-              <div className="min-w-[280px] w-[85vw] max-w-[320px] flex-shrink-0 snap-start lg:w-auto lg:min-w-0 lg:max-w-none">
+              <div className="min-w-[300px] w-[85vw] max-w-[360px] flex-shrink-0 snap-start lg:w-auto lg:min-w-0 lg:max-w-none">
                 <Card className="glass-card h-full flex flex-col">
-                  <CardContent className="p-4 flex flex-col h-full">
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <MapPin className="h-4 w-4 text-primary" />
+                  <CardContent className="p-5 flex flex-col h-full">
+                    <div className="mb-5">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <MapPin className="h-5 w-5 text-primary" />
                         </div>
-                        <h3 className="font-semibold text-sm">Matches Near You</h3>
+                        <h3 className="font-semibold text-base">Matches Near You</h3>
                       </div>
-                      <p className="text-xs text-muted-foreground">Find and join local games</p>
+                      <p className="text-sm text-muted-foreground ml-[52px]">Find and join local games</p>
                     </div>
 
-                    <div className="space-y-2 flex-1">
+                    <div className="space-y-3 flex-1">
                       {nearbyMatches && nearbyMatches.length > 0 ? (
                         nearbyMatches.slice(0, 3).map((match: any) => (
                           <Link key={match.id} to={`/matches/${match.id}`}>
-                            <div className="p-3 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors">
-                              <div className="flex items-center justify-between mb-1.5">
-                                <p className="text-[11px] font-medium text-accent">
+                            <div className="p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors border border-border/30">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-xs font-medium text-accent">
                                   {new Date(match.match_date).toLocaleDateString("en-IN", { 
                                     day: "2-digit", month: "short" 
                                   })} • {match.match_time?.slice(0, 5)}
                                 </p>
                                 {match.distance !== null && match.distance !== undefined && (
-                                  <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-medium">
+                                  <span className="text-xs bg-primary/15 text-primary px-2 py-1 rounded-md font-medium">
                                     {formatDistance(match.distance)}
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs font-medium line-clamp-1 mb-0.5">{match.match_name}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">{match.turfs?.name}</p>
-                              <Button size="sm" variant="ghost" className="mt-2 h-7 text-xs w-full justify-center text-primary hover:text-primary">
-                                Join Match <ArrowRight className="h-3 w-3 ml-1" />
+                              <p className="text-sm font-medium line-clamp-1 mb-1">{match.match_name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{match.turfs?.name}</p>
+                              <Button size="sm" variant="ghost" className="mt-3 h-8 text-xs w-full justify-center text-primary hover:text-primary">
+                                Join Match <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
                               </Button>
                             </div>
                           </Link>
                         ))
                       ) : (
-                        <div className="p-6 text-center">
-                          <MapPin className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                          <p className="text-xs text-muted-foreground">No matches nearby</p>
+                        <div className="p-8 text-center">
+                          <MapPin className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground">No matches nearby</p>
                         </div>
                       )}
                     </div>
 
-                    <Link to="/matches" className="mt-3 pt-3 border-t">
-                      <Button variant="ghost" size="sm" className="w-full text-xs h-8 text-primary hover:text-primary">
-                        View all matches <ChevronRight className="h-3 w-3 ml-1" />
+                    <Link to="/matches" className="mt-4 pt-4 border-t border-border/50">
+                      <Button variant="ghost" size="sm" className="w-full text-sm h-9 text-primary hover:text-primary">
+                        View all matches <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     </Link>
                   </CardContent>
@@ -711,56 +711,56 @@ export default function HomePage() {
               </div>
 
               {/* Column 2: Tournaments Around You */}
-              <div className="min-w-[280px] w-[85vw] max-w-[320px] flex-shrink-0 snap-start lg:w-auto lg:min-w-0 lg:max-w-none">
+              <div className="min-w-[300px] w-[85vw] max-w-[360px] flex-shrink-0 snap-start lg:w-auto lg:min-w-0 lg:max-w-none">
                 <Card className="glass-card h-full flex flex-col">
-                  <CardContent className="p-4 flex flex-col h-full">
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                          <Trophy className="h-4 w-4 text-accent" />
+                  <CardContent className="p-5 flex flex-col h-full">
+                    <div className="mb-5">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                          <Trophy className="h-5 w-5 text-accent" />
                         </div>
-                        <h3 className="font-semibold text-sm">Tournaments Nearby</h3>
+                        <h3 className="font-semibold text-base">Tournaments Nearby</h3>
                       </div>
-                      <p className="text-xs text-muted-foreground">Leagues, knockouts & weekend competitions</p>
+                      <p className="text-sm text-muted-foreground ml-[52px]">Leagues, knockouts & weekend competitions</p>
                     </div>
 
-                    <div className="space-y-2 flex-1">
+                    <div className="space-y-3 flex-1">
                       {nearbyTournaments && nearbyTournaments.length > 0 ? (
                         nearbyTournaments.slice(0, 3).map((tournament: any) => {
                           const status = getTournamentStatus(tournament);
                           return (
                             <Link key={tournament.id} to={`/tournaments/${tournament.id}`}>
-                              <div className="p-3 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors">
-                                <div className="flex items-center justify-between mb-1.5">
-                                  <Badge variant={status.variant} className="text-[9px] px-1.5 py-0">
+                              <div className="p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors border border-border/30">
+                                <div className="flex items-center justify-between mb-2">
+                                  <Badge variant={status.variant} className="text-[10px] px-2 py-0.5">
                                     {status.label}
                                   </Badge>
-                                  <p className="text-[10px] text-muted-foreground">
+                                  <p className="text-xs text-muted-foreground">
                                     {new Date(tournament.start_datetime).toLocaleDateString("en-IN", { 
                                       day: "2-digit", month: "short" 
                                     })}
                                   </p>
                                 </div>
-                                <p className="text-xs font-medium line-clamp-1 mb-0.5">{tournament.name}</p>
-                                <p className="text-[10px] text-muted-foreground truncate">{tournament.city}</p>
-                                <Button size="sm" variant="ghost" className="mt-2 h-7 text-xs w-full justify-center text-accent hover:text-accent">
-                                  View Tournament <ArrowRight className="h-3 w-3 ml-1" />
+                                <p className="text-sm font-medium line-clamp-1 mb-1">{tournament.name}</p>
+                                <p className="text-xs text-muted-foreground truncate">{tournament.city}</p>
+                                <Button size="sm" variant="ghost" className="mt-3 h-8 text-xs w-full justify-center text-accent hover:text-accent">
+                                  View Tournament <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
                                 </Button>
                               </div>
                             </Link>
                           );
                         })
                       ) : (
-                        <div className="p-6 text-center">
-                          <Trophy className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                          <p className="text-xs text-muted-foreground">No tournaments nearby</p>
+                        <div className="p-8 text-center">
+                          <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground">No tournaments nearby</p>
                         </div>
                       )}
                     </div>
 
-                    <Link to="/tournaments" className="mt-3 pt-3 border-t">
-                      <Button variant="ghost" size="sm" className="w-full text-xs h-8 text-accent hover:text-accent">
-                        Explore all tournaments <ChevronRight className="h-3 w-3 ml-1" />
+                    <Link to="/tournaments" className="mt-4 pt-4 border-t border-border/50">
+                      <Button variant="ghost" size="sm" className="w-full text-sm h-9 text-accent hover:text-accent">
+                        Explore all tournaments <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     </Link>
                   </CardContent>
@@ -768,53 +768,53 @@ export default function HomePage() {
               </div>
 
               {/* Column 3: Book Venues */}
-              <div className="min-w-[280px] w-[85vw] max-w-[320px] flex-shrink-0 snap-start lg:w-auto lg:min-w-0 lg:max-w-none">
+              <div className="min-w-[300px] w-[85vw] max-w-[360px] flex-shrink-0 snap-start lg:w-auto lg:min-w-0 lg:max-w-none">
                 <Card className="glass-card h-full flex flex-col">
-                  <CardContent className="p-4 flex flex-col h-full">
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Building2 className="h-4 w-4 text-primary" />
+                  <CardContent className="p-5 flex flex-col h-full">
+                    <div className="mb-5">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-primary" />
                         </div>
-                        <h3 className="font-semibold text-sm">Book a Venue</h3>
+                        <h3 className="font-semibold text-base">Book a Venue</h3>
                       </div>
-                      <p className="text-xs text-muted-foreground">Find turfs and grounds to play</p>
+                      <p className="text-sm text-muted-foreground ml-[52px]">Find turfs and grounds to play</p>
                     </div>
 
-                    <div className="space-y-2 flex-1">
+                    <div className="space-y-3 flex-1">
                       {featuredTurfs && featuredTurfs.length > 0 ? (
                         featuredTurfs.slice(0, 3).map((turf: any) => (
                           <Link key={turf.id} to={`/turfs/${turf.id}`}>
-                            <div className="p-3 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors">
-                              <div className="flex items-center justify-between mb-1.5">
-                                <p className="text-[11px] font-medium text-primary">
+                            <div className="p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors border border-border/30">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-xs font-semibold text-primary">
                                   ₹{turf.price_per_hour}/hr
                                 </p>
                                 {turf.is_featured && (
-                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
                                     Featured
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-xs font-medium line-clamp-1 mb-0.5">{turf.name}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">{turf.city}</p>
-                              <Button size="sm" variant="ghost" className="mt-2 h-7 text-xs w-full justify-center text-primary hover:text-primary">
-                                Book Now <ArrowRight className="h-3 w-3 ml-1" />
+                              <p className="text-sm font-medium line-clamp-1 mb-1">{turf.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{turf.city}</p>
+                              <Button size="sm" variant="ghost" className="mt-3 h-8 text-xs w-full justify-center text-primary hover:text-primary">
+                                Book Now <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
                               </Button>
                             </div>
                           </Link>
                         ))
                       ) : (
-                        <div className="p-6 text-center">
-                          <Building2 className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                          <p className="text-xs text-muted-foreground">No venues nearby</p>
+                        <div className="p-8 text-center">
+                          <Building2 className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground">No venues nearby</p>
                         </div>
                       )}
                     </div>
 
-                    <Link to="/turfs" className="mt-3 pt-3 border-t">
-                      <Button variant="ghost" size="sm" className="w-full text-xs h-8 text-primary hover:text-primary">
-                        View all venues <ChevronRight className="h-3 w-3 ml-1" />
+                    <Link to="/turfs" className="mt-4 pt-4 border-t border-border/50">
+                      <Button variant="ghost" size="sm" className="w-full text-sm h-9 text-primary hover:text-primary">
+                        View all venues <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     </Link>
                   </CardContent>
