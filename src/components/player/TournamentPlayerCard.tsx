@@ -16,6 +16,36 @@ interface TournamentPlayerCardProps {
   index: number;
 }
 
+type CardTier = "gold" | "silver" | "bronze";
+
+// Same tier colors as PlayerCard.tsx for consistency
+const tierColors = {
+  gold: {
+    primary: "45 90% 55%",
+    secondary: "40 85% 45%",
+    accent: "45 100% 70%",
+    cardBg: "#1a1508",
+    textPrimary: "45 90% 65%",
+    textSecondary: "45 70% 75%",
+  },
+  silver: {
+    primary: "220 15% 70%",
+    secondary: "220 10% 55%",
+    accent: "220 20% 80%",
+    cardBg: "#151820",
+    textPrimary: "220 15% 75%",
+    textSecondary: "220 10% 65%",
+  },
+  bronze: {
+    primary: "25 60% 45%",
+    secondary: "20 55% 35%",
+    accent: "30 65% 55%",
+    cardBg: "#1a1210",
+    textPrimary: "25 55% 60%",
+    textSecondary: "25 45% 50%",
+  },
+};
+
 const getPositionAbbrev = (position: string | null | undefined) => {
   if (!position) return "POS";
   const abbrevMap: Record<string, string> = {
@@ -39,143 +69,149 @@ const getPositionAbbrev = (position: string | null | undefined) => {
   return abbrevMap[position] || position.substring(0, 3).toUpperCase();
 };
 
-const getSkillRating = (level: string | null | undefined) => {
-  switch (level) {
-    case "pro": return 90;
-    case "advanced": return 78;
-    case "intermediate": return 65;
-    case "beginner": return 52;
-    default: return null;
+// Same tier logic as PlayerCard - based on skill_level
+const getTier = (skillLevel: string | null | undefined): CardTier => {
+  switch (skillLevel) {
+    case "pro": return "gold";
+    case "advanced": return "silver";
+    case "intermediate": return "bronze";
+    case "beginner": return "bronze";
+    default: return "bronze";
+  }
+};
+
+const getOverallRating = (skillLevel: string | null | undefined): string => {
+  switch (skillLevel) {
+    case "pro": return "90";
+    case "advanced": return "78";
+    case "intermediate": return "65";
+    case "beginner": return "52";
+    default: return "--";
   }
 };
 
 export function TournamentPlayerCard({ player, index }: TournamentPlayerCardProps) {
   const isRegisteredUser = !!player.user_id;
   const positionAbbrev = getPositionAbbrev(player.position);
-  const skillRating = isRegisteredUser ? getSkillRating(player.profile?.skill_level) : null;
-
-  // Colors based on registration status
-  const cardColors = isRegisteredUser 
-    ? {
-        bg: "linear-gradient(160deg, #c9a227 0%, #d4af37 20%, #f4d03f 40%, #d4af37 60%, #c9a227 100%)",
-        border: "#c9a227",
-        text: "#1a1a0a",
-        accent: "#8b7500",
-      }
-    : {
-        bg: "linear-gradient(160deg, #6b7280 0%, #9ca3af 30%, #d1d5db 50%, #9ca3af 70%, #6b7280 100%)",
-        border: "#6b7280",
-        text: "#1f2937",
-        accent: "#4b5563",
-      };
+  
+  // Use same tier system as PlayerCard
+  const tier = isRegisteredUser ? getTier(player.profile?.skill_level) : "bronze";
+  const colors = tierColors[tier];
+  const overallRating = isRegisteredUser ? getOverallRating(player.profile?.skill_level) : "--";
 
   return (
-    <div className="relative w-[85px] mx-auto group cursor-pointer transition-transform hover:scale-105">
-      {/* Card Shape SVG */}
+    <div className="relative w-[100px] mx-auto group">
+      {/* Card Shape SVG - matching PlayerCard style */}
       <svg
-        viewBox="0 0 85 120"
-        className="w-full h-auto drop-shadow-lg"
+        viewBox="0 0 100 140"
+        className="w-full h-auto"
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
-          <linearGradient id={`cardBg-${player.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            {isRegisteredUser ? (
-              <>
-                <stop offset="0%" stopColor="#c9a227" />
-                <stop offset="30%" stopColor="#d4af37" />
-                <stop offset="50%" stopColor="#f4d03f" />
-                <stop offset="70%" stopColor="#d4af37" />
-                <stop offset="100%" stopColor="#c9a227" />
-              </>
-            ) : (
-              <>
-                <stop offset="0%" stopColor="#6b7280" />
-                <stop offset="30%" stopColor="#9ca3af" />
-                <stop offset="50%" stopColor="#d1d5db" />
-                <stop offset="70%" stopColor="#9ca3af" />
-                <stop offset="100%" stopColor="#6b7280" />
-              </>
-            )}
+          <linearGradient id={`tierGradient-${player.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={`hsl(${colors.primary})`} />
+            <stop offset="50%" stopColor={`hsl(${colors.accent})`} />
+            <stop offset="100%" stopColor={`hsl(${colors.secondary})`} />
           </linearGradient>
-          <filter id={`shadow-${player.id}`} x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3" />
+          <filter id={`cardShadow-${player.id}`} x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.4" />
           </filter>
-          <clipPath id={`avatarClip-${player.id}`}>
-            <circle cx="42.5" cy="52" r="22" />
-          </clipPath>
         </defs>
         
-        {/* Main Card Shape */}
+        {/* Main card shape */}
         <path
           d="M 8 0 
-             L 77 0 
-             Q 85 0 85 8 
-             L 85 100 
-             Q 85 108 80 112 
-             L 50 120 
-             Q 42.5 122 35 120 
-             L 5 112 
-             Q 0 108 0 100 
+             L 92 0 
+             Q 100 0 100 8 
+             L 100 120 
+             Q 100 130 93 135 
+             L 57 140 
+             Q 50 142 43 140 
+             L 7 135 
+             Q 0 130 0 120 
              L 0 8 
              Q 0 0 8 0"
-          fill={`url(#cardBg-${player.id})`}
-          filter={`url(#shadow-${player.id})`}
+          fill={colors.cardBg}
+          stroke={`url(#tierGradient-${player.id})`}
+          strokeWidth="2"
+          filter={`url(#cardShadow-${player.id})`}
         />
         
-        {/* Inner card line */}
+        {/* Inner decorative line */}
         <path
-          d="M 10 3 
-             L 75 3 
-             Q 82 3 82 10 
-             L 82 98 
-             Q 82 105 78 109 
-             L 49 116 
-             Q 42.5 118 36 116 
-             L 7 109 
-             Q 3 105 3 98 
-             L 3 10 
-             Q 3 3 10 3"
+          d="M 10 4 
+             L 90 4 
+             Q 96 4 96 10 
+             L 96 118 
+             Q 96 126 90 130 
+             L 56 135 
+             Q 50 137 44 135 
+             L 10 130 
+             Q 4 126 4 118 
+             L 4 10 
+             Q 4 4 10 4"
           fill="none"
-          stroke={cardColors.border}
+          stroke={`url(#tierGradient-${player.id})`}
           strokeWidth="0.5"
           opacity="0.4"
         />
-
-        {/* Shine effect */}
+        
+        {/* Diagonal shine effect */}
         <path
-          d="M 20 0 L 45 0 L 30 35 L 5 35 L 5 15 Z"
-          fill="white"
-          opacity="0.15"
+          d="M 20 0 L 50 0 L 30 40 L 0 40 L 0 20 Z"
+          fill={`url(#tierGradient-${player.id})`}
+          opacity="0.08"
         />
       </svg>
 
       {/* Card Content Overlay */}
-      <div className="absolute inset-0 flex flex-col items-center pt-1.5">
-        {/* Rating & Position */}
-        <div className="flex flex-col items-center mb-0.5">
-          <span 
-            className="text-xl font-black leading-none"
+      <div className="absolute inset-0 flex flex-col items-center p-2 pt-2">
+        {/* Top Section - Rating and Position */}
+        <div className="w-full flex justify-between items-start mb-1 px-1">
+          <div className="text-left">
+            <div 
+              className="text-lg font-black leading-none" 
+              style={{ 
+                fontFamily: "'Space Grotesk', sans-serif",
+                color: `hsl(${colors.textPrimary})`,
+                textShadow: `0 0 10px hsl(${colors.primary} / 0.5)`
+              }}
+            >
+              {overallRating}
+            </div>
+            <div 
+              className="text-[8px] font-bold tracking-wider"
+              style={{ color: `hsl(${colors.textSecondary})` }}
+            >
+              {positionAbbrev}
+            </div>
+          </div>
+          
+          {/* Tier Badge */}
+          <div 
+            className="px-1.5 py-0.5 rounded-full text-[6px] font-bold uppercase tracking-wider"
             style={{ 
-              color: cardColors.text,
-              fontFamily: "'Space Grotesk', sans-serif",
-              textShadow: "0 1px 1px rgba(255,255,255,0.3)"
+              background: `linear-gradient(135deg, hsl(${colors.primary} / 0.3), hsl(${colors.secondary} / 0.3))`,
+              color: `hsl(${colors.textPrimary})`,
+              border: `1px solid hsl(${colors.primary} / 0.5)`
             }}
           >
-            {skillRating ?? "--"}
-          </span>
-          <span 
-            className="text-[8px] font-bold tracking-wide leading-none"
-            style={{ color: cardColors.accent }}
-          >
-            {positionAbbrev}
-          </span>
+            {tier}
+          </div>
         </div>
 
         {/* Player Avatar */}
-        <div className="relative mb-1">
+        <div className="relative my-1">
+          <div 
+            className="absolute inset-0 rounded-full blur-md scale-110" 
+            style={{ background: `radial-gradient(circle, hsl(${colors.primary} / 0.3), transparent)` }}
+          />
           <Avatar 
-            className="h-11 w-11 border-2"
-            style={{ borderColor: cardColors.accent }}
+            className="h-12 w-12 relative"
+            style={{ 
+              border: `2px solid hsl(${colors.primary} / 0.6)`,
+              boxShadow: `0 0 15px hsl(${colors.primary} / 0.3)`
+            }}
           >
             {isRegisteredUser && player.profile?.profile_photo_url ? (
               <AvatarImage src={player.profile.profile_photo_url} className="object-cover" />
@@ -183,8 +219,8 @@ export function TournamentPlayerCard({ player, index }: TournamentPlayerCardProp
             <AvatarFallback 
               className="text-lg font-bold"
               style={{ 
-                backgroundColor: isRegisteredUser ? "#d4af37" : "#9ca3af",
-                color: cardColors.text 
+                background: `linear-gradient(135deg, hsl(${colors.primary} / 0.3), hsl(${colors.secondary} / 0.3))`,
+                color: `hsl(${colors.textPrimary})`
               }}
             >
               {player.player_name?.charAt(0) || <User className="h-5 w-5" />}
@@ -193,36 +229,34 @@ export function TournamentPlayerCard({ player, index }: TournamentPlayerCardProp
         </div>
 
         {/* Player Name */}
-        <div 
-          className="w-full px-1 mb-0.5"
-        >
-          <div 
-            className="text-[7px] font-bold text-center truncate px-0.5 py-0.5 rounded mx-1"
+        <div className="text-center w-full px-1">
+          <h3 
+            className="text-[9px] font-bold truncate" 
             style={{ 
-              backgroundColor: `${cardColors.accent}20`,
-              color: cardColors.text,
               fontFamily: "'Space Grotesk', sans-serif",
+              color: `hsl(${colors.textPrimary})`
             }}
           >
-            {player.player_name?.split(' ').pop()?.toUpperCase() || "PLAYER"}
-          </div>
+            {player.player_name || "Player"}
+          </h3>
         </div>
 
-        {/* Jersey Number Badge */}
+        {/* Jersey Number - bottom left */}
         <div 
-          className="absolute top-1 left-1 text-[6px] font-bold w-3 h-3 flex items-center justify-center rounded-sm"
-          style={{ 
-            backgroundColor: cardColors.accent,
-            color: isRegisteredUser ? "#f4d03f" : "#e5e7eb"
-          }}
+          className="absolute bottom-3 left-2 text-[8px] font-bold"
+          style={{ color: `hsl(${colors.textSecondary})` }}
         >
-          {player.jersey_number || index + 1}
+          #{player.jersey_number || index + 1}
         </div>
 
         {/* Guest indicator for non-registered */}
         {!isRegisteredUser && (
           <div 
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[5px] font-medium px-1 py-0.5 rounded bg-slate-500/50 text-white"
+            className="absolute bottom-3 right-2 text-[6px] font-medium px-1 rounded"
+            style={{ 
+              background: `hsl(${colors.primary} / 0.2)`,
+              color: `hsl(${colors.textSecondary})`
+            }}
           >
             GUEST
           </div>
