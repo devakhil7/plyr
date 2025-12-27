@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowLeft, FileText, Plus, Shuffle, UserPlus } from "lucide-react";
+import { Trophy, Calendar, MapPin, Users, IndianRupee, ArrowLeft, FileText, Plus, Shuffle, UserPlus, ChevronDown, User } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRoles } from "@/hooks/useUserRoles";
@@ -49,7 +50,8 @@ export default function TournamentDetails() {
           turfs (id, name, city, location),
           tournament_teams (
             id, team_name, captain_user_id, payment_status, total_fee, total_paid, verification_notes, team_status,
-            profiles:captain_user_id (id, name, profile_photo_url)
+            profiles:captain_user_id (id, name, profile_photo_url),
+            tournament_team_players (id, player_name, jersey_number, position)
           ),
           tournament_matches (
             id, round, match_id, slot_a, slot_b, team_a_id, team_b_id, match_order, group_name,
@@ -63,6 +65,12 @@ export default function TournamentDetails() {
     },
     enabled: !!id,
   });
+
+  const [expandedTeams, setExpandedTeams] = useState<Record<string, boolean>>({});
+
+  const toggleTeamExpanded = (teamId: string) => {
+    setExpandedTeams(prev => ({ ...prev, [teamId]: !prev[teamId] }));
+  };
 
   // Total teams requested (all registrations regardless of approval)
   const teamsRequested = tournament?.tournament_teams?.length || 0;
@@ -431,38 +439,73 @@ export default function TournamentDetails() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {registeredTeams.map((team: any) => {
                       const isMyTeam = team.captain_user_id === user?.id;
-                      const cardContent = (
-                        <>
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="font-semibold text-sm">{team.team_name}</p>
-                            <Badge 
-                              variant={team.payment_status === 'paid' ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {team.payment_status === 'paid' ? 'Paid' : team.verification_notes === 'Pay at ground' ? 'Pay at Ground' : 'Partial'}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Captain: {team.profiles?.name || "Unknown"}
-                          </p>
-                          {isMyTeam && (
-                            <p className="text-xs text-primary mt-2">Click to manage roster →</p>
-                          )}
-                        </>
-                      );
+                      const players = team.tournament_team_players || [];
+                      const isExpanded = expandedTeams[team.id] || false;
 
-                      return isMyTeam ? (
-                        <Link 
+                      return (
+                        <Collapsible 
                           key={team.id} 
-                          to={`/tournaments/${id}/register/roster?team=${team.id}`}
-                          className="p-3 border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer block glass-card"
+                          open={isExpanded} 
+                          onOpenChange={() => toggleTeamExpanded(team.id)}
                         >
-                          {cardContent}
-                        </Link>
-                      ) : (
-                        <div key={team.id} className="p-3 border rounded-lg glass-card">
-                          {cardContent}
-                        </div>
+                          <div className="border rounded-lg glass-card overflow-hidden">
+                            <CollapsibleTrigger className="w-full p-3 text-left hover:bg-primary/5 transition-colors">
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="font-semibold text-sm">{team.team_name}</p>
+                                <div className="flex items-center gap-2">
+                                  <Badge 
+                                    variant={team.payment_status === 'paid' ? 'default' : 'secondary'}
+                                    className="text-xs"
+                                  >
+                                    {team.payment_status === 'paid' ? 'Paid' : team.verification_notes === 'Pay at ground' ? 'Pay at Ground' : 'Partial'}
+                                  </Badge>
+                                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Captain: {team.profiles?.name || "Unknown"}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {players.length} player{players.length !== 1 ? 's' : ''}
+                              </p>
+                            </CollapsibleTrigger>
+                            
+                            <CollapsibleContent>
+                              <div className="border-t px-3 py-2 bg-muted/30">
+                                {players.length > 0 ? (
+                                  <div className="space-y-1.5">
+                                    {players.map((player: any, index: number) => (
+                                      <div key={player.id} className="flex items-center gap-2 text-xs">
+                                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                                          {player.jersey_number || index + 1}
+                                        </div>
+                                        <span className="flex-1">{player.player_name}</span>
+                                        {player.position && (
+                                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                            {player.position}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground text-center py-2">
+                                    No players added yet
+                                  </p>
+                                )}
+                                
+                                {isMyTeam && (
+                                  <Link 
+                                    to={`/tournaments/${id}/register/roster?team=${team.id}`}
+                                    className="block mt-2 text-xs text-primary hover:underline text-center"
+                                  >
+                                    Manage roster →
+                                  </Link>
+                                )}
+                              </div>
+                            </CollapsibleContent>
+                          </div>
+                        </Collapsible>
                       );
                     })}
                   </div>
