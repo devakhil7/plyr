@@ -1,5 +1,4 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { User } from "lucide-react";
 
 interface TournamentPlayerCardProps {
@@ -18,7 +17,7 @@ interface TournamentPlayerCardProps {
 }
 
 const getPositionAbbrev = (position: string | null | undefined) => {
-  if (!position) return null;
+  if (!position) return "POS";
   const abbrevMap: Record<string, string> = {
     "Goalkeeper": "GK",
     "Defender": "DEF",
@@ -40,108 +39,194 @@ const getPositionAbbrev = (position: string | null | undefined) => {
   return abbrevMap[position] || position.substring(0, 3).toUpperCase();
 };
 
-const getSkillColor = (level: string | null | undefined) => {
+const getSkillRating = (level: string | null | undefined) => {
   switch (level) {
-    case "pro": return "text-yellow-500";
-    case "advanced": return "text-purple-500";
-    case "intermediate": return "text-blue-500";
-    case "beginner": return "text-green-500";
-    default: return "text-muted-foreground";
+    case "pro": return 90;
+    case "advanced": return 78;
+    case "intermediate": return 65;
+    case "beginner": return 52;
+    default: return null;
   }
 };
 
 export function TournamentPlayerCard({ player, index }: TournamentPlayerCardProps) {
   const isRegisteredUser = !!player.user_id;
-  const jerseyNumber = player.jersey_number || index + 1;
   const positionAbbrev = getPositionAbbrev(player.position);
-  const skillLevel = player.profile?.skill_level;
+  const skillRating = isRegisteredUser ? getSkillRating(player.profile?.skill_level) : null;
+
+  // Colors based on registration status
+  const cardColors = isRegisteredUser 
+    ? {
+        bg: "linear-gradient(160deg, #c9a227 0%, #d4af37 20%, #f4d03f 40%, #d4af37 60%, #c9a227 100%)",
+        border: "#c9a227",
+        text: "#1a1a0a",
+        accent: "#8b7500",
+      }
+    : {
+        bg: "linear-gradient(160deg, #6b7280 0%, #9ca3af 30%, #d1d5db 50%, #9ca3af 70%, #6b7280 100%)",
+        border: "#6b7280",
+        text: "#1f2937",
+        accent: "#4b5563",
+      };
 
   return (
-    <div className="relative group">
-      {/* Card with FIFA-style gradient border */}
-      <div 
-        className={`
-          relative overflow-hidden rounded-lg p-2.5 
-          ${isRegisteredUser 
-            ? 'bg-gradient-to-br from-amber-950/40 via-amber-900/20 to-amber-950/40 border border-amber-600/30' 
-            : 'bg-gradient-to-br from-slate-800/40 via-slate-700/20 to-slate-800/40 border border-slate-600/30'
-          }
-          transition-all duration-200 hover:scale-[1.02] hover:shadow-lg
-        `}
+    <div className="relative w-[85px] mx-auto group cursor-pointer transition-transform hover:scale-105">
+      {/* Card Shape SVG */}
+      <svg
+        viewBox="0 0 85 120"
+        className="w-full h-auto drop-shadow-lg"
+        preserveAspectRatio="xMidYMid meet"
       >
-        {/* Shine effect */}
-        <div className="absolute inset-0 opacity-10 bg-gradient-to-br from-white via-transparent to-transparent" />
+        <defs>
+          <linearGradient id={`cardBg-${player.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            {isRegisteredUser ? (
+              <>
+                <stop offset="0%" stopColor="#c9a227" />
+                <stop offset="30%" stopColor="#d4af37" />
+                <stop offset="50%" stopColor="#f4d03f" />
+                <stop offset="70%" stopColor="#d4af37" />
+                <stop offset="100%" stopColor="#c9a227" />
+              </>
+            ) : (
+              <>
+                <stop offset="0%" stopColor="#6b7280" />
+                <stop offset="30%" stopColor="#9ca3af" />
+                <stop offset="50%" stopColor="#d1d5db" />
+                <stop offset="70%" stopColor="#9ca3af" />
+                <stop offset="100%" stopColor="#6b7280" />
+              </>
+            )}
+          </linearGradient>
+          <filter id={`shadow-${player.id}`} x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3" />
+          </filter>
+          <clipPath id={`avatarClip-${player.id}`}>
+            <circle cx="42.5" cy="52" r="22" />
+          </clipPath>
+        </defs>
         
-        <div className="relative flex items-center gap-2.5">
-          {/* Jersey Number Badge */}
-          <div 
-            className={`
-              absolute -top-1 -left-1 w-6 h-6 flex items-center justify-center 
-              text-[10px] font-bold rounded-br-lg z-10
-              ${isRegisteredUser 
-                ? 'bg-amber-600 text-amber-950' 
-                : 'bg-slate-600 text-slate-200'
-              }
-            `}
-          >
-            {jerseyNumber}
-          </div>
+        {/* Main Card Shape */}
+        <path
+          d="M 8 0 
+             L 77 0 
+             Q 85 0 85 8 
+             L 85 100 
+             Q 85 108 80 112 
+             L 50 120 
+             Q 42.5 122 35 120 
+             L 5 112 
+             Q 0 108 0 100 
+             L 0 8 
+             Q 0 0 8 0"
+          fill={`url(#cardBg-${player.id})`}
+          filter={`url(#shadow-${player.id})`}
+        />
+        
+        {/* Inner card line */}
+        <path
+          d="M 10 3 
+             L 75 3 
+             Q 82 3 82 10 
+             L 82 98 
+             Q 82 105 78 109 
+             L 49 116 
+             Q 42.5 118 36 116 
+             L 7 109 
+             Q 3 105 3 98 
+             L 3 10 
+             Q 3 3 10 3"
+          fill="none"
+          stroke={cardColors.border}
+          strokeWidth="0.5"
+          opacity="0.4"
+        />
 
-          {/* Avatar */}
-          <Avatar className={`h-10 w-10 ml-4 ${isRegisteredUser ? 'ring-2 ring-amber-500/50' : 'ring-1 ring-slate-500/30'}`}>
+        {/* Shine effect */}
+        <path
+          d="M 20 0 L 45 0 L 30 35 L 5 35 L 5 15 Z"
+          fill="white"
+          opacity="0.15"
+        />
+      </svg>
+
+      {/* Card Content Overlay */}
+      <div className="absolute inset-0 flex flex-col items-center pt-1.5">
+        {/* Rating & Position */}
+        <div className="flex flex-col items-center mb-0.5">
+          <span 
+            className="text-xl font-black leading-none"
+            style={{ 
+              color: cardColors.text,
+              fontFamily: "'Space Grotesk', sans-serif",
+              textShadow: "0 1px 1px rgba(255,255,255,0.3)"
+            }}
+          >
+            {skillRating ?? "--"}
+          </span>
+          <span 
+            className="text-[8px] font-bold tracking-wide leading-none"
+            style={{ color: cardColors.accent }}
+          >
+            {positionAbbrev}
+          </span>
+        </div>
+
+        {/* Player Avatar */}
+        <div className="relative mb-1">
+          <Avatar 
+            className="h-11 w-11 border-2"
+            style={{ borderColor: cardColors.accent }}
+          >
             {isRegisteredUser && player.profile?.profile_photo_url ? (
               <AvatarImage src={player.profile.profile_photo_url} className="object-cover" />
             ) : null}
             <AvatarFallback 
-              className={`text-sm font-semibold ${
-                isRegisteredUser 
-                  ? 'bg-amber-800/50 text-amber-200' 
-                  : 'bg-slate-700/50 text-slate-300'
-              }`}
+              className="text-lg font-bold"
+              style={{ 
+                backgroundColor: isRegisteredUser ? "#d4af37" : "#9ca3af",
+                color: cardColors.text 
+              }}
             >
-              {player.player_name?.charAt(0) || <User className="h-4 w-4" />}
+              {player.player_name?.charAt(0) || <User className="h-5 w-5" />}
             </AvatarFallback>
           </Avatar>
-
-          {/* Player Info */}
-          <div className="flex-1 min-w-0">
-            <p className={`text-xs font-semibold truncate ${isRegisteredUser ? 'text-amber-100' : 'text-slate-200'}`}>
-              {player.player_name}
-            </p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              {positionAbbrev && (
-                <Badge 
-                  variant="outline" 
-                  className={`text-[9px] px-1 py-0 h-4 ${
-                    isRegisteredUser 
-                      ? 'border-amber-600/40 text-amber-300 bg-amber-900/30' 
-                      : 'border-slate-500/40 text-slate-400 bg-slate-800/30'
-                  }`}
-                >
-                  {positionAbbrev}
-                </Badge>
-              )}
-              {isRegisteredUser && skillLevel && (
-                <span className={`text-[9px] font-medium capitalize ${getSkillColor(skillLevel)}`}>
-                  {skillLevel}
-                </span>
-              )}
-              {!isRegisteredUser && (
-                <span className="text-[9px] text-slate-500 italic">Guest</span>
-              )}
-            </div>
-          </div>
-
-          {/* Skill Rating Placeholder for registered users */}
-          {isRegisteredUser && (
-            <div className="text-right">
-              <div className="text-xs font-bold text-amber-400">
-                {skillLevel === 'pro' ? '90+' : skillLevel === 'advanced' ? '75+' : skillLevel === 'intermediate' ? '60+' : '50+'}
-              </div>
-              <div className="text-[8px] text-amber-500/60 uppercase tracking-wide">OVR</div>
-            </div>
-          )}
         </div>
+
+        {/* Player Name */}
+        <div 
+          className="w-full px-1 mb-0.5"
+        >
+          <div 
+            className="text-[7px] font-bold text-center truncate px-0.5 py-0.5 rounded mx-1"
+            style={{ 
+              backgroundColor: `${cardColors.accent}20`,
+              color: cardColors.text,
+              fontFamily: "'Space Grotesk', sans-serif",
+            }}
+          >
+            {player.player_name?.split(' ').pop()?.toUpperCase() || "PLAYER"}
+          </div>
+        </div>
+
+        {/* Jersey Number Badge */}
+        <div 
+          className="absolute top-1 left-1 text-[6px] font-bold w-3 h-3 flex items-center justify-center rounded-sm"
+          style={{ 
+            backgroundColor: cardColors.accent,
+            color: isRegisteredUser ? "#f4d03f" : "#e5e7eb"
+          }}
+        >
+          {player.jersey_number || index + 1}
+        </div>
+
+        {/* Guest indicator for non-registered */}
+        {!isRegisteredUser && (
+          <div 
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[5px] font-medium px-1 py-0.5 rounded bg-slate-500/50 text-white"
+          >
+            GUEST
+          </div>
+        )}
       </div>
     </div>
   );
