@@ -668,11 +668,11 @@ export default function HomePage() {
                       <p className="text-sm text-muted-foreground ml-[52px]">Find and join local games</p>
                     </div>
 
-                    <div className="space-y-3 flex-1">
+                    <div className="flex flex-col gap-8 flex-1">
                       {nearbyMatches && nearbyMatches.length > 0 ? (
                         nearbyMatches.slice(0, 3).map((match: any) => (
-                          <Link key={match.id} to={`/matches/${match.id}`}>
-                            <div className="p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors border border-border/30">
+                          <Link key={match.id} to={`/matches/${match.id}`} className="block">
+                            <div className="p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors border border-border/30 shadow-sm hover:shadow-md">
                               <div className="flex items-center justify-between mb-2">
                                 <p className="text-xs font-medium text-accent">
                                   {new Date(match.match_date).toLocaleDateString("en-IN", { 
@@ -724,13 +724,13 @@ export default function HomePage() {
                       <p className="text-sm text-muted-foreground ml-[52px]">Leagues, knockouts & weekend competitions</p>
                     </div>
 
-                    <div className="space-y-3 flex-1">
+                    <div className="flex flex-col gap-8 flex-1">
                       {nearbyTournaments && nearbyTournaments.length > 0 ? (
                         nearbyTournaments.slice(0, 3).map((tournament: any) => {
                           const status = getTournamentStatus(tournament);
                           return (
-                            <Link key={tournament.id} to={`/tournaments/${tournament.id}`}>
-                              <div className="p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors border border-border/30">
+                            <Link key={tournament.id} to={`/tournaments/${tournament.id}`} className="block">
+                              <div className="p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors border border-border/30 shadow-sm hover:shadow-md">
                                 <div className="flex items-center justify-between mb-2">
                                   <Badge variant={status.variant} className="text-[10px] px-2 py-0.5">
                                     {status.label}
@@ -781,11 +781,11 @@ export default function HomePage() {
                       <p className="text-sm text-muted-foreground ml-[52px]">Find turfs and grounds to play</p>
                     </div>
 
-                    <div className="space-y-3 flex-1">
+                    <div className="flex flex-col gap-8 flex-1">
                       {featuredTurfs && featuredTurfs.length > 0 ? (
                         featuredTurfs.slice(0, 3).map((turf: any) => (
-                          <Link key={turf.id} to={`/turfs/${turf.id}`}>
-                            <div className="p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors border border-border/30">
+                          <Link key={turf.id} to={`/turfs/${turf.id}`} className="block">
+                            <div className="p-4 rounded-xl bg-muted/40 hover:bg-muted/60 transition-colors border border-border/30 shadow-sm hover:shadow-md">
                               <div className="flex items-center justify-between mb-2">
                                 <p className="text-xs font-semibold text-primary">
                                   ₹{turf.price_per_hour}/hr
