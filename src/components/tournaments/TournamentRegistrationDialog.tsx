@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Users, UserPlus, Trash2, Loader2, CreditCard, CheckCircle, IndianRupee } from "lucide-react";
+import { Users, UserPlus, Trash2, Loader2, CreditCard, CheckCircle, IndianRupee, Clock, Calendar, ClipboardCheck, AlertCircle } from "lucide-react";
 
 interface Player {
   name: string;
@@ -306,26 +306,66 @@ export function TournamentRegistrationDialog({ tournament, trigger }: Tournament
         {/* Step 2: Players */}
         {step === "players" && (
           <div className="space-y-4 mt-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Add {tournament.min_players_per_team}-{tournament.max_players_per_team} players
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={addPlayer}
-                disabled={players.length >= tournament.max_players_per_team}
-              >
-                <UserPlus className="h-4 w-4 mr-1" />
-                Add Player
-              </Button>
-            </div>
+            {/* Player count indicator */}
+            <Card className={`border-2 ${
+              players.length >= tournament.min_players_per_team 
+                ? "border-green-500/50 bg-green-50/50" 
+                : "border-orange-500/50 bg-orange-50/50"
+            }`}>
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className={`h-5 w-5 ${
+                      players.length >= tournament.min_players_per_team ? "text-green-600" : "text-orange-600"
+                    }`} />
+                    <div>
+                      <p className="font-semibold text-sm">
+                        {players.length} / {tournament.max_players_per_team} Players
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {players.length < tournament.min_players_per_team ? (
+                          <span className="text-orange-600">
+                            Need {tournament.min_players_per_team - players.length} more (min {tournament.min_players_per_team} required)
+                          </span>
+                        ) : (
+                          <span className="text-green-600">
+                            ✓ Minimum requirement met ({tournament.min_players_per_team}+ players)
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addPlayer}
+                    disabled={players.length >= tournament.max_players_per_team}
+                    className="shrink-0"
+                  >
+                    <UserPlus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+                {/* Progress bar */}
+                <div className="mt-2">
+                  <Progress 
+                    value={(players.length / tournament.max_players_per_team) * 100} 
+                    className={`h-2 ${
+                      players.length >= tournament.min_players_per_team ? "[&>div]:bg-green-500" : "[&>div]:bg-orange-500"
+                    }`}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="space-y-3 max-h-[300px] overflow-y-auto">
               {players.map((player, index) => (
                 <Card key={index}>
                   <CardContent className="p-3 flex gap-2 items-center">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary shrink-0">
+                      {index + 1}
+                    </div>
                     <div className="flex-1 space-y-2">
                       <Input
                         placeholder={`Player ${index + 1} name *`}
@@ -343,7 +383,7 @@ export function TournamentRegistrationDialog({ tournament, trigger }: Tournament
                         variant="ghost"
                         size="icon"
                         onClick={() => removePlayer(index)}
-                        className="text-destructive"
+                        className="text-destructive shrink-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -362,7 +402,7 @@ export function TournamentRegistrationDialog({ tournament, trigger }: Tournament
                 disabled={!isPlayersValid || registerTeam.isPending}
               >
                 {registerTeam.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Next: Payment
+                Save & Continue
               </Button>
             </div>
           </div>
@@ -445,31 +485,35 @@ export function TournamentRegistrationDialog({ tournament, trigger }: Tournament
 
         {/* Step 4: Success */}
         {step === "success" && (
-          <div className="py-8 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-              <CheckCircle className="h-8 w-8 text-green-600" />
+          <div className="py-6 space-y-5">
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold">Registration Submitted!</h3>
+                <p className="text-muted-foreground mt-1">
+                  Your team <strong>{teamName}</strong> has been registered.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xl font-semibold">Registration Successful!</h3>
-              <p className="text-muted-foreground mt-2">
-                Your team <strong>{teamName}</strong> has been registered for {tournament.name}.
-              </p>
-            </div>
+
+            {/* Payment Summary */}
             <Card className="bg-muted/50">
-              <CardContent className="p-4 text-left space-y-2">
+              <CardContent className="p-4 space-y-2">
                 <div className="flex justify-between">
-                  <span>Amount Paid</span>
+                  <span className="text-muted-foreground">Amount Paid</span>
                   <span className="font-medium">₹{amountToPay.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Payment Status</span>
+                  <span className="text-muted-foreground">Payment Status</span>
                   <span className={`font-medium ${paymentStatus === "paid" ? "text-green-600" : "text-orange-600"}`}>
                     {paymentStatus === "paid" ? "Fully Paid" : "Partial (Advance)"}
                   </span>
                 </div>
                 {paymentStatus === "partial" && (
                   <div className="flex justify-between">
-                    <span>Remaining Balance</span>
+                    <span className="text-muted-foreground">Remaining Balance</span>
                     <span className="font-medium text-orange-600">
                       ₹{(tournament.entry_fee - amountToPay).toLocaleString()}
                     </span>
@@ -477,7 +521,51 @@ export function TournamentRegistrationDialog({ tournament, trigger }: Tournament
                 )}
               </CardContent>
             </Card>
-            <Button onClick={() => {
+
+            {/* Next Steps */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                What happens next?
+              </h4>
+              <div className="space-y-3">
+                <div className="flex gap-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                  <ClipboardCheck className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-sm text-blue-900">1. Organizer Review</p>
+                    <p className="text-xs text-blue-700">
+                      The tournament organizer will review and approve your team registration.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3 p-3 rounded-lg bg-purple-50 border border-purple-200">
+                  <Calendar className="h-5 w-5 text-purple-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-sm text-purple-900">2. Match Schedule</p>
+                    <p className="text-xs text-purple-700">
+                      Once approved, you'll receive your match fixtures and schedule.
+                    </p>
+                  </div>
+                </div>
+                {paymentStatus === "partial" && (
+                  <div className="flex gap-3 p-3 rounded-lg bg-orange-50 border border-orange-200">
+                    <AlertCircle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-sm text-orange-900">3. Complete Payment</p>
+                      <p className="text-xs text-orange-700">
+                        Pay the remaining ₹{(tournament.entry_fee - amountToPay).toLocaleString()} before the tournament starts.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <p className="text-xs text-center text-muted-foreground">
+              You can view your team details and track status on the tournament page.
+            </p>
+
+            <Button className="w-full" onClick={() => {
               setOpen(false);
               resetForm();
             }}>
