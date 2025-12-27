@@ -10,8 +10,9 @@ import {
   Users, Calendar, ArrowRight, Play, Trophy, 
   BarChart3, Zap, Crown, Medal, MapPin, Target,
   Plus, Heart, Award, Star, ChevronRight, ChevronDown, Navigation,
-  Search, GraduationCap, Dumbbell, Shield, Crosshair, Wind
+  Search, GraduationCap, Dumbbell, Shield, Crosshair, Wind, Building2
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { QuickActionsFAB } from "@/components/home/QuickActionsFAB";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -324,6 +325,72 @@ export default function HomePage() {
     enabled: !!user?.id,
   });
 
+  // Fetch nearby tournaments
+  const { data: nearbyTournaments } = useQuery({
+    queryKey: ["home-nearby-tournaments", selectedCity],
+    queryFn: async () => {
+      const today = new Date().toISOString();
+      const { data } = await supabase
+        .from("tournaments")
+        .select("*, turfs(name, city)")
+        .or(`status.eq.draft,status.eq.in_progress,status.eq.upcoming`)
+        .gte("end_datetime", today)
+        .order("start_datetime", { ascending: true })
+        .limit(10);
+
+      if (!data) return [];
+
+      // Filter by city if not "Current Location"
+      if (selectedCity !== "Current Location") {
+        return data.filter((t: any) => t.city === selectedCity || t.turfs?.city === selectedCity).slice(0, 3);
+      }
+
+      return data.slice(0, 3);
+    },
+  });
+
+  // Fetch featured turfs/venues
+  const { data: featuredTurfs } = useQuery({
+    queryKey: ["home-featured-turfs", selectedCity],
+    queryFn: async () => {
+      let query = supabase
+        .from("turfs")
+        .select("*")
+        .eq("active", true)
+        .order("is_featured", { ascending: false })
+        .limit(10);
+
+      const { data } = await query;
+
+      if (!data) return [];
+
+      // Filter by city if not "Current Location"
+      if (selectedCity !== "Current Location") {
+        return data.filter((t: any) => t.city === selectedCity).slice(0, 3);
+      }
+
+      return data.slice(0, 3);
+    },
+  });
+
+  // Helper function to get tournament status badge
+  const getTournamentStatus = (tournament: any) => {
+    const now = new Date();
+    const start = new Date(tournament.start_datetime);
+    const regDeadline = tournament.registration_deadline ? new Date(tournament.registration_deadline) : null;
+    
+    if (tournament.status === "in_progress") {
+      return { label: "Live", variant: "destructive" as const };
+    }
+    if (tournament.registration_open && regDeadline && now < regDeadline) {
+      return { label: "Registrations Open", variant: "default" as const };
+    }
+    if (now < start) {
+      return { label: "Upcoming", variant: "secondary" as const };
+    }
+    return { label: "Upcoming", variant: "secondary" as const };
+  };
+
   const quickActions = [
     { icon: Plus, label: "Join Match", description: "Join open games near you", href: "/matches", color: "bg-primary" },
     { icon: Play, label: "Host Match", description: "Organise a game at your venue", href: "/host-match", color: "bg-accent" },
@@ -579,100 +646,181 @@ export default function HomePage() {
         {/* Main Content */}
         <div className="px-4 pt-4 space-y-6 pb-24">
 
-          {/* Matches Section - Split into Two */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Matches Near Me */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-sm flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-primary" />
-                  {selectedCity === "Current Location" ? "Near Me" : selectedCity}
-                </h3>
-                <Link to="/matches" className="text-xs text-primary flex items-center">
-                  All <ChevronRight className="h-3 w-3" />
-                </Link>
-              </div>
-              <div className="space-y-2">
-                {nearbyMatches && nearbyMatches.length > 0 ? (
-                  nearbyMatches.map((match: any) => (
-                    <Link key={match.id} to={`/matches/${match.id}`}>
-                      <Card className="glass-card hover:shadow-md transition-all">
-                        <CardContent className="p-3">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="text-[10px] text-accent font-medium">
-                              {new Date(match.match_date).toLocaleDateString("en-IN", { 
-                                day: "2-digit", month: "short" 
-                              })}
-                            </p>
-                            {match.distance !== null && match.distance !== undefined && (
-                              <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded">
-                                {formatDistance(match.distance)}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs font-medium line-clamp-1 mb-1">{match.match_name}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">
-                            {match.turfs?.name}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  ))
-                ) : (
-                  <Card className="glass-card">
-                    <CardContent className="p-4 text-center">
-                      <MapPin className="h-6 w-6 text-muted-foreground/50 mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">No matches nearby</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
+          {/* Three-Column Discovery Section */}
+          <div className="space-y-4">
+            {/* Section Header */}
+            <h2 className="font-bold text-lg text-foreground">Discover</h2>
 
-            {/* My Upcoming Matches */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-sm flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5 text-accent" />
-                  My Matches
-                </h3>
-                <Link to="/matches" className="text-xs text-primary flex items-center">
-                  All <ChevronRight className="h-3 w-3" />
-                </Link>
-              </div>
-              <div className="space-y-2">
-                {myUpcomingMatches && myUpcomingMatches.length > 0 ? (
-                  myUpcomingMatches.map((match: any) => (
-                    <Link key={match.id} to={`/matches/${match.id}`}>
-                      <Card className="glass-card hover:shadow-md transition-all">
-                        <CardContent className="p-3">
-                          <div className="flex items-center gap-1 mb-1">
-                            <p className="text-[10px] text-accent font-medium">
-                              {new Date(match.match_date).toLocaleDateString("en-IN", { 
-                                day: "2-digit", month: "short" 
-                              })}
-                            </p>
-                            {match.isHosted && (
-                              <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded">Host</span>
-                            )}
-                          </div>
-                          <p className="text-xs font-medium line-clamp-1 mb-1">{match.match_name}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">
-                            {match.turfs?.name}
-                          </p>
-                        </CardContent>
-                      </Card>
+            {/* Horizontal Scroll on Mobile, Grid on larger screens */}
+            <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide lg:grid lg:grid-cols-3 lg:overflow-visible">
+              
+              {/* Column 1: Matches Near You */}
+              <div className="min-w-[280px] w-[85vw] max-w-[320px] flex-shrink-0 snap-start lg:w-auto lg:min-w-0 lg:max-w-none">
+                <Card className="glass-card h-full flex flex-col">
+                  <CardContent className="p-4 flex flex-col h-full">
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <MapPin className="h-4 w-4 text-primary" />
+                        </div>
+                        <h3 className="font-semibold text-sm">Matches Near You</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Find and join local games</p>
+                    </div>
+
+                    <div className="space-y-2 flex-1">
+                      {nearbyMatches && nearbyMatches.length > 0 ? (
+                        nearbyMatches.slice(0, 3).map((match: any) => (
+                          <Link key={match.id} to={`/matches/${match.id}`}>
+                            <div className="p-3 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <p className="text-[11px] font-medium text-accent">
+                                  {new Date(match.match_date).toLocaleDateString("en-IN", { 
+                                    day: "2-digit", month: "short" 
+                                  })} • {match.match_time?.slice(0, 5)}
+                                </p>
+                                {match.distance !== null && match.distance !== undefined && (
+                                  <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-medium">
+                                    {formatDistance(match.distance)}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs font-medium line-clamp-1 mb-0.5">{match.match_name}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{match.turfs?.name}</p>
+                              <Button size="sm" variant="ghost" className="mt-2 h-7 text-xs w-full justify-center text-primary hover:text-primary">
+                                Join Match <ArrowRight className="h-3 w-3 ml-1" />
+                              </Button>
+                            </div>
+                          </Link>
+                        ))
+                      ) : (
+                        <div className="p-6 text-center">
+                          <MapPin className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                          <p className="text-xs text-muted-foreground">No matches nearby</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <Link to="/matches" className="mt-3 pt-3 border-t">
+                      <Button variant="ghost" size="sm" className="w-full text-xs h-8 text-primary hover:text-primary">
+                        View all matches <ChevronRight className="h-3 w-3 ml-1" />
+                      </Button>
                     </Link>
-                  ))
-                ) : (
-                  <Card className="glass-card">
-                    <CardContent className="p-4 text-center">
-                      <Calendar className="h-6 w-6 text-muted-foreground/50 mx-auto mb-1" />
-                      <p className="text-xs text-muted-foreground">No upcoming</p>
-                    </CardContent>
-                  </Card>
-                )}
+                  </CardContent>
+                </Card>
               </div>
+
+              {/* Column 2: Tournaments Around You */}
+              <div className="min-w-[280px] w-[85vw] max-w-[320px] flex-shrink-0 snap-start lg:w-auto lg:min-w-0 lg:max-w-none">
+                <Card className="glass-card h-full flex flex-col">
+                  <CardContent className="p-4 flex flex-col h-full">
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                          <Trophy className="h-4 w-4 text-accent" />
+                        </div>
+                        <h3 className="font-semibold text-sm">Tournaments Nearby</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Leagues, knockouts & weekend competitions</p>
+                    </div>
+
+                    <div className="space-y-2 flex-1">
+                      {nearbyTournaments && nearbyTournaments.length > 0 ? (
+                        nearbyTournaments.slice(0, 3).map((tournament: any) => {
+                          const status = getTournamentStatus(tournament);
+                          return (
+                            <Link key={tournament.id} to={`/tournaments/${tournament.id}`}>
+                              <div className="p-3 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors">
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <Badge variant={status.variant} className="text-[9px] px-1.5 py-0">
+                                    {status.label}
+                                  </Badge>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {new Date(tournament.start_datetime).toLocaleDateString("en-IN", { 
+                                      day: "2-digit", month: "short" 
+                                    })}
+                                  </p>
+                                </div>
+                                <p className="text-xs font-medium line-clamp-1 mb-0.5">{tournament.name}</p>
+                                <p className="text-[10px] text-muted-foreground truncate">{tournament.city}</p>
+                                <Button size="sm" variant="ghost" className="mt-2 h-7 text-xs w-full justify-center text-accent hover:text-accent">
+                                  View Tournament <ArrowRight className="h-3 w-3 ml-1" />
+                                </Button>
+                              </div>
+                            </Link>
+                          );
+                        })
+                      ) : (
+                        <div className="p-6 text-center">
+                          <Trophy className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                          <p className="text-xs text-muted-foreground">No tournaments nearby</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <Link to="/tournaments" className="mt-3 pt-3 border-t">
+                      <Button variant="ghost" size="sm" className="w-full text-xs h-8 text-accent hover:text-accent">
+                        Explore all tournaments <ChevronRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Column 3: Book Venues */}
+              <div className="min-w-[280px] w-[85vw] max-w-[320px] flex-shrink-0 snap-start lg:w-auto lg:min-w-0 lg:max-w-none">
+                <Card className="glass-card h-full flex flex-col">
+                  <CardContent className="p-4 flex flex-col h-full">
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Building2 className="h-4 w-4 text-primary" />
+                        </div>
+                        <h3 className="font-semibold text-sm">Book a Venue</h3>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Find turfs and grounds to play</p>
+                    </div>
+
+                    <div className="space-y-2 flex-1">
+                      {featuredTurfs && featuredTurfs.length > 0 ? (
+                        featuredTurfs.slice(0, 3).map((turf: any) => (
+                          <Link key={turf.id} to={`/turfs/${turf.id}`}>
+                            <div className="p-3 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <p className="text-[11px] font-medium text-primary">
+                                  ₹{turf.price_per_hour}/hr
+                                </p>
+                                {turf.is_featured && (
+                                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                                    Featured
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs font-medium line-clamp-1 mb-0.5">{turf.name}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{turf.city}</p>
+                              <Button size="sm" variant="ghost" className="mt-2 h-7 text-xs w-full justify-center text-primary hover:text-primary">
+                                Book Now <ArrowRight className="h-3 w-3 ml-1" />
+                              </Button>
+                            </div>
+                          </Link>
+                        ))
+                      ) : (
+                        <div className="p-6 text-center">
+                          <Building2 className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                          <p className="text-xs text-muted-foreground">No venues nearby</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <Link to="/turfs" className="mt-3 pt-3 border-t">
+                      <Button variant="ghost" size="sm" className="w-full text-xs h-8 text-primary hover:text-primary">
+                        View all venues <ChevronRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </div>
+
             </div>
           </div>
 
