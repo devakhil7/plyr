@@ -1,4 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
+import communityHighlight1 from "@/assets/community-highlight-1.jpg";
+import communityHighlight2 from "@/assets/community-highlight-2.jpg";
+import communityHighlight3 from "@/assets/community-highlight-3.jpg";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -911,24 +914,56 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Community Feed Link */}
+          {/* Community Highlights Section */}
           <div className="pt-2">
-            <Link to="/community">
-              <Card className="glass-card hover:shadow-md transition-shadow">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Card className="glass-card overflow-hidden">
+              <CardContent className="p-0">
+                {/* Carousel */}
+                <div className="relative h-48 overflow-hidden">
+                  <div className="flex animate-[slide_15s_linear_infinite] hover:[animation-play-state:paused]">
+                    <img 
+                      src={communityHighlight1} 
+                      alt="Football action" 
+                      className="w-full h-48 object-cover flex-shrink-0"
+                    />
+                    <img 
+                      src={communityHighlight2} 
+                      alt="Match in progress" 
+                      className="w-full h-48 object-cover flex-shrink-0"
+                    />
+                    <img 
+                      src={communityHighlight3} 
+                      alt="Goal celebration" 
+                      className="w-full h-48 object-cover flex-shrink-0"
+                    />
+                    <img 
+                      src={communityHighlight1} 
+                      alt="Football action" 
+                      className="w-full h-48 object-cover flex-shrink-0"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
+                </div>
+                
+                {/* Content */}
+                <div className="p-5 -mt-12 relative z-10">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-primary/20 backdrop-blur-sm flex items-center justify-center">
                       <Users className="h-5 w-5 text-primary" />
                     </div>
-                    <div>
-                      <h3 className="font-medium text-sm text-foreground">Community Feed</h3>
-                      <p className="text-xs text-muted-foreground">See highlights & connect</p>
-                    </div>
+                    <h3 className="font-semibold text-lg text-foreground">Community Highlights</h3>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                </CardContent>
-              </Card>
-            </Link>
+                  <p className="text-sm text-muted-foreground mb-4 ml-[52px]">
+                    Goals, moments & performances from players like you
+                  </p>
+                  <Link to="/community">
+                    <Button variant="outline" className="w-full h-11 text-sm font-medium">
+                      Explore the community <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* About SportsIQ Section */}
