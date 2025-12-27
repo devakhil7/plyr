@@ -426,7 +426,7 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
                         <Button 
                           variant="outline" 
                           size="sm"
-                          className="flex-1"
+                          className="flex-1 text-white border-white/50 hover:bg-white/10 hover:text-white"
                           onClick={() => handleShareHighlight(event)}
                         >
                           <Share2 className="h-3 w-3 mr-1" />
