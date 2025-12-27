@@ -475,9 +475,9 @@ export default function TournamentDetails() {
                             </CollapsibleTrigger>
                             
                             <CollapsibleContent>
-                              <div className="border-t px-3 py-3 bg-muted/30">
+                              <div className="border-t px-2 py-3 bg-gradient-to-b from-slate-900/50 to-slate-800/30">
                                 {players.length > 0 ? (
-                                  <div className="grid grid-cols-1 gap-2">
+                                  <div className="flex flex-wrap justify-center gap-2">
                                     {players.map((player: any, index: number) => (
                                       <TournamentPlayerCard 
                                         key={player.id} 
