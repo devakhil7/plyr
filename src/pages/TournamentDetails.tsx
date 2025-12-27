@@ -70,6 +70,46 @@ export default function TournamentDetails() {
     enabled: !!id,
   });
 
+  // Fetch player ratings for all registered users in teams
+  const allUserIds = tournament?.tournament_teams
+    ?.flatMap((team: any) => 
+      team.tournament_team_players
+        ?.filter((p: any) => p.user_id)
+        .map((p: any) => p.user_id) || []
+    ) || [];
+
+  const { data: playerRatings } = useQuery({
+    queryKey: ["tournament-player-ratings", allUserIds],
+    queryFn: async () => {
+      if (allUserIds.length === 0) return {};
+      
+      const { data } = await supabase
+        .from("player_ratings")
+        .select("rated_user_id, rating")
+        .in("rated_user_id", allUserIds)
+        .eq("moderation_status", "approved");
+      
+      // Calculate average rating per user
+      const ratingsMap: Record<string, { total: number; count: number }> = {};
+      data?.forEach((r: any) => {
+        if (!ratingsMap[r.rated_user_id]) {
+          ratingsMap[r.rated_user_id] = { total: 0, count: 0 };
+        }
+        ratingsMap[r.rated_user_id].total += r.rating;
+        ratingsMap[r.rated_user_id].count += 1;
+      });
+      
+      // Convert to average (1-5 scale to 1-100 scale)
+      const averages: Record<string, number> = {};
+      Object.entries(ratingsMap).forEach(([id, { total, count }]) => {
+        averages[id] = Math.round((total / count) * 20);
+      });
+      
+      return averages;
+    },
+    enabled: allUserIds.length > 0,
+  });
+
   const [expandedTeams, setExpandedTeams] = useState<Record<string, boolean>>({});
 
   const toggleTeamExpanded = (teamId: string) => {
@@ -485,7 +525,8 @@ export default function TournamentDetails() {
                                           ...player,
                                           profile: player.profiles
                                         }} 
-                                        index={index} 
+                                        index={index}
+                                        rating={player.user_id ? playerRatings?.[player.user_id] : undefined}
                                       />
                                     ))}
                                   </div>
