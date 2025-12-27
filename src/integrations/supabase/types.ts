@@ -1562,6 +1562,7 @@ export type Database = {
           is_admin: boolean | null
           location: string | null
           name: string | null
+          phone_number: string | null
           position: string | null
           profile_completed: boolean | null
           profile_photo_url: string | null
@@ -1583,6 +1584,7 @@ export type Database = {
           is_admin?: boolean | null
           location?: string | null
           name?: string | null
+          phone_number?: string | null
           position?: string | null
           profile_completed?: boolean | null
           profile_photo_url?: string | null
@@ -1604,6 +1606,7 @@ export type Database = {
           is_admin?: boolean | null
           location?: string | null
           name?: string | null
+          phone_number?: string | null
           position?: string | null
           profile_completed?: boolean | null
           profile_photo_url?: string | null
