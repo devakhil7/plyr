@@ -25,14 +25,26 @@ export function AdminSettingsTab() {
   });
 
   useEffect(() => {
-    if (settings) {
+    if (settings && settings.length > 0) {
       const ct = settings.find((s: any) => s.setting_key === "default_commission_type");
       const cv = settings.find((s: any) => s.setting_key === "default_commission_value");
       const pf = settings.find((s: any) => s.setting_key === "default_payout_frequency");
       
-      if (ct) setCommissionType(JSON.parse(String(ct.setting_value)));
-      if (cv) setCommissionValue(String(JSON.parse(String(cv.setting_value))));
-      if (pf) setPayoutFrequency(JSON.parse(String(pf.setting_value)));
+      // Handle both JSON string and raw value formats
+      const parseValue = (val: any) => {
+        if (typeof val === 'string') {
+          try {
+            return JSON.parse(val);
+          } catch {
+            return val;
+          }
+        }
+        return val;
+      };
+      
+      if (ct?.setting_value) setCommissionType(parseValue(ct.setting_value));
+      if (cv?.setting_value) setCommissionValue(String(parseValue(cv.setting_value)));
+      if (pf?.setting_value) setPayoutFrequency(parseValue(pf.setting_value));
     }
   }, [settings]);
 
