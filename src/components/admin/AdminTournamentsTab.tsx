@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { format, parseISO, subDays } from "date-fns";
 import { 
   Trophy, Users, IndianRupee, CheckCircle, XCircle, Eye, 
-  Download, Calendar, Search, Clock, TrendingUp
+  Download, Calendar, Search, Clock, TrendingUp, User, ExternalLink
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -74,6 +74,36 @@ export function AdminTournamentsTab() {
         return data.map(team => ({
           ...team,
           profiles: profileMap.get(team.captain_user_id) || null,
+        }));
+      }
+      return [];
+    },
+  });
+
+  // Fetch individual registrations across all tournaments
+  const { data: allIndividualRegistrations, isLoading: individualsLoading } = useQuery({
+    queryKey: ["admin-all-individual-registrations"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("tournament_individual_registrations")
+        .select(`
+          *,
+          tournaments (id, name, sport),
+          assigned_team:assigned_team_id (id, team_name)
+        `)
+        .order("created_at", { ascending: false });
+      
+      if (data) {
+        const userIds = [...new Set(data.map(r => r.user_id))];
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, name, profile_photo_url, position")
+          .in("id", userIds);
+        
+        const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+        return data.map(reg => ({
+          ...reg,
+          profiles: profileMap.get(reg.user_id) || null,
         }));
       }
       return [];
@@ -196,11 +226,14 @@ export function AdminTournamentsTab() {
   ) || [];
 
   // Calculate stats
+  const pendingIndividuals = allIndividualRegistrations?.filter(r => !r.assigned_team_id).length || 0;
   const stats = {
     totalTournaments: tournaments?.length || 0,
     activeTournaments: tournaments?.filter(t => t.status === "upcoming" || t.status === "live").length || 0,
     totalTeams: allTeams?.length || 0,
     pendingVerification: allTeams?.filter(t => t.team_status === "pending_payment" || t.team_status === "pending_verification").length || 0,
+    totalIndividuals: allIndividualRegistrations?.length || 0,
+    pendingIndividuals,
     totalRevenue: tournamentPayments?.filter(p => p.status === "paid").reduce((acc, p) => acc + Number(p.amount_total), 0) || 0,
     platformFees: tournamentPayments?.filter(p => p.status === "paid").reduce((acc, p) => acc + Number(p.platform_fee), 0) || 0,
   };
@@ -348,6 +381,14 @@ export function AdminTournamentsTab() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="individuals">
+            Individual Registrations
+            {stats.pendingIndividuals > 0 && (
+              <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs rounded-full">
+                {stats.pendingIndividuals}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="payments">Tournament Payments</TabsTrigger>
         </TabsList>
 
@@ -435,6 +476,11 @@ export function AdminTournamentsTab() {
                         <TableCell>{getStatusBadge(team.team_status)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
+                            <Link to={`/admin/tournaments/${team.tournament_id}/teams`}>
+                              <Button variant="ghost" size="sm" title="Manage Tournament">
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            </Link>
                             <Button
                               variant="outline"
                               size="sm"
@@ -469,6 +515,88 @@ export function AdminTournamentsTab() {
                               </Button>
                             )}
                           </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="individuals" className="space-y-4">
+          {/* Individual Registrations Table */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Individual Registrations
+                </CardTitle>
+                <Badge variant="outline">{stats.totalIndividuals} total, {stats.pendingIndividuals} unassigned</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {individualsLoading ? (
+                <div className="p-8 text-center text-muted-foreground">Loading...</div>
+              ) : !allIndividualRegistrations || allIndividualRegistrations.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No individual registrations found</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Player</TableHead>
+                      <TableHead>Tournament</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Payment</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allIndividualRegistrations.map((reg: any) => (
+                      <TableRow key={reg.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={reg.profiles?.profile_photo_url || undefined} />
+                              <AvatarFallback>{reg.profiles?.name?.charAt(0) || "?"}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{reg.profiles?.name || "Unknown"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">{reg.tournaments?.name}</div>
+                          <div className="text-xs text-muted-foreground">{reg.tournaments?.sport}</div>
+                        </TableCell>
+                        <TableCell>{reg.preferred_position || "-"}</TableCell>
+                        <TableCell>
+                          <Badge variant={reg.payment_status === "paid" ? "default" : reg.payment_status === "partial" ? "secondary" : "destructive"}>
+                            {reg.payment_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {reg.assigned_team_id ? (
+                            <Badge className="bg-green-600">
+                              Assigned: {reg.assigned_team?.team_name}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-orange-500 text-orange-600">
+                              Pending Assignment
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Link to={`/admin/tournaments/${reg.tournament_id}/teams`}>
+                            <Button variant="outline" size="sm">
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              Manage
+                            </Button>
+                          </Link>
                         </TableCell>
                       </TableRow>
                     ))}
