@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -45,8 +46,10 @@ import {
   Phone,
   Mail,
   IndianRupee,
-  Image
+  Image,
+  User
 } from "lucide-react";
+import { AdminIndividualRegistrations } from "@/components/tournaments/AdminIndividualRegistrations";
 
 interface Team {
   id: string;
@@ -87,6 +90,7 @@ export default function AdminTournamentTeams() {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [verificationNotes, setVerificationNotes] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<string>("teams");
 
   // Fetch tournament
   const { data: tournament, isLoading: tournamentLoading } = useQuery({
@@ -307,33 +311,47 @@ export default function AdminTournamentTeams() {
           </Card>
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-4 mb-6">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Teams</SelectItem>
-              <SelectItem value="pending_verification">Pending Verification</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-              <SelectItem value="pending_roster">Pending Roster</SelectItem>
-              <SelectItem value="pending_payment">Pending Payment</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Tabs for Teams and Individuals */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="teams" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Teams ({teams?.length || 0})
+            </TabsTrigger>
+            <TabsTrigger value="individuals" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Individuals
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Teams Table */}
-        <Card>
-          <CardContent className="p-0">
-            {filteredTeams.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No teams found</p>
-              </div>
-            ) : (
-              <Table>
+          <TabsContent value="teams" className="space-y-4">
+            {/* Filters */}
+            <div className="flex gap-4">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Teams</SelectItem>
+                  <SelectItem value="pending_verification">Pending Verification</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="pending_roster">Pending Roster</SelectItem>
+                  <SelectItem value="pending_payment">Pending Payment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Teams Table */}
+            <Card>
+              <CardContent className="p-0">
+                {filteredTeams.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No teams found</p>
+                  </div>
+                ) : (
+                  <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Team</TableHead>
@@ -408,6 +426,12 @@ export default function AdminTournamentTeams() {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="individuals">
+            <AdminIndividualRegistrations tournamentId={id!} />
+          </TabsContent>
+        </Tabs>
 
         {/* Team Detail Dialog */}
         <Dialog open={!!selectedTeam} onOpenChange={() => setSelectedTeam(null)}>
