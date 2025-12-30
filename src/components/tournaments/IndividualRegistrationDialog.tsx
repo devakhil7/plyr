@@ -217,7 +217,24 @@ export function IndividualRegistrationDialog({ tournament, trigger }: Individual
     },
   });
 
-  const isAlreadyRegistered = existingRegistration !== null;
+  const isAlreadyRegistered = existingRegistration != null;
+
+  const getRegistrationMessage = () => {
+    if (!existingRegistration) return "";
+    
+    if (existingRegistration.type === "individual") {
+      return existingRegistration.data?.assigned_team_id
+        ? "You've been assigned to a team."
+        : "Your individual registration is pending team assignment.";
+    }
+    if (existingRegistration.type === "team_captain") {
+      return `You are the captain of team "${existingRegistration.data?.team_name || 'Unknown'}".`;
+    }
+    if (existingRegistration.type === "team_player") {
+      return "You are already registered as a team member.";
+    }
+    return "";
+  };
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
@@ -249,17 +266,7 @@ export function IndividualRegistrationDialog({ tournament, trigger }: Individual
               <div>
                 <p className="font-medium text-orange-800 dark:text-orange-200">Already Registered</p>
                 <p className="text-sm text-orange-600 dark:text-orange-400">
-                  {existingRegistration.type === "individual" && (
-                    existingRegistration.data.assigned_team_id
-                      ? "You've been assigned to a team."
-                      : "Your individual registration is pending team assignment."
-                  )}
-                  {existingRegistration.type === "team_captain" && (
-                    `You are the captain of team "${existingRegistration.data.team_name}".`
-                  )}
-                  {existingRegistration.type === "team_player" && (
-                    "You are already registered as a team member."
-                  )}
+                  {getRegistrationMessage()}
                 </p>
               </div>
             </div>
