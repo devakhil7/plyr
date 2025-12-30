@@ -1617,6 +1617,72 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_individual_registrations: {
+        Row: {
+          amount_paid: number | null
+          assigned_at: string | null
+          assigned_by: string | null
+          assigned_team_id: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          payment_reference: string | null
+          payment_status: string
+          preferred_position: string | null
+          registration_status: string
+          tournament_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_team_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          payment_reference?: string | null
+          payment_status?: string
+          preferred_position?: string | null
+          registration_status?: string
+          tournament_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number | null
+          assigned_at?: string | null
+          assigned_by?: string | null
+          assigned_team_id?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          payment_reference?: string | null
+          payment_status?: string
+          preferred_position?: string | null
+          registration_status?: string
+          tournament_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_individual_registrations_assigned_team_id_fkey"
+            columns: ["assigned_team_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_individual_registrations_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_matches: {
         Row: {
           created_at: string | null

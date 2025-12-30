@@ -31,6 +31,7 @@ import { TournamentBracket } from "@/components/tournaments/TournamentBracket";
 import { TournamentShareDialog } from "@/components/tournaments/TournamentShareDialog";
 import { TournamentStatsSection } from "@/components/tournaments/TournamentStatsSection";
 import { TournamentPlayerCard } from "@/components/player/TournamentPlayerCard";
+import { IndividualRegistrationDialog } from "@/components/tournaments/IndividualRegistrationDialog";
 
 export default function TournamentDetails() {
   const { id } = useParams<{ id: string }>();
@@ -361,22 +362,54 @@ export default function TournamentDetails() {
             ) : (
               tournament.registration_open &&
               (!tournament.registration_deadline || !isPast(new Date(tournament.registration_deadline))) && (
-                user ? (
-                  <Link to={`/tournaments/${id}/register`}>
-                    <Button className="btn-glow bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+                <>
+                  {user ? (
+                    <Link to={`/tournaments/${id}/register`}>
+                      <Button className="btn-glow bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Register Your Team
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button 
+                      onClick={() => setLoginDialogOpen(true)}
+                      className="btn-glow bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                    >
                       <UserPlus className="h-4 w-4 mr-2" />
                       Register Your Team
                     </Button>
-                  </Link>
-                ) : (
-                  <Button 
-                    onClick={() => setLoginDialogOpen(true)}
-                    className="btn-glow bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Register Your Team
-                  </Button>
-                )
+                  )}
+                  
+                  {/* Join as Individual */}
+                  {user ? (
+                    <IndividualRegistrationDialog
+                      tournament={{
+                        id: tournament.id,
+                        name: tournament.name,
+                        entry_fee: tournament.entry_fee || 0,
+                        allow_part_payment: tournament.allow_part_payment || false,
+                        advance_type: tournament.advance_type,
+                        advance_value: tournament.advance_value,
+                        registration_open: tournament.registration_open || false,
+                      }}
+                      trigger={
+                        <Button variant="outline" className="bg-primary-foreground/10 text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/20">
+                          <User className="h-4 w-4 mr-2" />
+                          Join as Individual
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <Button 
+                      variant="outline"
+                      onClick={() => setLoginDialogOpen(true)}
+                      className="bg-primary-foreground/10 text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/20"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Join as Individual
+                    </Button>
+                  )}
+                </>
               )
             )}
             
