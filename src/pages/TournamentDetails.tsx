@@ -71,6 +71,22 @@ export default function TournamentDetails() {
     enabled: !!id,
   });
 
+  // Check if user has an individual registration
+  const { data: individualRegistration } = useQuery({
+    queryKey: ["individual-registration", id, user?.id],
+    queryFn: async () => {
+      if (!user?.id || !id) return null;
+      const { data } = await supabase
+        .from("tournament_individual_registrations")
+        .select("*, assigned_team:assigned_team_id(team_name)")
+        .eq("tournament_id", id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!id && !!user?.id,
+  });
+
   // Fetch player ratings for all registered users in teams
   const allUserIds = tournament?.tournament_teams
     ?.flatMap((team: any) => 
@@ -382,23 +398,39 @@ export default function TournamentDetails() {
                   
                   {/* Join as Individual */}
                   {user ? (
-                    <IndividualRegistrationDialog
-                      tournament={{
-                        id: tournament.id,
-                        name: tournament.name,
-                        entry_fee: tournament.entry_fee || 0,
-                        allow_part_payment: tournament.allow_part_payment || false,
-                        advance_type: tournament.advance_type,
-                        advance_value: tournament.advance_value,
-                        registration_open: tournament.registration_open || false,
-                      }}
-                      trigger={
-                        <Button variant="outline" className="bg-primary-foreground/10 text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/20">
-                          <User className="h-4 w-4 mr-2" />
-                          Join as Individual
-                        </Button>
-                      }
-                    />
+                    individualRegistration ? (
+                      <Badge 
+                        variant="outline" 
+                        className={`px-4 py-2 text-sm ${
+                          individualRegistration.assigned_team_id 
+                            ? "bg-green-500/20 text-green-100 border-green-500/40" 
+                            : "bg-amber-500/20 text-amber-100 border-amber-500/40"
+                        }`}
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        {individualRegistration.assigned_team_id 
+                          ? `Joined: ${(individualRegistration as any).assigned_team?.team_name || "Team"}` 
+                          : "Individual Registration Pending"}
+                      </Badge>
+                    ) : (
+                      <IndividualRegistrationDialog
+                        tournament={{
+                          id: tournament.id,
+                          name: tournament.name,
+                          entry_fee: tournament.entry_fee || 0,
+                          allow_part_payment: tournament.allow_part_payment || false,
+                          advance_type: tournament.advance_type,
+                          advance_value: tournament.advance_value,
+                          registration_open: tournament.registration_open || false,
+                        }}
+                        trigger={
+                          <Button variant="outline" className="bg-primary-foreground/10 text-primary-foreground border-primary-foreground/30 hover:bg-primary-foreground/20">
+                            <User className="h-4 w-4 mr-2" />
+                            Join as Individual
+                          </Button>
+                        }
+                      />
+                    )
                   ) : (
                     <Button 
                       variant="outline"
