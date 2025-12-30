@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { User, Loader2, CreditCard, CheckCircle, IndianRupee, AlertCircle } from "lucide-react";
+import { User, Loader2, CreditCard, CheckCircle, IndianRupee, AlertCircle, MapPin } from "lucide-react";
 
 interface Tournament {
   id: string;
@@ -48,6 +48,7 @@ const POSITIONS = [
 ];
 
 type Step = "details" | "payment" | "success";
+type PaymentMethod = "online" | "ground";
 
 export function IndividualRegistrationDialog({ tournament, trigger }: IndividualRegistrationDialogProps) {
   const [open, setOpen] = useState(false);
@@ -55,6 +56,7 @@ export function IndividualRegistrationDialog({ tournament, trigger }: Individual
   const [preferredPosition, setPreferredPosition] = useState("");
   const [notes, setNotes] = useState("");
   const [paymentOption, setPaymentOption] = useState<"full" | "advance">("full");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("online");
 
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -133,6 +135,7 @@ export function IndividualRegistrationDialog({ tournament, trigger }: Individual
     setPreferredPosition("");
     setNotes("");
     setPaymentOption("full");
+    setPaymentMethod("online");
   };
 
   // Register as individual mutation
@@ -185,7 +188,7 @@ export function IndividualRegistrationDialog({ tournament, trigger }: Individual
     },
   });
 
-  // Process payment mutation
+  // Process online payment mutation
   const processPayment = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Invalid state");
@@ -214,6 +217,39 @@ export function IndividualRegistrationDialog({ tournament, trigger }: Individual
     onError: (error: any) => {
       console.error("Payment error:", error);
       toast.error("Payment failed. Please try again.");
+    },
+  });
+
+  // Process pay at ground mutation
+  const processPayAtGround = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Invalid state");
+
+      // Update registration with pay at ground status
+      const { error } = await supabase
+        .from("tournament_individual_registrations")
+        .update({
+          amount_paid: 0,
+          payment_status: "unpaid",
+          registration_status: "confirmed",
+          payment_reference: "pay_at_ground",
+        })
+        .eq("tournament_id", tournament.id)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      return { payAtGround: true };
+    },
+    onSuccess: () => {
+      setStep("success");
+      queryClient.invalidateQueries({ queryKey: ["tournament", tournament.id] });
+      queryClient.invalidateQueries({ queryKey: ["individual-registration-check"] });
+      queryClient.invalidateQueries({ queryKey: ["tournament-individual-registrations"] });
+    },
+    onError: (error: any) => {
+      console.error("Pay at ground error:", error);
+      toast.error("Failed to register. Please try again.");
     },
   });
 
@@ -343,65 +379,123 @@ export function IndividualRegistrationDialog({ tournament, trigger }: Individual
                   </CardContent>
                 </Card>
 
-                <RadioGroup
-                  value={paymentOption}
-                  onValueChange={(v) => setPaymentOption(v as "full" | "advance")}
-                  className="space-y-3"
-                >
-                  <label
-                    className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                      paymentOption === "full" ? "border-primary bg-primary/5" : "border-border"
-                    }`}
+                {/* Payment Method Selection */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">How would you like to pay?</p>
+                  <RadioGroup
+                    value={paymentMethod}
+                    onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+                    className="grid grid-cols-2 gap-3"
                   >
-                    <RadioGroupItem value="full" />
-                    <div className="flex-1">
-                      <p className="font-medium">Pay Full Amount</p>
-                      <p className="text-sm text-muted-foreground">
-                        Pay ₹{individualFee.toLocaleString()} now
-                      </p>
-                    </div>
-                    <IndianRupee className="h-5 w-5 text-muted-foreground" />
-                  </label>
-
-                  {tournament.allow_part_payment && (
                     <label
-                      className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                        paymentOption === "advance" ? "border-primary bg-primary/5" : "border-border"
+                      className={`flex flex-col items-center gap-2 p-4 border rounded-lg cursor-pointer transition-colors ${
+                        paymentMethod === "online" ? "border-primary bg-primary/5" : "border-border"
                       }`}
                     >
-                      <RadioGroupItem value="advance" />
+                      <RadioGroupItem value="online" className="sr-only" />
+                      <CreditCard className="h-6 w-6" />
+                      <span className="text-sm font-medium">Pay Online</span>
+                    </label>
+                    <label
+                      className={`flex flex-col items-center gap-2 p-4 border rounded-lg cursor-pointer transition-colors ${
+                        paymentMethod === "ground" ? "border-primary bg-primary/5" : "border-border"
+                      }`}
+                    >
+                      <RadioGroupItem value="ground" className="sr-only" />
+                      <MapPin className="h-6 w-6" />
+                      <span className="text-sm font-medium">Pay at Ground</span>
+                    </label>
+                  </RadioGroup>
+                </div>
+
+                {/* Amount Options - Only show for online payment */}
+                {paymentMethod === "online" && (
+                  <RadioGroup
+                    value={paymentOption}
+                    onValueChange={(v) => setPaymentOption(v as "full" | "advance")}
+                    className="space-y-3"
+                  >
+                    <label
+                      className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                        paymentOption === "full" ? "border-primary bg-primary/5" : "border-border"
+                      }`}
+                    >
+                      <RadioGroupItem value="full" />
                       <div className="flex-1">
-                        <p className="font-medium">Pay Advance Only</p>
+                        <p className="font-medium">Pay Full Amount</p>
                         <p className="text-sm text-muted-foreground">
-                          Pay ₹{advanceAmount.toLocaleString()} now
-                          {tournament.advance_type === "percentage" && ` (${tournament.advance_value}%)`}
+                          Pay ₹{individualFee.toLocaleString()} now
                         </p>
                       </div>
-                      <CreditCard className="h-5 w-5 text-muted-foreground" />
+                      <IndianRupee className="h-5 w-5 text-muted-foreground" />
                     </label>
-                  )}
-                </RadioGroup>
 
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">Amount to Pay</span>
-                      <span className="text-xl font-bold text-primary">
-                        ₹{amountToPay.toLocaleString()}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                    {tournament.allow_part_payment && (
+                      <label
+                        className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                          paymentOption === "advance" ? "border-primary bg-primary/5" : "border-border"
+                        }`}
+                      >
+                        <RadioGroupItem value="advance" />
+                        <div className="flex-1">
+                          <p className="font-medium">Pay Advance Only</p>
+                          <p className="text-sm text-muted-foreground">
+                            Pay ₹{advanceAmount.toLocaleString()} now
+                            {tournament.advance_type === "percentage" && ` (${tournament.advance_value}%)`}
+                          </p>
+                        </div>
+                        <CreditCard className="h-5 w-5 text-muted-foreground" />
+                      </label>
+                    )}
+                  </RadioGroup>
+                )}
 
-                <Button
-                  className="w-full"
-                  onClick={() => processPayment.mutate()}
-                  disabled={processPayment.isPending}
-                >
-                  {processPayment.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Pay ₹{amountToPay.toLocaleString()}
-                </Button>
+                {/* Pay at Ground Info */}
+                {paymentMethod === "ground" && (
+                  <div className="p-4 bg-orange-50 dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <p className="text-sm text-orange-800 dark:text-orange-200">
+                      <strong>Pay at Ground</strong>: You'll pay ₹{individualFee.toLocaleString()} when you arrive at the venue.
+                      Your registration will be confirmed but marked as unpaid.
+                    </p>
+                  </div>
+                )}
+
+                {/* Amount Summary */}
+                {paymentMethod === "online" && (
+                  <Card className="bg-primary/5 border-primary/20">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Amount to Pay</span>
+                        <span className="text-xl font-bold text-primary">
+                          ₹{amountToPay.toLocaleString()}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Action Button */}
+                {paymentMethod === "online" ? (
+                  <Button
+                    className="w-full"
+                    onClick={() => processPayment.mutate()}
+                    disabled={processPayment.isPending}
+                  >
+                    {processPayment.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Pay ₹{amountToPay.toLocaleString()}
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full"
+                    onClick={() => processPayAtGround.mutate()}
+                    disabled={processPayAtGround.isPending}
+                  >
+                    {processPayAtGround.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Confirm Registration
+                  </Button>
+                )}
               </div>
             )}
 

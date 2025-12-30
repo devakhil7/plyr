@@ -82,7 +82,7 @@ interface Team {
 }
 
 export default function AdminTournamentTeams() {
-  const { id } = useParams<{ id: string }>();
+  const { tournamentId: id } = useParams<{ tournamentId: string }>();
   const { user } = useAuth();
   const { isAdmin } = useUserRoles();
   const queryClient = useQueryClient();
