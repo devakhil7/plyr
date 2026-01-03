@@ -574,38 +574,42 @@ export default function HomePage() {
         </div>
 
         {/* Hero Section - Player Card + Quick Actions */}
-        <div className="hero-gradient px-4 md:px-6 pt-8 md:pt-8 pb-6 md:pb-8 rounded-b-3xl">
+        <div className="hero-gradient px-4 md:px-6 pt-14 sm:pt-12 md:pt-8 pb-6 md:pb-8 rounded-b-3xl overflow-visible">
           {/* Desktop: Side-by-side layout | Mobile: Stacked with player info row */}
           <div className="flex flex-col gap-5 md:gap-0 md:flex-row md:items-start">
             
             {/* Left Column: Player Card + Level + CTA (stacked) */}
-            <div className="flex flex-row items-start gap-4 md:flex-col md:shrink-0 md:w-[200px] md:mr-6">
+            <div className="flex flex-row items-start gap-4 pt-4 sm:pt-3 md:pt-0 md:flex-col md:shrink-0 md:w-[200px] md:mr-6">
               {/* Player Card Container */}
-              <div className="relative shrink-0">
-                <Link to="/profile" className="active:scale-95 transition-transform touch-manipulation block">
-                  <PlayerCard
-                    player={{
-                      name: profile?.name || null,
-                      position: profile?.position || null,
-                      city: profile?.city || null,
-                      profile_photo_url: profile?.profile_photo_url || null,
-                      favourite_club: userStats?.favourite_club || null,
-                    }}
-                    stats={{
-                      overall: userStats?.rating || null,
-                      pace: userStats?.pace || null,
-                      shooting: userStats?.shooting || null,
-                      passing: userStats?.passing || null,
-                      dribbling: userStats?.dribbling || null,
-                      defending: userStats?.defending || null,
-                      physical: userStats?.physical || null,
-                      matches: userStats?.matches || 0,
-                      goals: userStats?.goals || 0,
-                      assists: userStats?.assists || 0,
-                      wins: userStats?.wins || 0,
-                    }}
-                    className="transform scale-[0.38] xs:scale-[0.42] md:scale-[0.50] origin-top-left w-[106px] xs:w-[118px] md:w-[140px] h-[152px] xs:h-[168px] md:h-[200px]"
-                  />
+              <div className="relative shrink-0 mt-2 sm:mt-1 w-[106px] xs:w-[118px] md:w-[140px] h-[152px] xs:h-[168px] md:h-[200px] overflow-visible">
+                <Link
+                  to="/profile"
+                  className="block w-full h-full active:scale-95 transition-transform touch-manipulation"
+                >
+                  <div className="absolute left-0 top-0 origin-top-left scale-[0.38] xs:scale-[0.42] md:scale-[0.50]">
+                    <PlayerCard
+                      player={{
+                        name: profile?.name || null,
+                        position: profile?.position || null,
+                        city: profile?.city || null,
+                        profile_photo_url: profile?.profile_photo_url || null,
+                        favourite_club: userStats?.favourite_club || null,
+                      }}
+                      stats={{
+                        overall: userStats?.rating || null,
+                        pace: userStats?.pace || null,
+                        shooting: userStats?.shooting || null,
+                        passing: userStats?.passing || null,
+                        dribbling: userStats?.dribbling || null,
+                        defending: userStats?.defending || null,
+                        physical: userStats?.physical || null,
+                        matches: userStats?.matches || 0,
+                        goals: userStats?.goals || 0,
+                        assists: userStats?.assists || 0,
+                        wins: userStats?.wins || 0,
+                      }}
+                    />
+                  </div>
                 </Link>
               </div>
               
