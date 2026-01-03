@@ -478,7 +478,7 @@ export default function HomePage() {
     <AppLayout>
       <div className="min-h-screen-safe">
         {/* Top Bar - Location + Search */}
-        <div className="bg-background/95 backdrop-blur-xl border-b border-border/30 px-3 md:px-4 py-2.5 sticky top-[calc(3rem+env(safe-area-inset-top))] md:top-[calc(3.5rem+env(safe-area-inset-top))] z-40 mb-4 md:mb-4">
+        <div className="bg-background/95 backdrop-blur-xl border-b border-border/30 px-3 md:px-4 py-2.5 sticky top-12 md:top-14 z-40 mb-4">
           <div className="flex items-center gap-2">
             {/* Location Selector */}
             <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
