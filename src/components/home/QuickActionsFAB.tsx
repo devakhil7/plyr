@@ -19,7 +19,7 @@ export function QuickActionsFAB() {
   if (!user) return null;
 
   return (
-    <div className="fixed bottom-20 right-4 z-40 md:hidden">
+    <div className="fixed z-40 md:hidden" style={{ bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', right: '16px' }}>
       {/* Action buttons */}
       <div
         className={cn(

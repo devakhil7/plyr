@@ -92,26 +92,26 @@ export default function PlayPage() {
 
   return (
     <AppLayout>
-      <div className="container-app py-4 space-y-6">
+      <div className="container-app py-3 md:py-4 space-y-4 md:space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold">Play</h1>
-          <p className="text-sm text-muted-foreground">Get on the field</p>
+        <div className="px-1">
+          <h1 className="text-xl md:text-2xl font-bold">Play</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Get on the field</p>
         </div>
 
         {/* Quick Action Cards - 3 Side by Side */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 md:gap-3">
           {actionCards.map((card) => {
             const Icon = card.icon;
             return (
               <Link key={card.title} to={card.href}>
-                <Card className="glass-card hover:shadow-lg transition-all duration-300 group h-full">
-                  <CardContent className="p-4 flex flex-col items-center text-center">
-                    <div className={`w-12 h-12 rounded-xl ${card.iconBg} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                      <Icon className={`h-6 w-6 ${card.iconColor}`} />
+                <Card className="glass-card hover:shadow-lg active:scale-[0.98] transition-all duration-300 group h-full touch-manipulation">
+                  <CardContent className="p-3 md:p-4 flex flex-col items-center text-center">
+                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl ${card.iconBg} flex items-center justify-center mb-2 md:mb-3 group-hover:scale-110 transition-transform`}>
+                      <Icon className={`h-5 w-5 md:h-6 md:w-6 ${card.iconColor}`} />
                     </div>
-                    <h3 className="font-semibold text-sm mb-0.5">{card.title}</h3>
-                    <p className="text-xs text-muted-foreground leading-tight">{card.description}</p>
+                    <h3 className="font-semibold text-xs md:text-sm mb-0.5">{card.title}</h3>
+                    <p className="text-[10px] md:text-xs text-muted-foreground leading-tight">{card.description}</p>
                   </CardContent>
                 </Card>
               </Link>
@@ -121,30 +121,30 @@ export default function PlayPage() {
 
         {/* Open Matches Section */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold flex items-center gap-2">
+          <div className="flex items-center justify-between mb-2.5 md:mb-3 px-1">
+            <h3 className="font-semibold text-sm md:text-base flex items-center gap-2">
               <Users className="h-4 w-4 text-primary" />
               Open Matches
             </h3>
-            <Link to="/matches" className="text-xs text-primary font-medium flex items-center gap-1 hover:underline">
+            <Link to="/matches" className="text-xs text-primary font-medium flex items-center gap-1 active:opacity-70 touch-manipulation">
               View All <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
           {upcomingMatches && upcomingMatches.length > 0 ? (
             <div className="space-y-2">
               {upcomingMatches.slice(0, 3).map((match: any) => (
-                <Link key={match.id} to={`/matches/${match.id}`}>
-                  <Card className="glass-card hover:shadow-md transition-all duration-200">
+                <Link key={match.id} to={`/matches/${match.id}`} className="block touch-manipulation">
+                  <Card className="glass-card hover:shadow-md active:scale-[0.99] transition-all duration-200">
                     <CardContent className="p-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm truncate">{match.match_name}</h4>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                          <div className="flex items-center gap-2 md:gap-3 text-[11px] md:text-xs text-muted-foreground mt-1">
                             <span className="flex items-center gap-1 truncate">
                               <MapPin className="h-3 w-3 flex-shrink-0" />
                               {match.turfs?.name}
                             </span>
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-1 shrink-0">
                               <Calendar className="h-3 w-3" />
                               {new Date(match.match_date).toLocaleDateString("en-IN", { 
                                 month: "short", 
@@ -153,10 +153,10 @@ export default function PlayPage() {
                             </span>
                           </div>
                         </div>
-                        <Button size="sm" variant="default" className="text-xs h-7 px-3">
+                        <Button size="sm" variant="default" className="text-xs h-7 px-3 shrink-0">
                           Join
                         </Button>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                       </div>
                     </CardContent>
                   </Card>

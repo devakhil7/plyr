@@ -302,16 +302,16 @@ export default function Profile() {
 
   return (
     <AppLayout showBottomNav={false}>
-      <div className="container-app py-8">
-        <Link to="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
+      <div className="container-app py-4 md:py-8">
+        <Link to="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4 md:mb-6 active:opacity-70 touch-manipulation">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to dashboard
         </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Player Card Preview */}
-          <div className="lg:col-span-1 flex justify-center lg:justify-start">
-            <div className="sticky top-24">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          {/* Player Card Preview - Hidden on mobile, shown below form on small tablets, sidebar on desktop */}
+          <div className="lg:col-span-1 hidden sm:flex justify-center lg:justify-start">
+            <div className="lg:sticky lg:top-24">
               <p className="text-sm text-muted-foreground text-center mb-4">Your Player Card</p>
               <PlayerCard
                 player={{
@@ -399,9 +399,9 @@ export default function Profile() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="px-4 md:px-6">
+              <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <Input
@@ -432,7 +432,7 @@ export default function Profile() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="position">Preferred Position</Label>
                     <Select

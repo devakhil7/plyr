@@ -20,8 +20,8 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card/95 backdrop-blur-xl border-t border-border/30 safe-area-bottom">
-      <div className="flex items-center justify-around h-16 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-card/98 backdrop-blur-2xl border-t border-border/40 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' }}>
+      <div className="flex items-center justify-around h-14 px-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
@@ -30,21 +30,21 @@ export function BottomNav() {
               key={item.name}
               to={item.href}
               className={cn(
-                "flex flex-col items-center justify-center flex-1 h-full px-2 py-1 transition-all duration-200",
+                "flex flex-col items-center justify-center flex-1 h-full min-w-[64px] py-1.5 transition-all duration-200 active:scale-95",
                 active
                   ? "text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground active:text-foreground"
               )}
             >
               <div
                 className={cn(
-                  "flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200",
-                  active && "bg-primary/10"
+                  "flex items-center justify-center w-11 h-11 rounded-2xl transition-all duration-200",
+                  active && "bg-primary/15 shadow-sm"
                 )}
               >
-                <Icon className={cn("h-5 w-5", active && "scale-110")} />
+                <Icon className={cn("h-5 w-5 transition-transform", active && "scale-110")} />
               </div>
-              <span className={cn("text-[10px] font-medium mt-0.5", active && "font-semibold")}>
+              <span className={cn("text-[10px] font-medium mt-0.5 leading-none", active && "font-semibold text-primary")}>
                 {item.name}
               </span>
             </Link>

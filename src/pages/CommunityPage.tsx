@@ -233,18 +233,18 @@ export default function CommunityPage() {
 
   return (
     <AppLayout>
-      <div className="container-app py-4">
+      <div className="container-app py-3 md:py-4">
         {/* Header with Create Post */}
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold">Community</h1>
+        <div className="flex items-center justify-between mb-3 md:mb-4 px-1">
+          <h1 className="text-xl md:text-2xl font-bold">Community</h1>
           <CreatePostDialog />
         </div>
 
         {/* Main Tabs: Feed | Leaderboards */}
         <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as "feed" | "leaderboards")} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="feed">Feed</TabsTrigger>
-            <TabsTrigger value="leaderboards">Leaderboards</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-3 md:mb-4 h-9 md:h-10">
+            <TabsTrigger value="feed" className="text-xs md:text-sm">Feed</TabsTrigger>
+            <TabsTrigger value="leaderboards" className="text-xs md:text-sm">Leaderboards</TabsTrigger>
           </TabsList>
 
           <TabsContent value="feed" className="mt-0 space-y-4">

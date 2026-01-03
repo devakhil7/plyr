@@ -476,17 +476,17 @@ export default function HomePage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen">
+      <div className="min-h-screen-safe">
         {/* Top Bar - Location + Search */}
-        <div className="bg-background/95 backdrop-blur-sm border-b px-4 py-3 sticky top-0 z-40">
-          <div className="flex items-center gap-3">
+        <div className="bg-background/95 backdrop-blur-xl border-b border-border/30 px-3 md:px-4 py-2.5 sticky top-12 md:top-14 z-40">
+          <div className="flex items-center gap-2">
             {/* Location Selector */}
             <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="shrink-0 gap-1.5 h-9 px-3"
+                  className="shrink-0 gap-1 h-8 px-2.5 active:scale-95 transition-transform touch-manipulation"
                 >
                   {selectedCity === "Current Location" ? (
                     <Navigation className="h-3.5 w-3.5 text-primary" />
@@ -574,11 +574,11 @@ export default function HomePage() {
         </div>
 
         {/* Hero Section - Player Card + Quick Actions */}
-        <div className="hero-gradient px-4 pt-4 pb-6 rounded-b-3xl">
-          <div className="flex gap-3 items-stretch">
+        <div className="hero-gradient px-3 md:px-4 pt-3 pb-5 md:pb-6 rounded-b-3xl">
+          <div className="flex gap-2 md:gap-3 items-stretch">
             {/* Player Card - Left */}
-            <div className="shrink-0 w-[160px] flex flex-col">
-              <Link to="/profile" className="flex-1">
+            <div className="shrink-0 w-[140px] md:w-[160px] flex flex-col">
+              <Link to="/profile" className="flex-1 active:scale-95 transition-transform touch-manipulation">
                 <div className="h-full flex items-center">
                   <PlayerCard
                     player={{
@@ -601,40 +601,40 @@ export default function HomePage() {
                       assists: userStats?.assists || 0,
                       wins: userStats?.wins || 0,
                     }}
-                    className="transform scale-[0.57] origin-top-left -mr-[120px] -mb-[172px]"
+                    className="transform scale-[0.50] md:scale-[0.57] origin-top-left -mr-[135px] md:-mr-[120px] -mb-[190px] md:-mb-[172px]"
                   />
                 </div>
               </Link>
-              <p className="text-primary-foreground/60 text-[9px] mt-1 italic">Start playing to build your profile</p>
+              <p className="text-primary-foreground/60 text-[8px] md:text-[9px] mt-0.5 italic leading-tight">Start playing to build your profile</p>
             </div>
 
             {/* Right Side - Level + Quick Actions */}
-            <div className="flex-1 flex flex-col gap-2">
+            <div className="flex-1 flex flex-col gap-1.5 md:gap-2">
               {/* Player Level Badge */}
-              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-2xl px-4 py-2.5 border border-primary-foreground/20 inline-flex items-center gap-2 w-fit">
-                <Star className="h-5 w-5 text-accent" />
+              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl md:rounded-2xl px-3 py-2 border border-primary-foreground/20 inline-flex items-center gap-2 w-fit">
+                <Star className="h-4 w-4 md:h-5 md:w-5 text-accent" />
                 <div>
-                  <p className="text-primary-foreground/70 text-[10px]">Level</p>
-                  <p className="text-primary-foreground font-semibold text-sm">
+                  <p className="text-primary-foreground/70 text-[9px] md:text-[10px]">Level</p>
+                  <p className="text-primary-foreground font-semibold text-xs md:text-sm">
                     {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
                   </p>
                 </div>
               </div>
 
               {/* Quick Actions - 2 rows × 3 columns */}
-              <div className="grid grid-cols-3 gap-2 flex-1">
+              <div className="grid grid-cols-3 gap-1.5 md:gap-2 flex-1">
                 {quickActions.map((action) => {
                   const Icon = action.icon;
                   return (
-                    <Link key={action.label} to={action.href} className="h-full group">
-                      <div className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 h-full rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 hover:bg-primary-foreground/20 transition-colors">
-                        <div className={`w-9 h-9 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
-                          <Icon className="h-4 w-4 text-white" />
+                    <Link key={action.label} to={action.href} className="h-full group active:scale-95 transition-transform touch-manipulation">
+                      <div className="flex flex-col items-center justify-center gap-1 md:gap-1.5 px-1.5 py-2 md:py-3 h-full rounded-xl md:rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 active:bg-primary-foreground/25 transition-colors">
+                        <div className={`w-7 h-7 md:w-9 md:h-9 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
+                          <Icon className="h-3.5 w-3.5 md:h-4 md:w-4 text-white" />
                         </div>
-                        <span className="text-[11px] font-medium text-primary-foreground text-center leading-tight">
+                        <span className="text-[10px] md:text-[11px] font-medium text-primary-foreground text-center leading-tight">
                           {action.label}
                         </span>
-                        <span className="text-[9px] text-primary-foreground/60 text-center leading-tight line-clamp-2 px-0.5">
+                        <span className="text-[8px] md:text-[9px] text-primary-foreground/60 text-center leading-tight line-clamp-2 px-0.5 hidden xs:block">
                           {action.description}
                         </span>
                       </div>
@@ -647,15 +647,15 @@ export default function HomePage() {
         </div>
 
         {/* Main Content */}
-        <div className="px-4 pt-4 space-y-6 pb-24">
+        <div className="px-3 md:px-4 pt-4 space-y-5 md:space-y-6 pb-28">
 
           {/* Three-Column Discovery Section */}
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {/* Section Header */}
-            <h2 className="font-bold text-xl text-foreground">Discover</h2>
+            <h2 className="font-bold text-lg md:text-xl text-foreground">Discover</h2>
 
             {/* Horizontal Scroll on Mobile, Grid on larger screens */}
-            <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide lg:grid lg:grid-cols-3 lg:overflow-visible">
+            <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide scroll-smooth-touch lg:grid lg:grid-cols-3 lg:overflow-visible -mx-3 md:-mx-4 px-3 md:px-4">
               
               {/* Column 1: Matches Near You */}
               <div className="min-w-[300px] w-[85vw] max-w-[360px] flex-shrink-0 snap-start lg:w-auto lg:min-w-0 lg:max-w-none">
