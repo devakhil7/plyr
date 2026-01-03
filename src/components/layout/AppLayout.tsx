@@ -9,9 +9,9 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, showBottomNav = true }: AppLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col bg-background">
       <AppNavbar />
-      <main className="flex-1 pb-20 md:pb-0">{children}</main>
+      <main className="flex-1 pb-24 md:pb-0 overflow-x-hidden">{children}</main>
       {showBottomNav && <BottomNav />}
     </div>
   );

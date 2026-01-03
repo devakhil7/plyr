@@ -132,9 +132,42 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: contain;
+  }
+  
+  /* Mobile-optimized touch targets */
+  button, a, [role="button"] {
+    @apply touch-manipulation;
+  }
+  
+  /* Safe area utilities for notched devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+  .safe-area-inset {
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
   }
 }
 
@@ -341,9 +374,9 @@
     @apply bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full text-xs font-medium;
   }
   
-  /* Container max width */
+  /* Container max width - mobile-first */
   .container-app {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8;
   }
   
   /* Section spacing */
@@ -385,7 +418,51 @@
   }
 }
 
+/* Mobile-first responsive utilities */
 @layer utilities {
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Smooth momentum scrolling on iOS */
+  .scroll-smooth-touch {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Touch-friendly tap area */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Mobile container with horizontal padding */
+  .container-mobile {
+    @apply px-4 max-w-full;
+  }
+  
+  /* Full viewport height accounting for mobile browsers */
+  .h-screen-safe {
+    height: 100vh;
+    height: 100dvh;
+  }
+  
+  .min-h-screen-safe {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  
+  /* Prevent text selection on interactive elements */
+  .select-none-touch {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
   /* Custom animations */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;

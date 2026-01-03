@@ -37,14 +37,14 @@ export function AppNavbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/30 bg-background/60 backdrop-blur-xl">
-      <nav className="container-app flex h-14 items-center justify-between">
+    <header className="sticky top-0 z-50 w-full border-b border-border/30 bg-background/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <nav className="container-app flex h-12 md:h-14 items-center justify-between">
         {/* Logo */}
-        <Link to="/home" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent shadow-glow">
-            <span className="text-sm font-bold text-primary-foreground">S</span>
+        <Link to="/home" className="flex items-center gap-2 active:scale-95 transition-transform">
+          <div className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent shadow-glow">
+            <span className="text-xs md:text-sm font-bold text-primary-foreground">S</span>
           </div>
-          <span className="text-lg font-bold font-display text-foreground hidden sm:block">SPORTIQ</span>
+          <span className="text-base md:text-lg font-bold font-display text-foreground hidden sm:block">SPORTIQ</span>
         </Link>
 
         {/* Desktop Navigation */}
