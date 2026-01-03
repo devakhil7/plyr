@@ -478,7 +478,7 @@ export default function HomePage() {
     <AppLayout>
       <div className="min-h-screen-safe">
         {/* Top Bar - Location + Search */}
-        <div className="bg-background/95 backdrop-blur-xl border-b border-border/30 px-3 md:px-4 py-2.5 sticky top-12 md:top-14 z-40">
+        <div className="bg-background/95 backdrop-blur-xl border-b border-border/30 px-3 md:px-4 py-2.5 sticky top-[calc(3rem+env(safe-area-inset-top))] md:top-[calc(3.5rem+env(safe-area-inset-top))] z-40 mb-4 md:mb-4">
           <div className="flex items-center gap-2">
             {/* Location Selector */}
             <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
@@ -574,7 +574,7 @@ export default function HomePage() {
         </div>
 
         {/* Hero Section - Player Card + Quick Actions */}
-        <div className="hero-gradient px-4 md:px-6 pt-14 sm:pt-12 md:pt-8 pb-6 md:pb-8 rounded-b-3xl overflow-visible">
+        <div className="hero-gradient mt-4 md:mt-4 px-4 md:px-6 pt-16 sm:pt-12 md:pt-8 pb-6 md:pb-8 rounded-3xl md:rounded-b-3xl overflow-visible">
           {/* Desktop: Side-by-side layout | Mobile: Stacked with player info row */}
           <div className="flex flex-col gap-5 md:gap-0 md:flex-row md:items-start">
             
