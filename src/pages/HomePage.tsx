@@ -574,87 +574,73 @@ export default function HomePage() {
         </div>
 
         {/* Hero Section - Player Card + Quick Actions */}
-        <div className="hero-gradient px-3 md:px-6 pt-6 md:pt-7 pb-5 md:pb-6 rounded-b-3xl">
-          {/* Desktop: Side-by-side layout | Mobile: Stacked layout */}
-          <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+        <div className="hero-gradient px-4 md:px-6 pt-8 md:pt-8 pb-6 md:pb-8 rounded-b-3xl">
+          {/* Desktop: Side-by-side layout | Mobile: Stacked with player info row */}
+          <div className="flex flex-col gap-5 md:gap-0 md:flex-row md:items-start">
             
-            {/* Player Card Section */}
-            <div className="flex flex-col md:shrink-0 md:w-[220px]">
-              <div className="flex items-start gap-4 md:flex-col md:items-start">
-                {/* Player Card (extra top padding so nothing gets clipped under sticky bars) */}
-                <div className="relative h-[192px] w-[132px] md:h-[260px] md:w-[176px] shrink-0 overflow-visible pt-4">
-                  <Link to="/profile" className="active:scale-95 transition-transform touch-manipulation block">
-                    <PlayerCard
-                      player={{
-                        name: profile?.name || null,
-                        position: profile?.position || null,
-                        city: profile?.city || null,
-                        profile_photo_url: profile?.profile_photo_url || null,
-                        favourite_club: userStats?.favourite_club || null,
-                      }}
-                      stats={{
-                        overall: userStats?.rating || null,
-                        pace: userStats?.pace || null,
-                        shooting: userStats?.shooting || null,
-                        passing: userStats?.passing || null,
-                        dribbling: userStats?.dribbling || null,
-                        defending: userStats?.defending || null,
-                        physical: userStats?.physical || null,
-                        matches: userStats?.matches || 0,
-                        goals: userStats?.goals || 0,
-                        assists: userStats?.assists || 0,
-                        wins: userStats?.wins || 0,
-                      }}
-                      className="transform scale-[0.42] md:scale-[0.52] origin-top-left"
-                    />
-                  </Link>
-                </div>
-                
-                {/* Mobile: Level badge next to player card */}
-                <div className="flex flex-col gap-2 md:hidden pt-2">
-                  <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-primary-foreground/20 inline-flex items-center gap-2 w-fit">
-                    <Star className="h-4 w-4 text-accent" />
-                    <div>
-                      <p className="text-primary-foreground/70 text-[9px]">Level</p>
-                      <p className="text-primary-foreground font-semibold text-xs">
-                        {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            {/* Left Column: Player Card + Level + CTA (stacked) */}
+            <div className="flex flex-row items-start gap-4 md:flex-col md:shrink-0 md:w-[200px] md:mr-6">
+              {/* Player Card Container */}
+              <div className="relative shrink-0">
+                <Link to="/profile" className="active:scale-95 transition-transform touch-manipulation block">
+                  <PlayerCard
+                    player={{
+                      name: profile?.name || null,
+                      position: profile?.position || null,
+                      city: profile?.city || null,
+                      profile_photo_url: profile?.profile_photo_url || null,
+                      favourite_club: userStats?.favourite_club || null,
+                    }}
+                    stats={{
+                      overall: userStats?.rating || null,
+                      pace: userStats?.pace || null,
+                      shooting: userStats?.shooting || null,
+                      passing: userStats?.passing || null,
+                      dribbling: userStats?.dribbling || null,
+                      defending: userStats?.defending || null,
+                      physical: userStats?.physical || null,
+                      matches: userStats?.matches || 0,
+                      goals: userStats?.goals || 0,
+                      assists: userStats?.assists || 0,
+                      wins: userStats?.wins || 0,
+                    }}
+                    className="transform scale-[0.38] xs:scale-[0.42] md:scale-[0.50] origin-top-left w-[106px] xs:w-[118px] md:w-[140px] h-[152px] xs:h-[168px] md:h-[200px]"
+                  />
+                </Link>
               </div>
               
-              {/* CTA text below player card */}
-              <p className="text-primary-foreground/60 text-[9px] md:text-[10px] italic leading-tight mt-2">Start playing to build your profile</p>
+              {/* Level Badge + CTA - visible on all screens */}
+              <div className="flex flex-col gap-2 pt-1">
+                <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-primary-foreground/20 inline-flex items-center gap-2 w-fit">
+                  <Star className="h-4 w-4 md:h-5 md:w-5 text-accent" />
+                  <div>
+                    <p className="text-primary-foreground/70 text-[9px] md:text-[10px]">Level</p>
+                    <p className="text-primary-foreground font-semibold text-xs md:text-sm">
+                      {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-primary-foreground/60 text-[9px] md:text-[10px] italic leading-tight max-w-[140px]">
+                  Start playing to build your profile
+                </p>
+              </div>
             </div>
 
-            {/* Right Side - Level (desktop) + Quick Actions */}
-            <div className="flex-1 flex flex-col gap-3 md:gap-3 pt-1 md:pt-3">
-              {/* Desktop: Player Level Badge */}
-              <div className="hidden md:inline-flex bg-primary-foreground/10 backdrop-blur-sm rounded-2xl px-4 py-2.5 border border-primary-foreground/20 items-center gap-2 w-fit">
-                <Star className="h-5 w-5 text-accent" />
-                <div>
-                  <p className="text-primary-foreground/70 text-[10px]">Level</p>
-                  <p className="text-primary-foreground font-semibold text-sm">
-                    {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Quick Actions Grid */}
-              <div className="grid grid-cols-3 gap-2 md:gap-3">
+            {/* Right Side - Quick Actions Grid */}
+            <div className="flex-1">
+              <div className="grid grid-cols-3 gap-2.5 md:gap-3">
                 {quickActions.map((action) => {
                   const Icon = action.icon;
                   return (
                     <Link key={action.label} to={action.href} className="group active:scale-95 transition-transform touch-manipulation">
-                      <div className="flex flex-col items-center justify-center gap-1.5 md:gap-2 px-2 py-3 md:py-5 rounded-xl md:rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 active:bg-primary-foreground/25 hover:bg-primary-foreground/20 transition-colors">
-                        <div className={`w-8 h-8 md:w-11 md:h-11 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
+                      <div className="flex flex-col items-center justify-center gap-1.5 md:gap-2 px-2 py-3.5 md:py-5 rounded-xl md:rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 active:bg-primary-foreground/25 hover:bg-primary-foreground/20 transition-colors">
+                        <div className={`w-9 h-9 md:w-11 md:h-11 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
                           <Icon className="h-4 w-4 md:h-5 md:w-5 text-white" />
                         </div>
                         <span className="text-[11px] md:text-sm font-medium text-primary-foreground text-center leading-tight">
                           {action.label}
                         </span>
-                        <span className="text-[9px] md:text-xs text-primary-foreground/60 text-center leading-tight line-clamp-2 px-1 hidden sm:block">
+                        <span className="text-[8px] md:text-xs text-primary-foreground/60 text-center leading-tight line-clamp-2 px-0.5 hidden xs:block">
                           {action.description}
                         </span>
                       </div>
