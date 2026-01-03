@@ -574,12 +574,14 @@ export default function HomePage() {
         </div>
 
         {/* Hero Section - Player Card + Quick Actions */}
-        <div className="hero-gradient px-3 md:px-4 pt-3 pb-5 md:pb-6 rounded-b-3xl">
-          <div className="flex gap-2 md:gap-3 items-stretch">
-            {/* Player Card - Left */}
-            <div className="shrink-0 w-[140px] md:w-[160px] flex flex-col">
-              <Link to="/profile" className="flex-1 active:scale-95 transition-transform touch-manipulation">
-                <div className="h-full flex items-center">
+        <div className="hero-gradient px-3 md:px-6 pt-4 pb-5 md:pb-6 rounded-b-3xl">
+          {/* Desktop: Side-by-side layout | Mobile: Stacked layout */}
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6 md:items-stretch">
+            
+            {/* Player Card Section */}
+            <div className="flex items-center gap-4 md:shrink-0 md:w-[180px] md:flex-col md:items-start">
+              <Link to="/profile" className="active:scale-95 transition-transform touch-manipulation">
+                <div className="relative">
                   <PlayerCard
                     player={{
                       name: profile?.name || null,
@@ -601,40 +603,56 @@ export default function HomePage() {
                       assists: userStats?.assists || 0,
                       wins: userStats?.wins || 0,
                     }}
-                    className="transform scale-[0.50] md:scale-[0.57] origin-top-left -mr-[135px] md:-mr-[120px] -mb-[190px] md:-mb-[172px]"
+                    className="transform scale-[0.42] md:scale-[0.55] origin-top-left -mr-[160px] md:-mr-[130px] -mb-[220px] md:-mb-[180px]"
                   />
                 </div>
               </Link>
-              <p className="text-primary-foreground/60 text-[8px] md:text-[9px] mt-0.5 italic leading-tight">Start playing to build your profile</p>
+              
+              {/* Mobile: Level badge next to player card */}
+              <div className="flex flex-col gap-2 md:hidden">
+                <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-primary-foreground/20 inline-flex items-center gap-2">
+                  <Star className="h-4 w-4 text-accent" />
+                  <div>
+                    <p className="text-primary-foreground/70 text-[9px]">Level</p>
+                    <p className="text-primary-foreground font-semibold text-xs">
+                      {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-primary-foreground/60 text-[9px] italic leading-tight max-w-[140px]">Start playing to build your profile</p>
+              </div>
             </div>
 
-            {/* Right Side - Level + Quick Actions */}
-            <div className="flex-1 flex flex-col gap-1.5 md:gap-2">
-              {/* Player Level Badge */}
-              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl md:rounded-2xl px-3 py-2 border border-primary-foreground/20 inline-flex items-center gap-2 w-fit">
-                <Star className="h-4 w-4 md:h-5 md:w-5 text-accent" />
+            {/* Right Side - Level (desktop) + Quick Actions */}
+            <div className="flex-1 flex flex-col gap-3 md:gap-2">
+              {/* Desktop: Player Level Badge */}
+              <div className="hidden md:inline-flex bg-primary-foreground/10 backdrop-blur-sm rounded-2xl px-3 py-2 border border-primary-foreground/20 items-center gap-2 w-fit">
+                <Star className="h-5 w-5 text-accent" />
                 <div>
-                  <p className="text-primary-foreground/70 text-[9px] md:text-[10px]">Level</p>
-                  <p className="text-primary-foreground font-semibold text-xs md:text-sm">
+                  <p className="text-primary-foreground/70 text-[10px]">Level</p>
+                  <p className="text-primary-foreground font-semibold text-sm">
                     {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
                   </p>
                 </div>
               </div>
+              
+              {/* Desktop hint */}
+              <p className="hidden md:block text-primary-foreground/60 text-[9px] italic leading-tight">Start playing to build your profile</p>
 
-              {/* Quick Actions - 2 rows × 3 columns */}
-              <div className="grid grid-cols-3 gap-1.5 md:gap-2 flex-1">
+              {/* Quick Actions Grid */}
+              <div className="grid grid-cols-3 gap-2 md:gap-2.5 flex-1">
                 {quickActions.map((action) => {
                   const Icon = action.icon;
                   return (
                     <Link key={action.label} to={action.href} className="h-full group active:scale-95 transition-transform touch-manipulation">
-                      <div className="flex flex-col items-center justify-center gap-1 md:gap-1.5 px-1.5 py-2 md:py-3 h-full rounded-xl md:rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 active:bg-primary-foreground/25 transition-colors">
-                        <div className={`w-7 h-7 md:w-9 md:h-9 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
-                          <Icon className="h-3.5 w-3.5 md:h-4 md:w-4 text-white" />
+                      <div className="flex flex-col items-center justify-center gap-1.5 md:gap-2 px-2 py-3 md:py-4 h-full rounded-xl md:rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 active:bg-primary-foreground/25 hover:bg-primary-foreground/20 transition-colors">
+                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
+                          <Icon className="h-4 w-4 md:h-5 md:w-5 text-white" />
                         </div>
-                        <span className="text-[10px] md:text-[11px] font-medium text-primary-foreground text-center leading-tight">
+                        <span className="text-[11px] md:text-xs font-medium text-primary-foreground text-center leading-tight">
                           {action.label}
                         </span>
-                        <span className="text-[8px] md:text-[9px] text-primary-foreground/60 text-center leading-tight line-clamp-2 px-0.5 hidden xs:block">
+                        <span className="text-[9px] md:text-[10px] text-primary-foreground/60 text-center leading-tight line-clamp-2 px-1 hidden sm:block">
                           {action.description}
                         </span>
                       </div>
