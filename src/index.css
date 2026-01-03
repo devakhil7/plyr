@@ -129,6 +129,11 @@
 }
 
 @layer base {
+  :root {
+    /* Dynamic viewport height for PWA/mobile */
+    --vh: 1vh;
+  }
+  
   * {
     @apply border-border;
   }
@@ -143,6 +148,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overscroll-behavior-y: contain;
+    /* Prevent pull-to-refresh on PWA */
+    overscroll-behavior: none;
   }
   
   /* Mobile-optimized touch targets */
@@ -168,6 +175,34 @@
     padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
+  }
+  
+  /* PWA standalone mode specific styles */
+  @media (display-mode: standalone) {
+    html, body {
+      /* Prevent overscroll bounce in PWA mode */
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Ensure content doesn't go under status bar */
+    body {
+      padding-top: env(safe-area-inset-top);
+    }
+    
+    /* Fix for iOS PWA viewport issues */
+    #root {
+      min-height: 100vh;
+      min-height: 100dvh;
+      min-height: calc(var(--vh, 1vh) * 100);
+    }
+  }
+  
+  /* Fullscreen mode (for Android PWA) */
+  @media (display-mode: fullscreen) {
+    body {
+      padding-top: env(safe-area-inset-top);
+    }
   }
 }
 
