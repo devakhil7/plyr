@@ -574,15 +574,15 @@ export default function HomePage() {
         </div>
 
         {/* Hero Section - Player Card + Quick Actions */}
-        <div className="hero-gradient px-3 md:px-6 pt-4 pb-5 md:pb-6 rounded-b-3xl">
+        <div className="hero-gradient px-3 md:px-6 pt-6 md:pt-7 pb-5 md:pb-6 rounded-b-3xl">
           {/* Desktop: Side-by-side layout | Mobile: Stacked layout */}
           <div className="flex flex-col md:flex-row gap-4 md:gap-6">
             
-            {/* Player Card Section - Fixed height container */}
-            <div className="flex flex-col md:shrink-0 md:w-[200px]">
+            {/* Player Card Section */}
+            <div className="flex flex-col md:shrink-0 md:w-[220px]">
               <div className="flex items-start gap-4 md:flex-col md:items-start">
-                {/* Player Card with proper containment */}
-                <div className="relative h-[160px] w-[120px] md:h-[200px] md:w-[160px] shrink-0">
+                {/* Player Card (extra top padding so nothing gets clipped under sticky bars) */}
+                <div className="relative h-[192px] w-[132px] md:h-[260px] md:w-[176px] shrink-0 overflow-visible pt-4">
                   <Link to="/profile" className="active:scale-95 transition-transform touch-manipulation block">
                     <PlayerCard
                       player={{
@@ -605,7 +605,7 @@ export default function HomePage() {
                         assists: userStats?.assists || 0,
                         wins: userStats?.wins || 0,
                       }}
-                      className="transform scale-[0.40] md:scale-[0.50] origin-top-left"
+                      className="transform scale-[0.42] md:scale-[0.52] origin-top-left"
                     />
                   </Link>
                 </div>
@@ -629,7 +629,7 @@ export default function HomePage() {
             </div>
 
             {/* Right Side - Level (desktop) + Quick Actions */}
-            <div className="flex-1 flex flex-col gap-3 md:gap-3">
+            <div className="flex-1 flex flex-col gap-3 md:gap-3 pt-1 md:pt-3">
               {/* Desktop: Player Level Badge */}
               <div className="hidden md:inline-flex bg-primary-foreground/10 backdrop-blur-sm rounded-2xl px-4 py-2.5 border border-primary-foreground/20 items-center gap-2 w-fit">
                 <Star className="h-5 w-5 text-accent" />
