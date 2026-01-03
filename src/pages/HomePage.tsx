@@ -576,57 +576,62 @@ export default function HomePage() {
         {/* Hero Section - Player Card + Quick Actions */}
         <div className="hero-gradient px-3 md:px-6 pt-4 pb-5 md:pb-6 rounded-b-3xl">
           {/* Desktop: Side-by-side layout | Mobile: Stacked layout */}
-          <div className="flex flex-col md:flex-row gap-4 md:gap-6 md:items-stretch">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6">
             
-            {/* Player Card Section */}
-            <div className="flex items-center gap-4 md:shrink-0 md:w-[180px] md:flex-col md:items-start">
-              <Link to="/profile" className="active:scale-95 transition-transform touch-manipulation">
-                <div className="relative">
-                  <PlayerCard
-                    player={{
-                      name: profile?.name || null,
-                      position: profile?.position || null,
-                      city: profile?.city || null,
-                      profile_photo_url: profile?.profile_photo_url || null,
-                      favourite_club: userStats?.favourite_club || null,
-                    }}
-                    stats={{
-                      overall: userStats?.rating || null,
-                      pace: userStats?.pace || null,
-                      shooting: userStats?.shooting || null,
-                      passing: userStats?.passing || null,
-                      dribbling: userStats?.dribbling || null,
-                      defending: userStats?.defending || null,
-                      physical: userStats?.physical || null,
-                      matches: userStats?.matches || 0,
-                      goals: userStats?.goals || 0,
-                      assists: userStats?.assists || 0,
-                      wins: userStats?.wins || 0,
-                    }}
-                    className="transform scale-[0.42] md:scale-[0.55] origin-top-left -mr-[160px] md:-mr-[130px] -mb-[220px] md:-mb-[180px]"
-                  />
+            {/* Player Card Section - Fixed height container */}
+            <div className="flex flex-col md:shrink-0 md:w-[200px]">
+              <div className="flex items-start gap-4 md:flex-col md:items-start">
+                {/* Player Card with proper containment */}
+                <div className="relative h-[160px] w-[120px] md:h-[200px] md:w-[160px] shrink-0">
+                  <Link to="/profile" className="active:scale-95 transition-transform touch-manipulation block">
+                    <PlayerCard
+                      player={{
+                        name: profile?.name || null,
+                        position: profile?.position || null,
+                        city: profile?.city || null,
+                        profile_photo_url: profile?.profile_photo_url || null,
+                        favourite_club: userStats?.favourite_club || null,
+                      }}
+                      stats={{
+                        overall: userStats?.rating || null,
+                        pace: userStats?.pace || null,
+                        shooting: userStats?.shooting || null,
+                        passing: userStats?.passing || null,
+                        dribbling: userStats?.dribbling || null,
+                        defending: userStats?.defending || null,
+                        physical: userStats?.physical || null,
+                        matches: userStats?.matches || 0,
+                        goals: userStats?.goals || 0,
+                        assists: userStats?.assists || 0,
+                        wins: userStats?.wins || 0,
+                      }}
+                      className="transform scale-[0.40] md:scale-[0.50] origin-top-left"
+                    />
+                  </Link>
                 </div>
-              </Link>
-              
-              {/* Mobile: Level badge next to player card */}
-              <div className="flex flex-col gap-2 md:hidden">
-                <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-primary-foreground/20 inline-flex items-center gap-2">
-                  <Star className="h-4 w-4 text-accent" />
-                  <div>
-                    <p className="text-primary-foreground/70 text-[9px]">Level</p>
-                    <p className="text-primary-foreground font-semibold text-xs">
-                      {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
-                    </p>
+                
+                {/* Mobile: Level badge next to player card */}
+                <div className="flex flex-col gap-2 md:hidden pt-2">
+                  <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-primary-foreground/20 inline-flex items-center gap-2 w-fit">
+                    <Star className="h-4 w-4 text-accent" />
+                    <div>
+                      <p className="text-primary-foreground/70 text-[9px]">Level</p>
+                      <p className="text-primary-foreground font-semibold text-xs">
+                        {getPlayerLevel(userStats?.ratingCount || 0, userStats?.rating || 0)}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <p className="text-primary-foreground/60 text-[9px] italic leading-tight max-w-[140px]">Start playing to build your profile</p>
               </div>
+              
+              {/* CTA text below player card */}
+              <p className="text-primary-foreground/60 text-[9px] md:text-[10px] italic leading-tight mt-2">Start playing to build your profile</p>
             </div>
 
             {/* Right Side - Level (desktop) + Quick Actions */}
-            <div className="flex-1 flex flex-col gap-3 md:gap-2">
+            <div className="flex-1 flex flex-col gap-3 md:gap-3">
               {/* Desktop: Player Level Badge */}
-              <div className="hidden md:inline-flex bg-primary-foreground/10 backdrop-blur-sm rounded-2xl px-3 py-2 border border-primary-foreground/20 items-center gap-2 w-fit">
+              <div className="hidden md:inline-flex bg-primary-foreground/10 backdrop-blur-sm rounded-2xl px-4 py-2.5 border border-primary-foreground/20 items-center gap-2 w-fit">
                 <Star className="h-5 w-5 text-accent" />
                 <div>
                   <p className="text-primary-foreground/70 text-[10px]">Level</p>
@@ -635,24 +640,21 @@ export default function HomePage() {
                   </p>
                 </div>
               </div>
-              
-              {/* Desktop hint */}
-              <p className="hidden md:block text-primary-foreground/60 text-[9px] italic leading-tight">Start playing to build your profile</p>
 
               {/* Quick Actions Grid */}
-              <div className="grid grid-cols-3 gap-2 md:gap-2.5 flex-1">
+              <div className="grid grid-cols-3 gap-2 md:gap-3">
                 {quickActions.map((action) => {
                   const Icon = action.icon;
                   return (
-                    <Link key={action.label} to={action.href} className="h-full group active:scale-95 transition-transform touch-manipulation">
-                      <div className="flex flex-col items-center justify-center gap-1.5 md:gap-2 px-2 py-3 md:py-4 h-full rounded-xl md:rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 active:bg-primary-foreground/25 hover:bg-primary-foreground/20 transition-colors">
-                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
+                    <Link key={action.label} to={action.href} className="group active:scale-95 transition-transform touch-manipulation">
+                      <div className="flex flex-col items-center justify-center gap-1.5 md:gap-2 px-2 py-3 md:py-5 rounded-xl md:rounded-2xl bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 active:bg-primary-foreground/25 hover:bg-primary-foreground/20 transition-colors">
+                        <div className={`w-8 h-8 md:w-11 md:h-11 rounded-full ${action.color} flex items-center justify-center shrink-0`}>
                           <Icon className="h-4 w-4 md:h-5 md:w-5 text-white" />
                         </div>
-                        <span className="text-[11px] md:text-xs font-medium text-primary-foreground text-center leading-tight">
+                        <span className="text-[11px] md:text-sm font-medium text-primary-foreground text-center leading-tight">
                           {action.label}
                         </span>
-                        <span className="text-[9px] md:text-[10px] text-primary-foreground/60 text-center leading-tight line-clamp-2 px-1 hidden sm:block">
+                        <span className="text-[9px] md:text-xs text-primary-foreground/60 text-center leading-tight line-clamp-2 px-1 hidden sm:block">
                           {action.description}
                         </span>
                       </div>
