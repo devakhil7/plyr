@@ -202,7 +202,7 @@ export const CalendarSlotPicker: React.FC<CalendarSlotPickerProps> = ({
           <div className="min-w-[600px]">
             {/* Day headers */}
             <div className="grid grid-cols-[50px_repeat(7,1fr)] border-b bg-muted/50 sticky top-0 z-10">
-              <div className="p-2 text-center text-xs font-medium text-muted-foreground">Time</div>
+              <div className="p-2 text-center text-xs font-medium text-muted-foreground sticky left-0 bg-muted/50 z-20">Time</div>
               {weekDays.map((day) => (
                 <div
                   key={day.toISOString()}
@@ -231,7 +231,7 @@ export const CalendarSlotPicker: React.FC<CalendarSlotPickerProps> = ({
                 <React.Fragment key={hour}>
                   {/* Full hour row */}
                   <div className="grid grid-cols-[50px_repeat(7,1fr)] border-b">
-                    <div className="p-1 text-xs text-muted-foreground text-right pr-2 border-r">
+                    <div className="p-1 text-xs text-muted-foreground text-right pr-2 border-r sticky left-0 bg-background z-10">
                       {formatHour(hour)}
                     </div>
                     {weekDays.map((day) => {
@@ -258,7 +258,7 @@ export const CalendarSlotPicker: React.FC<CalendarSlotPickerProps> = ({
                   </div>
                   {/* Half hour row */}
                   <div className="grid grid-cols-[50px_repeat(7,1fr)] border-b border-dashed">
-                    <div className="p-1 text-xs text-muted-foreground text-right pr-2 border-r" />
+                    <div className="p-1 text-xs text-muted-foreground text-right pr-2 border-r sticky left-0 bg-background z-10" />
                     {weekDays.map((day) => {
                       const available = isSlotAvailable(day, hour, true);
                       const selected = isSlotSelected(day, hour, true);
