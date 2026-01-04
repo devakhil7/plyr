@@ -291,9 +291,10 @@ export function MatchScorecard({
 
       const { error } = await supabase.from("feed_posts").insert([{
         user_id: user.id,
-        caption: `${finalCaption}\n\n🔗 ${matchUrl}`,
+        caption: finalCaption,
         match_id: matchId,
         post_type: "stat" as const,
+        highlight_type: "match",
       }]);
 
       if (error) throw error;
