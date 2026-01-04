@@ -308,8 +308,37 @@ export default function Profile() {
           Back to dashboard
         </Link>
 
+        {/* Player Card Preview - Mobile (shown at top) */}
+        <div className="flex justify-center sm:hidden mb-4">
+          <div className="scale-[0.85] origin-top">
+            <p className="text-sm text-muted-foreground text-center mb-3">Your Player Card</p>
+            <PlayerCard
+              player={{
+                name: formData.name || profile?.name || null,
+                position: formData.position || profile?.position || null,
+                city: formData.city || profile?.city || null,
+                profile_photo_url: profilePhotoUrl || profile?.profile_photo_url || null,
+                favourite_club: getFinalClub(),
+              }}
+              stats={{
+                overall: stats?.overall || null,
+                pace: stats?.pace || null,
+                shooting: stats?.shooting || null,
+                passing: stats?.passing || null,
+                dribbling: stats?.dribbling || null,
+                defending: stats?.defending || null,
+                physical: stats?.physical || null,
+                matches: stats?.matches || 0,
+                goals: stats?.goals || 0,
+                assists: stats?.assists || 0,
+                wins: stats?.wins || 0,
+              }}
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Player Card Preview - Hidden on mobile, shown below form on small tablets, sidebar on desktop */}
+          {/* Player Card Preview - Tablet/Desktop (sidebar) */}
           <div className="lg:col-span-1 hidden sm:flex justify-center lg:justify-start">
             <div className="lg:sticky lg:top-24">
               <p className="text-sm text-muted-foreground text-center mb-4">Your Player Card</p>
