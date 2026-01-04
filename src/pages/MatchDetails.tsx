@@ -50,7 +50,7 @@ export default function MatchDetails() {
           *,
           turfs(*),
           profiles!matches_host_id_fkey(id, name, profile_photo_url),
-          match_players(*, profiles(*)),
+          match_players(*, profiles!left(id, name, profile_photo_url, skill_level, city)),
           analytics(*)
         `)
         .eq("id", id)
