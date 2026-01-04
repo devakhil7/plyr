@@ -4,13 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trophy, Star, Target, Users, Award, Medal, Crown, CalendarIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { didPlayerWin } from "@/lib/playerStats";
@@ -69,7 +70,9 @@ function LeaderboardCard({
   loading,
   valueLabel,
   secondaryLabel,
-  formatValue = (v: number) => v.toString()
+  formatValue = (v: number) => v.toString(),
+  showViewAll = false,
+  onViewAll
 }: {
   title: string;
   icon: React.ElementType;
@@ -78,6 +81,8 @@ function LeaderboardCard({
   valueLabel: string;
   secondaryLabel?: string;
   formatValue?: (value: number) => string;
+  showViewAll?: boolean;
+  onViewAll?: () => void;
 }) {
   if (loading) {
     return (
@@ -107,10 +112,17 @@ function LeaderboardCard({
   return (
     <Card className="glass-card">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Icon className="h-5 w-5 text-primary" />
-          {title}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Icon className="h-5 w-5 text-primary" />
+            {title}
+          </CardTitle>
+          {showViewAll && onViewAll && (
+            <Button variant="ghost" size="sm" onClick={onViewAll} className="text-xs">
+              View All
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {entries.length === 0 ? (
@@ -163,6 +175,13 @@ export default function Leaderboards() {
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("all");
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+  const [viewAllDialog, setViewAllDialog] = useState<{
+    open: boolean;
+    title: string;
+    entries: LeaderboardEntry[];
+    formatValue: (v: number) => string;
+    secondaryLabel?: string;
+  }>({ open: false, title: "", entries: [], formatValue: (v) => v.toString() });
 
   // Calculate date range based on selected period
   const dateRange = useMemo(() => {
@@ -260,29 +279,29 @@ export default function Leaderboards() {
         const stats = playerRatings.get(profile.id);
         if (stats && stats.count > 0) {
           const avg = stats.sum / stats.count;
-          // Weighted score: average * (1 + log10(count))
-          const weightedScore = avg * (1 + Math.log10(stats.count));
           results.push({
             id: profile.id,
             name: profile.name || "Unknown",
             profile_photo_url: profile.profile_photo_url,
             city: profile.city,
-            value: parseFloat(avg.toFixed(1)),
+            value: parseFloat(avg.toFixed(2)),
             secondaryValue: stats.count
           });
         }
       });
 
-      // Sort by weighted score (recalculate for sorting)
+      // Sort by average rating (highest first), then by rating count as tiebreaker
       results.sort((a, b) => {
-        const aWeighted = a.value * (1 + Math.log10((a.secondaryValue || 0) + 1));
-        const bWeighted = b.value * (1 + Math.log10((b.secondaryValue || 0) + 1));
-        return bWeighted - aWeighted;
+        if (b.value !== a.value) return b.value - a.value;
+        return (b.secondaryValue || 0) - (a.secondaryValue || 0);
       });
 
-      return results.slice(0, 10);
+      return results; // Return all results, we'll slice in display
     }
   });
+
+  // Get display data (top 10) and full data for each leaderboard
+  const ratingLeaderboardTop10 = ratingLeaderboard.slice(0, 10);
 
   // Goals leaderboard
   const { data: goalsLeaderboard = [], isLoading: loadingGoals } = useQuery({
@@ -349,9 +368,10 @@ export default function Leaderboards() {
       });
 
       results.sort((a, b) => b.value - a.value);
-      return results.slice(0, 10);
+      return results;
     }
   });
+  const goalsLeaderboardTop10 = goalsLeaderboard.slice(0, 10);
 
   // Assists leaderboard
   const { data: assistsLeaderboard = [], isLoading: loadingAssists } = useQuery({
@@ -421,9 +441,10 @@ export default function Leaderboards() {
       });
 
       results.sort((a, b) => b.value - a.value);
-      return results.slice(0, 10);
+      return results;
     }
   });
+  const assistsLeaderboardTop10 = assistsLeaderboard.slice(0, 10);
 
   // Wins leaderboard
   const { data: winsLeaderboard = [], isLoading: loadingWins } = useQuery({
@@ -501,9 +522,10 @@ export default function Leaderboards() {
       });
 
       results.sort((a, b) => b.value - a.value);
-      return results.slice(0, 10);
+      return results;
     }
   });
+  const winsLeaderboardTop10 = winsLeaderboard.slice(0, 10);
 
   // Most matches played leaderboard
   const { data: matchesLeaderboard = [], isLoading: loadingMatches } = useQuery({
@@ -571,11 +593,17 @@ export default function Leaderboards() {
       });
 
       results.sort((a, b) => b.value - a.value);
-      return results.slice(0, 10);
+      return results;
     }
   });
+  const matchesLeaderboardTop10 = matchesLeaderboard.slice(0, 10);
+
+  const openViewAll = (title: string, entries: LeaderboardEntry[], formatValue: (v: number) => string, secondaryLabel?: string) => {
+    setViewAllDialog({ open: true, title, entries, formatValue, secondaryLabel });
+  };
 
   return (
+    <>
     <AppLayout>
       <div className="container-app py-4 space-y-4">
         {/* Header */}
@@ -749,50 +777,108 @@ export default function Leaderboards() {
           <LeaderboardCard
             title="Top Rated Players"
             icon={Star}
-            entries={ratingLeaderboard}
+            entries={ratingLeaderboardTop10}
             loading={loadingRatings}
             valueLabel="avg rating"
             secondaryLabel="ratings"
             formatValue={(v) => `${v.toFixed(1)} ★`}
+            showViewAll={ratingLeaderboard.length > 10}
+            onViewAll={() => openViewAll("Top Rated Players", ratingLeaderboard, (v) => `${v.toFixed(1)} ★`, "ratings")}
           />
 
           <LeaderboardCard
             title="Top Goal Scorers"
             icon={Target}
-            entries={goalsLeaderboard}
+            entries={goalsLeaderboardTop10}
             loading={loadingGoals}
             valueLabel="goals"
             formatValue={(v) => `${v} goals`}
+            showViewAll={goalsLeaderboard.length > 10}
+            onViewAll={() => openViewAll("Top Goal Scorers", goalsLeaderboard, (v) => `${v} goals`)}
           />
 
           <LeaderboardCard
             title="Top Assist Providers"
             icon={Users}
-            entries={assistsLeaderboard}
+            entries={assistsLeaderboardTop10}
             loading={loadingAssists}
             valueLabel="assists"
             formatValue={(v) => `${v} assists`}
+            showViewAll={assistsLeaderboard.length > 10}
+            onViewAll={() => openViewAll("Top Assist Providers", assistsLeaderboard, (v) => `${v} assists`)}
           />
 
           <LeaderboardCard
             title="Most Wins"
             icon={Award}
-            entries={winsLeaderboard}
+            entries={winsLeaderboardTop10}
             loading={loadingWins}
             valueLabel="wins"
             formatValue={(v) => `${v} wins`}
+            showViewAll={winsLeaderboard.length > 10}
+            onViewAll={() => openViewAll("Most Wins", winsLeaderboard, (v) => `${v} wins`)}
           />
 
           <LeaderboardCard
             title="Most Matches Played"
             icon={Trophy}
-            entries={matchesLeaderboard}
+            entries={matchesLeaderboardTop10}
             loading={loadingMatches}
             valueLabel="matches"
             formatValue={(v) => `${v} matches`}
+            showViewAll={matchesLeaderboard.length > 10}
+            onViewAll={() => openViewAll("Most Matches Played", matchesLeaderboard, (v) => `${v} matches`)}
           />
         </div>
       </div>
     </AppLayout>
+
+    {/* View All Dialog */}
+    <Dialog open={viewAllDialog.open} onOpenChange={(open) => setViewAllDialog(prev => ({ ...prev, open }))}>
+      <DialogContent className="max-w-lg max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>{viewAllDialog.title}</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="max-h-[60vh] pr-4">
+          <div className="space-y-2">
+            {viewAllDialog.entries.map((entry, index) => (
+              <Link
+                key={entry.id}
+                to={`/players/${entry.id}`}
+                onClick={() => setViewAllDialog(prev => ({ ...prev, open: false }))}
+                className={`flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50 ${
+                  index < 3 ? getRankBadgeClass(index + 1) + " border" : ""
+                }`}
+              >
+                <div className="flex items-center justify-center w-6">
+                  {getRankIcon(index + 1)}
+                </div>
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={entry.profile_photo_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                    {entry.name?.charAt(0).toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{entry.name || "Unknown"}</p>
+                  {entry.city && (
+                    <p className="text-xs text-muted-foreground truncate">{entry.city}</p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-primary">{viewAllDialog.formatValue(entry.value)}</p>
+                  {viewAllDialog.secondaryLabel && entry.secondaryValue !== undefined && (
+                    <p className="text-xs text-muted-foreground">
+                      {entry.secondaryValue} {viewAllDialog.secondaryLabel}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
