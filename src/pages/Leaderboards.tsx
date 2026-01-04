@@ -223,13 +223,16 @@ export default function Leaderboards() {
       // Use a higher limit to get all ratings (default is 1000)
       let query = supabase
         .from("player_ratings")
-        .select(`
+        .select(
+          `
           rated_user_id,
           rating,
           match_id,
           created_at,
-          matches!inner(turf_id, match_date, turfs(city))
-        `, { count: 'exact' })
+          matches(turf_id, match_date, turfs(city))
+        `,
+          { count: "exact" }
+        )
         .eq("moderation_status", "approved")
         .limit(10000);
 
