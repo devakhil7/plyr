@@ -65,7 +65,8 @@ export default function CommunityPage() {
           created_at,
           profiles!player_ratings_rated_user_id_fkey(id, name, profile_photo_url, city)
         `)
-        .eq("moderation_status", "approved");
+        .eq("moderation_status", "approved")
+        .limit(10000);
 
       if (!data) return [];
 

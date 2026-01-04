@@ -220,6 +220,7 @@ export default function Leaderboards() {
     queryKey: ["leaderboard-ratings", selectedCity, selectedTurf, dateRange.start?.toISOString(), dateRange.end?.toISOString()],
     queryFn: async () => {
       // Get all approved ratings with profile and match info
+      // Use a higher limit to get all ratings (default is 1000)
       let query = supabase
         .from("player_ratings")
         .select(`
@@ -228,8 +229,9 @@ export default function Leaderboards() {
           match_id,
           created_at,
           matches!inner(turf_id, match_date, turfs(city))
-        `)
-        .eq("moderation_status", "approved");
+        `, { count: 'exact' })
+        .eq("moderation_status", "approved")
+        .limit(10000);
 
       // Apply date filter
       if (dateRange.start) {
