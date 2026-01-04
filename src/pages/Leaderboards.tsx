@@ -215,37 +215,54 @@ export default function Leaderboards() {
     }
   });
 
+  const RATINGS_QUERY_VERSION = 2;
+
   // Rating leaderboard - weighted by count
   const { data: ratingLeaderboard = [], isLoading: loadingRatings } = useQuery({
-    queryKey: ["leaderboard-ratings", selectedCity, selectedTurf, dateRange.start?.toISOString(), dateRange.end?.toISOString()],
+    queryKey: ["leaderboard-ratings", RATINGS_QUERY_VERSION, selectedCity, selectedTurf, dateRange.start?.toISOString(), dateRange.end?.toISOString()],
     queryFn: async () => {
-      // Get all approved ratings with profile and match info
-      // Use a higher limit to get all ratings (default is 1000)
-      let query = supabase
-        .from("player_ratings")
-        .select(
-          `
-          rated_user_id,
-          rating,
-          match_id,
-          created_at,
-          matches(turf_id, match_date, turfs(city))
-        `,
-          { count: "exact" }
-        )
-        .eq("moderation_status", "approved")
-        .limit(10000);
+      // Issue: the backend can cap responses (returns 206 Partial Content),
+      // so a single `.limit()` may undercount ratings. We page through all rows.
+      const PAGE_SIZE = 1000;
 
-      // Apply date filter
-      if (dateRange.start) {
-        query = query.gte("created_at", dateRange.start.toISOString());
-      }
-      if (dateRange.end) {
-        query = query.lte("created_at", dateRange.end.toISOString());
-      }
+      const fetchAllRatings = async () => {
+        const all: any[] = [];
+        for (let from = 0; ; from += PAGE_SIZE) {
+          let pageQuery = supabase
+            .from("player_ratings")
+            .select(
+              `
+              rated_user_id,
+              rating,
+              match_id,
+              created_at,
+              matches(turf_id, match_date, turfs(city))
+            `
+            )
+            .eq("moderation_status", "approved")
+            .order("created_at", { ascending: false })
+            .range(from, from + PAGE_SIZE - 1);
 
-      const { data: ratings } = await query;
-      if (!ratings) return [];
+          // Apply date filter
+          if (dateRange.start) {
+            pageQuery = pageQuery.gte("created_at", dateRange.start.toISOString());
+          }
+          if (dateRange.end) {
+            pageQuery = pageQuery.lte("created_at", dateRange.end.toISOString());
+          }
+
+          const { data, error } = await pageQuery;
+          if (error) throw error;
+
+          const rows = data || [];
+          all.push(...rows);
+          if (rows.length < PAGE_SIZE) break;
+        }
+        return all;
+      };
+
+      const ratings = await fetchAllRatings();
+      if (!ratings.length) return [];
 
       // Filter by city/turf
       let filteredRatings = ratings;
