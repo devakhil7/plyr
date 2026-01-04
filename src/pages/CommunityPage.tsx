@@ -53,22 +53,39 @@ export default function CommunityPage() {
 
   const { bookmarks, toggleBookmark } = useEventBookmark(user?.id || null);
 
+  const LEADERBOARD_QUERY_VERSION = 2;
+
   // Leaderboard data
   const { data: leaderboardData, isLoading: leaderboardLoading } = useQuery({
-    queryKey: ["community-leaderboard", leaderboardPeriod],
+    queryKey: ["community-leaderboard", LEADERBOARD_QUERY_VERSION, leaderboardPeriod],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("player_ratings")
-        .select(`
-          rated_user_id,
-          rating,
-          created_at,
-          profiles!player_ratings_rated_user_id_fkey(id, name, profile_photo_url, city)
-        `)
-        .eq("moderation_status", "approved")
-        .limit(10000);
+      const PAGE_SIZE = 1000;
+      const all: any[] = [];
 
-      if (!data) return [];
+      for (let from = 0; ; from += PAGE_SIZE) {
+        const { data, error } = await supabase
+          .from("player_ratings")
+          .select(
+            `
+            rated_user_id,
+            rating,
+            created_at,
+            profiles!player_ratings_rated_user_id_fkey(id, name, profile_photo_url, city)
+          `
+          )
+          .eq("moderation_status", "approved")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (error) throw error;
+        const rows = data || [];
+        all.push(...rows);
+        if (rows.length < PAGE_SIZE) break;
+      }
+
+      const data = all;
+
+      if (!data?.length) return [];
 
       // Filter by period if needed
       let filteredData = data;
