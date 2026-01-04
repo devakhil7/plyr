@@ -131,7 +131,7 @@ export default function MatchDetails() {
 
   const isHost = user && match?.host_id === user.id;
   const canEditStats = isHost || isTurfOwner || isAdmin;
-  const canTagEvents = isHost || isTurfOwner || isAdmin;
+  const canTagEvents = isAdmin; // Only admins can tag video events
   const confirmedPlayers = match?.match_players?.filter((p: any) => p.join_status === "confirmed") || [];
   const pendingPlayers = match?.match_players?.filter((p: any) => p.join_status === "requested") || [];
   const isJoined = confirmedPlayers.some((p: any) => p.user_id === user?.id);
