@@ -8,17 +8,46 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Search, Plus, Filter } from "lucide-react";
+import { Users, Search, Plus, Filter, User } from "lucide-react";
 import { MatchCard } from "@/components/match/MatchCard";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function BrowseMatches() {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [cityFilter, setCityFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("open");
+  const [viewMode, setViewMode] = useState<"all" | "my">("all");
+
+  // Fetch user's match IDs for "My Matches" filter
+  const { data: myMatchIds } = useQuery({
+    queryKey: ["my-match-ids", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // Get matches user joined
+      const { data: joinedMatches } = await supabase
+        .from("match_players")
+        .select("match_id")
+        .eq("user_id", user.id)
+        .eq("join_status", "confirmed");
+      
+      // Get matches user hosted
+      const { data: hostedMatches } = await supabase
+        .from("matches")
+        .select("id")
+        .eq("host_id", user.id);
+      
+      const joinedIds = joinedMatches?.map(m => m.match_id) || [];
+      const hostedIds = hostedMatches?.map(m => m.id) || [];
+      
+      return [...new Set([...joinedIds, ...hostedIds])];
+    },
+    enabled: !!user?.id,
+  });
 
   const { data: matches, isLoading } = useQuery({
-    queryKey: ["all-matches", cityFilter, statusFilter],
+    queryKey: ["all-matches", cityFilter, statusFilter, viewMode, myMatchIds],
     queryFn: async () => {
       // First get all tournament match IDs to exclude
       const { data: tournamentMatches } = await supabase
@@ -35,16 +64,26 @@ export default function BrowseMatches() {
           profiles!matches_host_id_fkey(name),
           match_players(user_id, join_status)
         `)
-        .eq("visibility", "public" as const)
         .order("match_date", { ascending: statusFilter === "all" || statusFilter === "completed" ? false : true });
 
+      // For "My Matches" view, filter by user's matches and don't require public visibility
+      if (viewMode === "my" && myMatchIds && myMatchIds.length > 0) {
+        query = query.in("id", myMatchIds);
+      } else if (viewMode === "my") {
+        // No matches for user, return empty
+        return [];
+      } else {
+        // All matches view - only show public
+        query = query.eq("visibility", "public" as const);
+      }
+
       // Only filter to future matches if not showing "all" or "completed"
-      if (statusFilter !== "all" && statusFilter !== "completed") {
+      if (viewMode !== "my" && statusFilter !== "all" && statusFilter !== "completed") {
         query = query.gte("match_date", new Date().toISOString().split("T")[0]);
       }
 
-      // Exclude tournament matches
-      if (tournamentMatchIds.length > 0) {
+      // Exclude tournament matches (only for "all" view)
+      if (viewMode !== "my" && tournamentMatchIds.length > 0) {
         query = query.not("id", "in", `(${tournamentMatchIds.join(",")})`);
       }
 
@@ -86,6 +125,22 @@ export default function BrowseMatches() {
             )}
           </div>
         </div>
+
+        {/* View Mode Tabs */}
+        {user && (
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "all" | "my")} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+              <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Users className="h-4 w-4 mr-2" />
+                All Matches
+              </TabsTrigger>
+              <TabsTrigger value="my" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <User className="h-4 w-4 mr-2" />
+                My Matches
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
 
         {/* Filters */}
         <Card className="glass-card">
