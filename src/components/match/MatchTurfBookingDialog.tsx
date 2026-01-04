@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { CreditCard, Loader2, MapPin, Clock, Calendar, Wallet, Banknote, Check } from 'lucide-react';
 import {
   Dialog,
@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { calculateBookingPrice, PricingRules } from '@/lib/turfPricing';
 
 /** Represents an existing turf booking */
 export interface ExistingBooking {
@@ -85,7 +86,7 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
       if (!match?.turf_id) return null;
       const { data } = await supabase
         .from('turfs')
-        .select('id, name, location, price_per_hour, allow_advance_payment, advance_amount_type, advance_amount_value, allow_pay_at_ground')
+        .select('id, name, location, price_per_hour, allow_advance_payment, advance_amount_type, advance_amount_value, allow_pay_at_ground, pricing_rules')
         .eq('id', match.turf_id)
         .single();
       return data;
@@ -100,7 +101,9 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
   if (!match || !match.turf_id) return null;
 
   const pricePerHour = turf?.price_per_hour || 0;
-  const totalAmount = (pricePerHour * match.duration_minutes) / 60;
+  // Calculate total using peak pricing rules
+  const matchDate = parseISO(match.match_date);
+  const totalAmount = calculateBookingPrice(pricePerHour, turfSettings?.pricing_rules as PricingRules | null, matchDate, match.match_time, match.duration_minutes);
 
   // Calculate advance amount
   const advanceAmount = turfSettings?.advance_amount_type === 'percentage'

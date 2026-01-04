@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { CalendarSlotPicker } from "@/components/CalendarSlotPicker";
 import { useGeolocation, calculateDistance, formatDistance, getCityCoordinates } from "@/hooks/useGeolocation";
 import { Badge } from "@/components/ui/badge";
+import { calculateBookingPrice, getEffectiveHourlyRate, getPriceRangeDisplay } from "@/lib/turfPricing";
 
 const skillLevels = [
   { value: "beginner", label: "Beginner" },
@@ -323,16 +324,33 @@ export default function HostMatch() {
                           )}
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-primary flex items-center">
-                            <IndianRupee className="h-5 w-5" />
-                            {selectedTurf.price_per_hour}
-                          </div>
-                          <p className="text-xs text-muted-foreground">per hour</p>
-                          {duration && (
-                            <p className="text-sm font-medium mt-1">
-                              Est. ₹{Math.round((selectedTurf.price_per_hour || 0) * (duration / 60))} for {duration} mins
-                            </p>
-                          )}
+                          {(() => {
+                            const priceRange = getPriceRangeDisplay(selectedTurf.price_per_hour || 0, selectedTurf.pricing_rules);
+                            const effectiveRate = selectedTime 
+                              ? getEffectiveHourlyRate(selectedTurf.price_per_hour || 0, selectedTurf.pricing_rules, selectedDate, selectedTime)
+                              : selectedTurf.price_per_hour || 0;
+                            const estimatedTotal = selectedTime && duration
+                              ? calculateBookingPrice(selectedTurf.price_per_hour || 0, selectedTurf.pricing_rules, selectedDate, selectedTime, duration)
+                              : Math.round((selectedTurf.price_per_hour || 0) * (duration / 60));
+                            
+                            return (
+                              <>
+                                <div className="text-2xl font-bold text-primary flex items-center justify-end">
+                                  <IndianRupee className="h-5 w-5" />
+                                  {priceRange.hasPeakPricing ? `${priceRange.min}-${priceRange.max}` : effectiveRate}
+                                </div>
+                                <p className="text-xs text-muted-foreground">per hour</p>
+                                {priceRange.hasPeakPricing && (
+                                  <p className="text-xs text-amber-600">Peak pricing applies</p>
+                                )}
+                                {duration && (
+                                  <p className="text-sm font-medium mt-1">
+                                    Est. ₹{estimatedTotal} for {duration} mins
+                                  </p>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     </CardContent>
