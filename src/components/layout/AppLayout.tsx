@@ -32,7 +32,7 @@ export function AppLayout({ children, showBottomNav = true }: AppLayoutProps) {
     >
       <AppNavbar />
       {/* Spacer for fixed navbar */}
-      <div className="h-[calc(3rem+env(safe-area-inset-top))] md:h-[calc(3.5rem+env(safe-area-inset-top))] flex-shrink-0" />
+      <div className="h-12 md:h-14 flex-shrink-0" />
       <main className="flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0 overflow-x-hidden">
         {children}
       </main>
