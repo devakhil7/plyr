@@ -47,9 +47,13 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
   const [uploading, setUploading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // Derive scores from goal events
-  const teamAScore = goalEvents.filter(e => e.team === "A" && e.scorerId).length;
-  const teamBScore = goalEvents.filter(e => e.team === "B" && e.scorerId).length;
+  // Derive scores from goal events, fallback to existingScore if no events
+  const goalEventsTeamA = goalEvents.filter(e => e.team === "A" && e.scorerId).length;
+  const goalEventsTeamB = goalEvents.filter(e => e.team === "B" && e.scorerId).length;
+  
+  // Use goal events count if there are events, otherwise use existing scores from match
+  const teamAScore = goalEvents.length > 0 ? goalEventsTeamA : (existingScore.teamA ?? 0);
+  const teamBScore = goalEvents.length > 0 ? goalEventsTeamB : (existingScore.teamB ?? 0);
 
   // Initialize goal events from existing data
   useEffect(() => {
