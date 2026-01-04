@@ -127,12 +127,12 @@ export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
   return (
     <div className={`relative ${className}`}>
       {/* Card Container with FIFA-style shape */}
-      <div className="relative w-[280px] mx-auto">
+      <div className="relative w-[280px] h-[400px] mx-auto">
         {/* Card Background SVG Shape */}
         <svg
           viewBox="0 0 280 400"
-          className="absolute inset-0 w-full h-full"
-          preserveAspectRatio="xMidYMid meet"
+          className="absolute inset-0 w-[280px] h-[400px]"
+          style={{ width: '280px', height: '400px' }}
         >
           <defs>
             <linearGradient id={`cardGradient-${tier}`} x1="0%" y1="0%" x2="100%" y2="100%">
