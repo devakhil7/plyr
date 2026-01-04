@@ -35,8 +35,8 @@ const tierColors = {
     accent: "45 100% 70%",      // Bright gold
     gradient: "linear-gradient(135deg, hsl(45, 90%, 55%) 0%, hsl(40, 85%, 45%) 50%, hsl(35, 80%, 35%) 100%)",
     cardBg: "linear-gradient(180deg, hsl(40, 30%, 15%) 0%, hsl(35, 25%, 8%) 100%)",
-    textPrimary: "45 90% 65%",
-    textSecondary: "45 70% 75%",
+    textPrimary: "45 85% 60%",
+    textSecondary: "45 60% 50%",
   },
   silver: {
     primary: "220 15% 70%",     // Silver
@@ -44,8 +44,8 @@ const tierColors = {
     accent: "220 20% 80%",      // Bright silver
     gradient: "linear-gradient(135deg, hsl(220, 15%, 70%) 0%, hsl(220, 10%, 55%) 50%, hsl(220, 8%, 40%) 100%)",
     cardBg: "linear-gradient(180deg, hsl(220, 15%, 20%) 0%, hsl(220, 12%, 10%) 100%)",
-    textPrimary: "220 15% 75%",
-    textSecondary: "220 10% 65%",
+    textPrimary: "220 20% 80%",
+    textSecondary: "220 15% 60%",
   },
   bronze: {
     primary: "25 60% 45%",      // Bronze
@@ -53,8 +53,8 @@ const tierColors = {
     accent: "30 65% 55%",       // Bright bronze
     gradient: "linear-gradient(135deg, hsl(25, 60%, 45%) 0%, hsl(20, 55%, 35%) 50%, hsl(15, 50%, 25%) 100%)",
     cardBg: "linear-gradient(180deg, hsl(20, 25%, 15%) 0%, hsl(15, 20%, 8%) 100%)",
-    textPrimary: "25 55% 60%",
-    textSecondary: "25 45% 50%",
+    textPrimary: "30 65% 55%",
+    textSecondary: "25 50% 45%",
   },
 };
 
