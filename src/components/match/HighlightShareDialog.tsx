@@ -25,6 +25,7 @@ interface HighlightShareDialogProps {
     clip_url: string | null;
     team: string | null;
     generate_highlight?: boolean;
+    assist_player_name?: string | null;
   } | null;
   matchId?: string;
   matchName?: string;
@@ -52,7 +53,7 @@ export function HighlightShareDialog({
     : "";
 
   const defaultCaption = highlight
-    ? `Check out this ${highlight.event_type}${highlight.player_name ? ` by ${highlight.player_name}` : ""}! 🔥`
+    ? `Check out this ${highlight.event_type}${highlight.player_name ? ` by ${highlight.player_name}` : ""}${highlight.event_type === "goal" && highlight.assist_player_name ? ` (Assist: ${highlight.assist_player_name})` : ""}! 🔥`
     : "";
 
   // Search users for DM
@@ -367,7 +368,7 @@ export function HighlightShareDialog({
                 variant="outline"
                 className="flex flex-col items-center gap-1 h-auto py-3"
                 onClick={() => {
-                  const text = `Check out this ${highlight.event_type}${highlight.player_name ? ` by ${highlight.player_name}` : ""}! 🔥`;
+                  const text = `Check out this ${highlight.event_type}${highlight.player_name ? ` by ${highlight.player_name}` : ""}${highlight.event_type === "goal" && highlight.assist_player_name ? ` (Assist: ${highlight.assist_player_name})` : ""}! 🔥`;
                   shareToWhatsApp({ title: matchName || "Match Highlight", text, url: highlightUrl, videoUrl: mediaUrlToUse });
                 }}
               >
@@ -381,7 +382,7 @@ export function HighlightShareDialog({
                 variant="outline"
                 className="flex flex-col items-center gap-1 h-auto py-3"
                 onClick={() => {
-                  const text = `Check out this ${highlight.event_type}${highlight.player_name ? ` by ${highlight.player_name}` : ""}! 🔥`;
+                  const text = `Check out this ${highlight.event_type}${highlight.player_name ? ` by ${highlight.player_name}` : ""}${highlight.event_type === "goal" && highlight.assist_player_name ? ` (Assist: ${highlight.assist_player_name})` : ""}! 🔥`;
                   shareToInstagram({ title: matchName || "Match Highlight", text, url: highlightUrl, videoUrl: mediaUrlToUse });
                 }}
               >
@@ -395,7 +396,7 @@ export function HighlightShareDialog({
                 variant="outline"
                 className="flex flex-col items-center gap-1 h-auto py-3"
                 onClick={() => {
-                  const text = `Check out this ${highlight.event_type}${highlight.player_name ? ` by ${highlight.player_name}` : ""}! 🔥`;
+                  const text = `Check out this ${highlight.event_type}${highlight.player_name ? ` by ${highlight.player_name}` : ""}${highlight.event_type === "goal" && highlight.assist_player_name ? ` (Assist: ${highlight.assist_player_name})` : ""}! 🔥`;
                   shareToYouTube({ title: matchName || "Match Highlight", text, url: highlightUrl, videoUrl: mediaUrlToUse });
                 }}
               >
