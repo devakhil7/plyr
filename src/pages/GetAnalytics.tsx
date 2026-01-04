@@ -97,6 +97,28 @@ const GetAnalytics = () => {
     enabled: isAdmin,
   });
 
+  // Fetch match players when a match is selected for linking
+  const { data: matchPlayersForTagging = [] } = useQuery({
+    queryKey: ["match-players-for-tagging", selectedMatchId],
+    queryFn: async () => {
+      if (!selectedMatchId || selectedMatchId === "none") return [];
+      const { data, error } = await supabase
+        .from("match_players")
+        .select(`
+          id,
+          user_id,
+          team,
+          offline_player_name,
+          profiles:user_id(id, name)
+        `)
+        .eq("match_id", selectedMatchId)
+        .eq("join_status", "confirmed");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedMatchId && selectedMatchId !== "none",
+  });
+
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (!videoFile || !user?.id) throw new Error("Missing video or user");
@@ -229,7 +251,11 @@ const GetAnalytics = () => {
               {isAdmin && job.status !== "completed" && (
                 <Button
                   size="sm"
-                  onClick={() => setSelectedJob(job)}
+                  onClick={() => {
+                    setSelectedJob(job);
+                    // Auto-select match if job has match_id
+                    setSelectedMatchId(job.match_id || "");
+                  }}
                 >
                   <Film className="h-3 w-3 mr-1" /> Tag
                 </Button>
@@ -450,7 +476,7 @@ const GetAnalytics = () => {
                   videoUrl={selectedJob.video_url}
                   videoAnalysisJobId={selectedJob.id}
                   matchId={selectedMatchId && selectedMatchId !== "none" ? selectedMatchId : undefined}
-                  matchPlayers={[]}
+                  matchPlayers={matchPlayersForTagging}
                   onEventAdded={() => {
                     queryClient.invalidateQueries({ queryKey: ["job-events", selectedJob.id] });
                   }}

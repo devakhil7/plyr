@@ -212,7 +212,7 @@ export function AdminVideoTagger({
         event_type: eventType,
         timestamp_seconds: Math.floor(currentTime),
         player_id: selectedPlayerId || null,
-        player_name: playerName || null,
+        player_name: playerName || (selectedPlayerId ? null : "Unknown"),
         jersey_number: jerseyNumber ? parseInt(jerseyNumber) : null,
         team: team || null,
         generate_highlight: generateHighlight,
