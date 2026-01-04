@@ -11,7 +11,7 @@ import { useOwnedTurfs, useUserRoles } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MapPin, Calendar, Clock, Users, ArrowLeft, Play, Upload, Trophy, Target, Percent, CreditCard, CheckCircle, Loader2 } from "lucide-react";
+import { MapPin, Calendar, Clock, Users, ArrowLeft, Play, Upload, Trophy, Target, Percent, CreditCard, CheckCircle, Loader2, Wallet } from "lucide-react";
 import { MatchInviteDialog } from "@/components/match/MatchInviteDialog";
 import { MatchShareDialog } from "@/components/match/MatchShareDialog";
 import { FootballPitch } from "@/components/match/FootballPitch";
@@ -21,7 +21,7 @@ import { PlayerRatingsSection } from "@/components/match/PlayerRatingsSection";
 import { AdminVideoTagger } from "@/components/match/AdminVideoTagger";
 import { VideoHighlightEvents } from "@/components/match/VideoHighlightEvents";
 import { MatchEventsShareDialog } from "@/components/match/MatchEventsShareDialog";
-import { MatchTurfBookingDialog } from "@/components/match/MatchTurfBookingDialog";
+import { MatchTurfBookingDialog, type ExistingBooking } from "@/components/match/MatchTurfBookingDialog";
 import { computeMatchStatus, type ComputedMatchStatus } from "@/lib/matchStatus";
 
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
@@ -208,7 +208,7 @@ export default function MatchDetails() {
     enabled: !!id,
   });
 
-  // Check if turf is booked for this match
+  // Check if turf is booked for this match (any status)
   const { data: turfBooking } = useQuery({
     queryKey: ["match-turf-booking", id],
     queryFn: async () => {
@@ -217,7 +217,7 @@ export default function MatchDetails() {
         .from("turf_bookings")
         .select("*")
         .eq("match_id", id)
-        .eq("payment_status", "completed")
+        .in("payment_status", ["completed", "pay_at_ground", "advance_paid"])
         .maybeSingle();
       return data;
     },
@@ -225,6 +225,7 @@ export default function MatchDetails() {
   });
 
   const isTurfBooked = !!turfBooking;
+  const turfBookingStatus = turfBooking?.payment_status;
 
   const joinMutation = useMutation({
     mutationFn: async () => {
@@ -495,13 +496,51 @@ export default function MatchDetails() {
                   <div className="space-y-3">
                     {/* Turf Booking Status for Host */}
                     {match.turf_id && (
-                      isTurfBooked ? (
+                      turfBookingStatus === 'completed' ? (
                         <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                           <CheckCircle className="h-4 w-4 text-green-600" />
                           <div className="flex-1">
                             <p className="text-xs font-medium text-green-700">Turf Booked</p>
                             <p className="text-xs text-green-600">Payment confirmed</p>
                           </div>
+                        </div>
+                      ) : turfBookingStatus === 'advance_paid' ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                            <Wallet className="h-4 w-4 text-amber-600" />
+                            <div className="flex-1">
+                              <p className="text-xs font-medium text-amber-700">Advance Paid</p>
+                              <p className="text-xs text-amber-600">₹{turfBooking?.amount_paid} paid • Balance at ground</p>
+                            </div>
+                          </div>
+                          <Button
+                            className="w-full"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleBookTurf}
+                          >
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Pay Remaining Online
+                          </Button>
+                        </div>
+                      ) : turfBookingStatus === 'pay_at_ground' ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                            <MapPin className="h-4 w-4 text-blue-600" />
+                            <div className="flex-1">
+                              <p className="text-xs font-medium text-blue-700">Pay at Ground</p>
+                              <p className="text-xs text-blue-600">₹{((match.turfs?.price_per_hour || 0) * match.duration_minutes / 60).toLocaleString('en-IN')} to pay at venue</p>
+                            </div>
+                          </div>
+                          <Button
+                            className="w-full"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleBookTurf}
+                          >
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Pay Online Now
+                          </Button>
                         </div>
                       ) : (
                         <Button
@@ -1017,6 +1056,7 @@ export default function MatchDetails() {
           open={bookingDialogOpen}
           onOpenChange={setBookingDialogOpen}
           match={match}
+          existingBooking={turfBooking as ExistingBooking | null | undefined}
           onBookingComplete={handleBookingComplete}
         />
       </div>

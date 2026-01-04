@@ -16,6 +16,14 @@ import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 
+/** Represents an existing turf booking */
+export interface ExistingBooking {
+  id: string;
+  payment_status: string;
+  amount_paid: number;
+  [key: string]: unknown; // Allow additional properties
+}
+
 interface MatchTurfBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,10 +40,11 @@ interface MatchTurfBookingDialogProps {
       price_per_hour: number | null;
     } | null;
   } | null;
+  existingBooking?: ExistingBooking | null;
   onBookingComplete?: () => void;
 }
 
-type PaymentOption = 'full' | 'advance' | 'ground';
+type PaymentOption = 'full' | 'advance' | 'ground' | 'pay_remaining';
 
 declare global {
   interface Window {
@@ -62,6 +71,7 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
   open,
   onOpenChange,
   match,
+  existingBooking,
   onBookingComplete,
 }) => {
   const { user } = useAuth();
@@ -98,6 +108,11 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
     : (turfSettings?.advance_amount_value || 0);
   
   const remainingAmount = totalAmount - advanceAmount;
+
+  // Calculate amount already paid and balance
+  const alreadyPaid = existingBooking?.amount_paid || 0;
+  const balanceAmount = totalAmount - alreadyPaid;
+  const hasExistingBooking = !!existingBooking && (existingBooking.payment_status === 'pay_at_ground' || existingBooking.payment_status === 'advance_paid');
 
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -247,7 +262,10 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
   };
 
   const handleConfirmPayment = () => {
-    if (paymentOption === 'ground') {
+    if (hasExistingBooking) {
+      // Pay remaining balance for existing booking
+      handlePayRemainingBalance();
+    } else if (paymentOption === 'ground') {
       handlePayAtGround();
     } else if (paymentOption === 'advance') {
       handleOnlinePayment(advanceAmount, true);
@@ -256,32 +274,50 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
     }
   };
 
-  const paymentOptions = [
-    {
-      id: 'full' as PaymentOption,
-      title: 'Pay Full Amount',
-      description: 'Pay the complete amount now',
-      amount: totalAmount,
-      icon: CreditCard,
-      enabled: true,
-    },
-    {
-      id: 'advance' as PaymentOption,
-      title: 'Pay Advance',
-      description: `Pay ₹${advanceAmount} now, ₹${remainingAmount} at ground`,
-      amount: advanceAmount,
-      icon: Wallet,
-      enabled: turfSettings?.allow_advance_payment !== false,
-    },
-    {
-      id: 'ground' as PaymentOption,
-      title: 'Pay at Ground',
-      description: 'No online payment, pay full amount at venue',
-      amount: 0,
-      icon: Banknote,
-      enabled: turfSettings?.allow_pay_at_ground === true,
-    },
-  ];
+  const handlePayRemainingBalance = async () => {
+    if (!user || !match || !existingBooking) return;
+    // For now, pay the full remaining balance
+    handleOnlinePayment(balanceAmount, false);
+  };
+
+  // Different options based on whether there's an existing booking
+  const paymentOptions = hasExistingBooking 
+    ? [
+        {
+          id: 'pay_remaining' as PaymentOption,
+          title: 'Pay Remaining Balance',
+          description: `Already paid ₹${alreadyPaid.toLocaleString('en-IN')}`,
+          amount: balanceAmount,
+          icon: CreditCard,
+          enabled: true,
+        },
+      ]
+    : [
+        {
+          id: 'full' as PaymentOption,
+          title: 'Pay Full Amount',
+          description: 'Pay the complete amount now',
+          amount: totalAmount,
+          icon: CreditCard,
+          enabled: true,
+        },
+        {
+          id: 'advance' as PaymentOption,
+          title: 'Pay Advance',
+          description: `Pay ₹${advanceAmount.toLocaleString('en-IN')} now, ₹${remainingAmount.toLocaleString('en-IN')} at ground`,
+          amount: advanceAmount,
+          icon: Wallet,
+          enabled: turfSettings?.allow_advance_payment !== false,
+        },
+        {
+          id: 'ground' as PaymentOption,
+          title: 'Pay at Ground',
+          description: 'No online payment, pay full amount at venue',
+          amount: 0,
+          icon: Banknote,
+          enabled: turfSettings?.allow_pay_at_ground === true,
+        },
+      ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -289,7 +325,7 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
-            Book Turf
+            {hasExistingBooking ? 'Complete Payment' : 'Book Turf'}
           </DialogTitle>
           <DialogDescription className="flex items-center gap-1">
             <MapPin className="h-4 w-4" />
@@ -378,6 +414,11 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
                 <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                 Processing...
               </>
+            ) : hasExistingBooking ? (
+              <>
+                <CreditCard className="h-5 w-5 mr-2" />
+                Pay ₹{balanceAmount.toLocaleString('en-IN')} Now
+              </>
             ) : paymentOption === 'ground' ? (
               <>
                 <Banknote className="h-5 w-5 mr-2" />
@@ -386,7 +427,7 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
             ) : (
               <>
                 <CreditCard className="h-5 w-5 mr-2" />
-                Pay ₹{paymentOption === 'advance' ? advanceAmount.toLocaleString('en-IN') : totalAmount.toLocaleString('en-IN')} Now
+                Pay ₹{(paymentOption === 'advance' ? advanceAmount : totalAmount).toLocaleString('en-IN')} Now
               </>
             )}
           </Button>
