@@ -910,6 +910,8 @@ export type Database = {
       }
       match_video_events: {
         Row: {
+          assist_player_id: string | null
+          assist_player_name: string | null
           clip_url: string | null
           created_at: string
           created_by: string | null
@@ -927,6 +929,8 @@ export type Database = {
           video_analysis_job_id: string | null
         }
         Insert: {
+          assist_player_id?: string | null
+          assist_player_name?: string | null
           clip_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -944,6 +948,8 @@ export type Database = {
           video_analysis_job_id?: string | null
         }
         Update: {
+          assist_player_id?: string | null
+          assist_player_name?: string | null
           clip_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -961,6 +967,20 @@ export type Database = {
           video_analysis_job_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "match_video_events_assist_player_id_fkey"
+            columns: ["assist_player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_video_events_assist_player_id_fkey"
+            columns: ["assist_player_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "match_video_events_match_id_fkey"
             columns: ["match_id"]

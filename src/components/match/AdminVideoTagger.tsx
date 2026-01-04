@@ -206,13 +206,6 @@ export function AdminVideoTagger({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Build notes with assist info for goals
-      let eventNotes = notes || "";
-      if (eventType === "goal" && (assistPlayerId || assistPlayerName)) {
-        const assistInfo = `Assist: ${assistPlayerName || "Unknown"}${assistPlayerId ? ` (ID: ${assistPlayerId})` : ""}`;
-        eventNotes = eventNotes ? `${eventNotes}\n${assistInfo}` : assistInfo;
-      }
-
       const insertData: any = {
         event_type: eventType,
         timestamp_seconds: Math.floor(currentTime),
@@ -221,9 +214,15 @@ export function AdminVideoTagger({
         jersey_number: jerseyNumber ? parseInt(jerseyNumber) : null,
         team: team || null,
         generate_highlight: generateHighlight,
-        notes: eventNotes || null,
+        notes: notes || null,
         created_by: user.id,
       };
+
+      // Add assist info for goals using dedicated columns
+      if (eventType === "goal") {
+        insertData.assist_player_id = assistPlayerId || null;
+        insertData.assist_player_name = assistPlayerName || null;
+      }
 
       if (matchId) {
         insertData.match_id = matchId;
