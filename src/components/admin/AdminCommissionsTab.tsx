@@ -182,7 +182,7 @@ function EditCommissionDialog({
   const [useOverride, setUseOverride] = useState(turf.commission_type !== null);
   const [commissionType, setCommissionType] = useState(turf.commission_type || platformSettings?.default_commission_type || "percentage");
   const [commissionValue, setCommissionValue] = useState(String(turf.commission_value ?? platformSettings?.default_commission_value ?? 10));
-  const [payoutFrequency, setPayoutFrequency] = useState(turf.payout_frequency || "");
+  const [payoutFrequency, setPayoutFrequency] = useState(turf.payout_frequency || "default");
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -192,12 +192,12 @@ function EditCommissionDialog({
         ? { 
             commission_type: commissionType, 
             commission_value: Number(commissionValue),
-            payout_frequency: payoutFrequency || null,
+            payout_frequency: payoutFrequency === "default" ? null : payoutFrequency,
           }
         : { 
             commission_type: null, 
             commission_value: null,
-            payout_frequency: payoutFrequency || null,
+            payout_frequency: payoutFrequency === "default" ? null : payoutFrequency,
           };
 
       const { error } = await supabase.from("turfs").update(updateData).eq("id", turf.id);
@@ -272,7 +272,7 @@ function EditCommissionDialog({
                 <SelectValue placeholder="Use platform default" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Use platform default</SelectItem>
+                <SelectItem value="default">Use platform default</SelectItem>
                 <SelectItem value="daily">Daily</SelectItem>
                 <SelectItem value="weekly">Weekly</SelectItem>
                 <SelectItem value="biweekly">Bi-weekly</SelectItem>
