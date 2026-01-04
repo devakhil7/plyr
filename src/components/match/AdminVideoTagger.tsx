@@ -343,6 +343,8 @@ export function AdminVideoTagger({
             src={videoUrl}
             className="w-full rounded-lg bg-black max-h-[400px]"
             crossOrigin="anonymous"
+            playsInline
+            webkit-playsinline="true"
           />
           
           {/* Timeline */}
