@@ -180,23 +180,23 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
           Match Key Events
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Team-wise Stats Summary */}
         {(teamAEvents.length > 0 || teamBEvents.length > 0) && (
-          <div className="space-y-4">
-            <h4 className="font-medium text-sm text-muted-foreground">Team-wise Statistics</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3 sm:space-y-4">
+            <h4 className="font-medium text-xs sm:text-sm text-muted-foreground">Team-wise Statistics</h4>
+            <div className="grid grid-cols-1 gap-3 sm:gap-4">
               {/* Team A Stats */}
-              <div className="p-4 rounded-lg border bg-primary/5 border-primary/20">
-                <h5 className="font-semibold mb-3 text-center">Team A</h5>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="p-2 sm:p-4 rounded-lg border bg-primary/5 border-primary/20">
+                <h5 className="font-semibold mb-2 sm:mb-3 text-center text-sm sm:text-base">Team A</h5>
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                   {Object.entries(EVENT_CONFIGS).map(([type, config]) => {
                     const count = teamAStats[type] || 0;
                     const Icon = config.icon;
                     return (
-                      <div key={type} className="flex items-center gap-2 p-2 bg-background/50 rounded">
-                        <Icon className="h-4 w-4 opacity-70" />
-                        <span className="text-sm">{config.label}:</span>
+                      <div key={type} className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-background/50 rounded text-xs sm:text-sm">
+                        <Icon className="h-3 w-3 sm:h-4 sm:w-4 opacity-70 shrink-0" />
+                        <span className="truncate">{config.label}:</span>
                         <span className="font-bold">{count}</span>
                       </div>
                     );
@@ -205,16 +205,16 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
               </div>
 
               {/* Team B Stats */}
-              <div className="p-4 rounded-lg border bg-secondary/5 border-secondary/20">
-                <h5 className="font-semibold mb-3 text-center">Team B</h5>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="p-2 sm:p-4 rounded-lg border bg-secondary/5 border-secondary/20">
+                <h5 className="font-semibold mb-2 sm:mb-3 text-center text-sm sm:text-base">Team B</h5>
+                <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
                   {Object.entries(EVENT_CONFIGS).map(([type, config]) => {
                     const count = teamBStats[type] || 0;
                     const Icon = config.icon;
                     return (
-                      <div key={type} className="flex items-center gap-2 p-2 bg-background/50 rounded">
-                        <Icon className="h-4 w-4 opacity-70" />
-                        <span className="text-sm">{config.label}:</span>
+                      <div key={type} className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 bg-background/50 rounded text-xs sm:text-sm">
+                        <Icon className="h-3 w-3 sm:h-4 sm:w-4 opacity-70 shrink-0" />
+                        <span className="truncate">{config.label}:</span>
                         <span className="font-bold">{count}</span>
                       </div>
                     );
@@ -226,18 +226,18 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
         )}
 
         {/* Overall Event Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
           {Object.entries(EVENT_CONFIGS).map(([type, config]) => {
             const count = eventCounts[type] || 0;
             const Icon = config.icon;
             return (
               <div
                 key={type}
-                className={`p-4 rounded-lg border ${config.bgColor} text-center`}
+                className={`p-2 sm:p-4 rounded-lg border ${config.bgColor} text-center`}
               >
-                <Icon className="h-6 w-6 mx-auto mb-2 opacity-80" />
-                <div className="text-2xl font-bold">{count}</div>
-                <div className="text-sm text-muted-foreground">{config.label}</div>
+                <Icon className="h-4 w-4 sm:h-6 sm:w-6 mx-auto mb-1 sm:mb-2 opacity-80" />
+                <div className="text-lg sm:text-2xl font-bold">{count}</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">{config.label}</div>
               </div>
             );
           })}

@@ -482,17 +482,18 @@ const GetAnalytics = () => {
 
         {/* View Results Dialog */}
         <Dialog open={!!viewingJob} onOpenChange={() => setViewingJob(null)}>
-          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-3 sm:p-6">
             <DialogHeader>
-              <DialogTitle>Analysis Results - {viewingJob?.title}</DialogTitle>
+              <DialogTitle className="text-base sm:text-lg">Analysis Results - {viewingJob?.title}</DialogTitle>
             </DialogHeader>
             {viewingJob && (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {viewingJob.video_url && (
                   <video
                     src={viewingJob.video_url}
                     controls
-                    className="w-full rounded-lg max-h-[300px]"
+                    playsInline
+                    className="w-full rounded-lg max-h-[160px] sm:max-h-[250px] md:max-h-[300px]"
                   />
                 )}
                 {viewingJob.admin_notes && (
