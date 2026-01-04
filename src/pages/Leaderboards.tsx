@@ -290,10 +290,15 @@ export default function Leaderboards() {
         }
       });
 
-      // Sort by average rating (highest first), then by rating count as tiebreaker
+      // Sort by weighted score: 75% rating + 25% normalized count
+      // Normalize count by max count to make it comparable to rating scale (0-5)
+      const maxCount = Math.max(...results.map(r => r.secondaryValue || 0), 1);
       results.sort((a, b) => {
-        if (b.value !== a.value) return b.value - a.value;
-        return (b.secondaryValue || 0) - (a.secondaryValue || 0);
+        const normalizedCountA = ((a.secondaryValue || 0) / maxCount) * 5; // Scale to 0-5
+        const normalizedCountB = ((b.secondaryValue || 0) / maxCount) * 5;
+        const weightedScoreA = (a.value * 0.75) + (normalizedCountA * 0.25);
+        const weightedScoreB = (b.value * 0.75) + (normalizedCountB * 0.25);
+        return weightedScoreB - weightedScoreA;
       });
 
       return results; // Return all results, we'll slice in display
