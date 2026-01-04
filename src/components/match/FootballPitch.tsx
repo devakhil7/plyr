@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Shuffle, Users, User, Plus, X } from "lucide-react";
+import { Shuffle, Users, User, Plus, X, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -15,6 +15,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Player {
   id: string;
@@ -930,7 +937,100 @@ export function FootballPitch({ matchId, players, isHost, teamAssignmentMode, to
         </div>
       </div>
 
-      {/* Unassigned Players */}
+      {/* Player List with Team Assignment Dropdowns */}
+      {players.length > 0 && (
+        <Card>
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Player Assignments
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="py-3">
+            <div className="space-y-2">
+              {players.map((player) => {
+                const isOfflinePlayer = !player.user_id && player.offline_player_name;
+                const displayName = isOfflinePlayer ? player.offline_player_name : player.profiles?.name;
+                
+                return (
+                  <div 
+                    key={player.id} 
+                    className="flex items-center justify-between gap-3 p-2 rounded-lg bg-muted/50"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={player.profiles?.profile_photo_url || undefined} />
+                        <AvatarFallback className="text-xs">
+                          {displayName?.charAt(0) || "P"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-medium truncate">
+                          {displayName || "Player"}
+                        </span>
+                        {player.profiles?.position && (
+                          <span className="text-xs text-muted-foreground">
+                            {player.profiles.position}
+                          </span>
+                        )}
+                        {isOfflinePlayer && (
+                          <span className="text-xs text-yellow-600">Offline</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {isHost ? (
+                      <Select
+                        value={player.team || "unassigned"}
+                        onValueChange={(value: "A" | "B" | "unassigned") => handleMoveToTeam(player.id, value)}
+                      >
+                        <SelectTrigger className="w-[110px] h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="A">
+                            <span className="flex items-center gap-2">
+                              <span className="h-2 w-2 rounded-full bg-blue-500" />
+                              Team A
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="B">
+                            <span className="flex items-center gap-2">
+                              <span className="h-2 w-2 rounded-full bg-red-500" />
+                              Team B
+                            </span>
+                          </SelectItem>
+                          <SelectItem value="unassigned">
+                            <span className="flex items-center gap-2">
+                              <span className="h-2 w-2 rounded-full bg-gray-400" />
+                              Unassigned
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Badge 
+                        variant="secondary"
+                        className={
+                          player.team === "A" 
+                            ? "bg-blue-500/20 text-blue-600 border-blue-500/30"
+                            : player.team === "B"
+                            ? "bg-red-500/20 text-red-600 border-red-500/30"
+                            : "bg-gray-500/20 text-gray-600"
+                        }
+                      >
+                        {player.team === "A" ? "Team A" : player.team === "B" ? "Team B" : "Unassigned"}
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Unassigned Players on Pitch (visual only) */}
       {unassigned.length > 0 && (
         <Card className="border-dashed">
           <CardHeader className="py-3">
