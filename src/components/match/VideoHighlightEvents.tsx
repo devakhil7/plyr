@@ -33,6 +33,8 @@ interface VideoEvent {
   clip_url: string | null;
   notes: string | null;
   team: string | null;
+  assist_player_id: string | null;
+  assist_player_name: string | null;
 }
 
 interface VideoHighlightEventsProps {
@@ -283,6 +285,14 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
                         {event.jersey_number && (
                           <span className="text-muted-foreground">#{event.jersey_number}</span>
                         )}
+                      </div>
+                    )}
+                    
+                    {/* Show assist for goals */}
+                    {event.event_type === "goal" && event.assist_player_name && (
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <ArrowRightLeft className="h-3 w-3" />
+                        <span>Assist: {event.assist_player_name}</span>
                       </div>
                     )}
                     
