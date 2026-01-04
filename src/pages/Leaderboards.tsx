@@ -874,7 +874,7 @@ export default function Leaderboards() {
             Showing {Math.min(viewAllDialog.entries.length, ITEMS_PER_PAGE)} of {viewAllDialog.entries.length} players
           </p>
         </DialogHeader>
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="h-[60vh] pr-4">
           <div className="space-y-2">
             {viewAllDialog.entries
               .slice(viewAllDialog.page * ITEMS_PER_PAGE, (viewAllDialog.page + 1) * ITEMS_PER_PAGE)
