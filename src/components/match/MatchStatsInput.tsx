@@ -49,6 +49,13 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
   const [initialized, setInitialized] = useState(false);
   const [submittingForAnalysis, setSubmittingForAnalysis] = useState(false);
 
+  // Sync highlightUrl when videoUrl prop changes
+  useEffect(() => {
+    if (videoUrl && videoUrl !== highlightUrl) {
+      setHighlightUrl(videoUrl);
+    }
+  }, [videoUrl]);
+
   // Fetch existing analysis job for this match
   const { data: analysisJob, refetch: refetchAnalysisJob } = useQuery({
     queryKey: ["match-analysis-job", matchId],
@@ -66,13 +73,40 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
     enabled: !!matchId,
   });
 
-  // Derive scores from goal events, fallback to existingScore if no events
+  // Fetch video events goals to calculate score from analytics
+  const { data: videoEventsGoals = [] } = useQuery({
+    queryKey: ["match-video-events-goals", matchId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("match_video_events")
+        .select("id, team, event_type")
+        .eq("match_id", matchId)
+        .eq("event_type", "goal");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!matchId,
+  });
+
+  // Calculate scores from video events (from admin tagging)
+  const videoGoalsTeamA = videoEventsGoals.filter(e => e.team === "A").length;
+  const videoGoalsTeamB = videoEventsGoals.filter(e => e.team === "B").length;
+
+  // Derive scores from goal events, fallback to video events, then existing score
   const goalEventsTeamA = goalEvents.filter(e => e.team === "A" && e.scorerId).length;
   const goalEventsTeamB = goalEvents.filter(e => e.team === "B" && e.scorerId).length;
   
-  // Use goal events count if there are events, otherwise use existing scores from match
-  const teamAScore = goalEvents.length > 0 ? goalEventsTeamA : (existingScore.teamA ?? 0);
-  const teamBScore = goalEvents.length > 0 ? goalEventsTeamB : (existingScore.teamB ?? 0);
+  // Priority: goal events > video events from analytics > existing score
+  const teamAScore = goalEvents.length > 0 
+    ? goalEventsTeamA 
+    : videoEventsGoals.length > 0 
+      ? videoGoalsTeamA 
+      : (existingScore.teamA ?? 0);
+  const teamBScore = goalEvents.length > 0 
+    ? goalEventsTeamB 
+    : videoEventsGoals.length > 0 
+      ? videoGoalsTeamB 
+      : (existingScore.teamB ?? 0);
 
   // Initialize goal events from existing data
   useEffect(() => {
@@ -248,6 +282,45 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
     }
   };
 
+  const handleReuploadVideo = async () => {
+    // Confirm before re-uploading as it clears all video events
+    if (!confirm("Re-uploading will remove all tagged video events. Continue?")) {
+      return;
+    }
+
+    try {
+      // Delete existing video events for this match
+      await supabase
+        .from("match_video_events")
+        .delete()
+        .eq("match_id", matchId);
+
+      // Delete existing analysis job
+      if (analysisJob) {
+        await supabase
+          .from("video_analysis_jobs")
+          .delete()
+          .eq("id", analysisJob.id);
+      }
+
+      // Clear the video URL
+      await supabase
+        .from("matches")
+        .update({ video_url: null })
+        .eq("id", matchId);
+
+      setHighlightUrl("");
+      refetchAnalysisJob();
+      queryClient.invalidateQueries({ queryKey: ["match-video-events", matchId] });
+      queryClient.invalidateQueries({ queryKey: ["match-video-events-goals", matchId] });
+      onUpdate();
+      toast.success("Video cleared. You can now upload a new video.");
+    } catch (err: any) {
+      console.error("Re-upload error:", err);
+      toast.error(err.message || "Failed to clear video");
+    }
+  };
+
   const handleSubmitForAnalysis = async () => {
     if (!highlightUrl) {
       toast.error("Please upload a video first");
@@ -362,16 +435,28 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
           </div>
 
           {highlightUrl ? (
-            <div className="overflow-hidden rounded-lg border bg-muted/30">
-              <video
-                key={highlightUrl}
-                src={highlightUrl}
-                controls
-                playsInline
-                preload="metadata"
-                className="w-full aspect-video bg-muted object-contain"
-                onError={() => toast.error("Couldn't play this video. Try re-uploading or use a direct .mp4 URL.")}
-              />
+            <div className="space-y-2">
+              <div className="overflow-hidden rounded-lg border bg-muted/30">
+                <video
+                  key={highlightUrl}
+                  src={highlightUrl}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="w-full aspect-video bg-muted object-contain"
+                  onError={() => toast.error("Couldn't play this video. Try re-uploading or use a direct .mp4 URL.")}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full text-destructive border-destructive/30 hover:bg-destructive/10"
+                onClick={handleReuploadVideo}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Remove & Re-upload Video
+              </Button>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
