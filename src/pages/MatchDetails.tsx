@@ -11,7 +11,7 @@ import { useOwnedTurfs, useUserRoles } from "@/hooks/useUserRoles";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { MapPin, Calendar, Clock, Users, ArrowLeft, Play, Upload, Trophy, Target, Percent, CreditCard, CheckCircle, Loader2, Wallet } from "lucide-react";
+import { MapPin, Calendar, Clock, Users, ArrowLeft, Play, Upload, Trophy, Target, Percent, CreditCard, CheckCircle, Loader2, Wallet, UserPlus } from "lucide-react";
 import { MatchInviteDialog } from "@/components/match/MatchInviteDialog";
 import { MatchShareDialog } from "@/components/match/MatchShareDialog";
 import { FootballPitch } from "@/components/match/FootballPitch";
@@ -22,6 +22,7 @@ import { AdminVideoTagger } from "@/components/match/AdminVideoTagger";
 import { VideoHighlightEvents } from "@/components/match/VideoHighlightEvents";
 import { MatchEventsShareDialog } from "@/components/match/MatchEventsShareDialog";
 import { MatchTurfBookingDialog, type ExistingBooking } from "@/components/match/MatchTurfBookingDialog";
+import { PendingJoinRequests } from "@/components/match/PendingJoinRequests";
 import { computeMatchStatus, type ComputedMatchStatus } from "@/lib/matchStatus";
 
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
@@ -132,7 +133,9 @@ export default function MatchDetails() {
   const canEditStats = isHost || isTurfOwner || isAdmin;
   const canTagEvents = isHost || isTurfOwner || isAdmin;
   const confirmedPlayers = match?.match_players?.filter((p: any) => p.join_status === "confirmed") || [];
+  const pendingPlayers = match?.match_players?.filter((p: any) => p.join_status === "requested") || [];
   const isJoined = confirmedPlayers.some((p: any) => p.user_id === user?.id);
+  const hasRequestedToJoin = pendingPlayers.some((p: any) => p.user_id === user?.id);
   const slotsLeft = (match?.total_slots || 0) - confirmedPlayers.length;
   const analytics = match?.analytics?.[0];
 
@@ -234,13 +237,22 @@ export default function MatchDetails() {
         match_id: match.id,
         user_id: user.id,
         role: "player",
-        join_status: "confirmed",
+        join_status: "requested",
         team: "unassigned",
       });
       if (error) throw error;
+
+      // Create notification for the host
+      await supabase.from("notifications").insert({
+        user_id: match.host_id,
+        type: "match_join_request",
+        title: "New Join Request",
+        message: `${profile?.name || "A player"} wants to join ${match.match_name}`,
+        link: `/matches/${match.id}`,
+      });
     },
     onSuccess: () => {
-      toast.success("You've joined the match!");
+      toast.success("Join request sent! Waiting for host approval.");
       refetch();
     },
     onError: (err: any) => {
@@ -585,6 +597,25 @@ export default function MatchDetails() {
                       </Button>
                     </Link>
                   </div>
+                ) : hasRequestedToJoin ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                      <Clock className="h-4 w-4 text-amber-600" />
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-amber-700">Request Pending</p>
+                        <p className="text-xs text-amber-600">Waiting for host approval</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      size="sm"
+                      onClick={() => leaveMutation.mutate()}
+                      disabled={leaveMutation.isPending}
+                    >
+                      {leaveMutation.isPending ? "Cancelling..." : "Cancel Request"}
+                    </Button>
+                  </div>
                 ) : (
                   <Button
                     className="w-full btn-glow"
@@ -592,7 +623,7 @@ export default function MatchDetails() {
                     onClick={() => joinMutation.mutate()}
                     disabled={joinMutation.isPending || !canJoin}
                   >
-                    {joinMutation.isPending ? "Joining..." : slotsLeft === 0 ? "Match Full" : effectiveStatus !== "open" ? "Match Started" : "Join Match"}
+                    {joinMutation.isPending ? "Requesting..." : slotsLeft === 0 ? "Match Full" : effectiveStatus !== "open" ? "Match Started" : "Request to Join"}
                   </Button>
                 )
               ) : (
@@ -615,7 +646,14 @@ export default function MatchDetails() {
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList className="glass-card w-full justify-start">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="players">Players ({confirmedPlayers.length})</TabsTrigger>
+            <TabsTrigger value="players">
+              Players ({confirmedPlayers.length})
+              {isHost && pendingPlayers.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 bg-amber-500 text-white text-xs rounded-full">
+                  {pendingPlayers.length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="analytics">Video & Analytics</TabsTrigger>
           </TabsList>
 
@@ -674,6 +712,16 @@ export default function MatchDetails() {
           </TabsContent>
 
           <TabsContent value="players" className="space-y-4">
+            {/* Pending Join Requests - Only visible to host */}
+            {isHost && pendingPlayers.length > 0 && (
+              <PendingJoinRequests
+                matchId={match.id}
+                pendingPlayers={pendingPlayers}
+                slotsLeft={slotsLeft}
+                onRefetch={refetch}
+              />
+            )}
+
             <Card className="glass-card">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
