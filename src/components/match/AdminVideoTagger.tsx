@@ -27,6 +27,7 @@ import { toast } from "sonner";
 interface Player {
   id: string;
   user_id: string | null;
+  team?: string | null;
   offline_player_name: string | null;
   profiles?: {
     id: string;
@@ -171,9 +172,13 @@ export function AdminVideoTagger({
 
   const handlePlayerSelect = (playerId: string) => {
     setSelectedPlayerId(playerId);
-    const player = matchPlayers.find(p => p.user_id === playerId || p.profiles?.id === playerId);
+    const player = matchPlayers.find(p => p.user_id === playerId || p.profiles?.id === playerId || p.id === playerId);
     if (player) {
       setPlayerName(player.profiles?.name || player.offline_player_name || "");
+      // Auto-set team from player's team assignment
+      if (player.team && (player.team === "A" || player.team === "B")) {
+        setTeam(player.team);
+      }
     }
   };
 
