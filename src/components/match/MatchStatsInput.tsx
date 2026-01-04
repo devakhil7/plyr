@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Trophy, Plus, Upload, Trash2, Loader2, Edit3 } from "lucide-react";
+import { Trophy, Plus, Upload, Trash2, Loader2, Edit3, Send, Clock, CheckCircle, AlertCircle } from "lucide-react";
 
 interface MatchStatsInputProps {
   matchId: string;
@@ -46,6 +47,24 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
   const [goalEvents, setGoalEvents] = useState<GoalEvent[]>([]);
   const [uploading, setUploading] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [submittingForAnalysis, setSubmittingForAnalysis] = useState(false);
+
+  // Fetch existing analysis job for this match
+  const { data: analysisJob, refetch: refetchAnalysisJob } = useQuery({
+    queryKey: ["match-analysis-job", matchId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("video_analysis_jobs")
+        .select("*")
+        .eq("match_id", matchId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!matchId,
+  });
 
   // Derive scores from goal events, fallback to existingScore if no events
   const goalEventsTeamA = goalEvents.filter(e => e.team === "A" && e.scorerId).length;
@@ -229,6 +248,64 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
     }
   };
 
+  const handleSubmitForAnalysis = async () => {
+    if (!highlightUrl) {
+      toast.error("Please upload a video first");
+      return;
+    }
+
+    setSubmittingForAnalysis(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in");
+        return;
+      }
+
+      // Check if job already exists for this match
+      const { data: existingJob } = await supabase
+        .from("video_analysis_jobs")
+        .select("id")
+        .eq("match_id", matchId)
+        .maybeSingle();
+
+      if (existingJob) {
+        // Update existing job with new video URL
+        const { error: updateError } = await supabase
+          .from("video_analysis_jobs")
+          .update({
+            video_url: highlightUrl,
+            status: "pending",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingJob.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new analysis job
+        const { error: insertError } = await supabase
+          .from("video_analysis_jobs")
+          .insert({
+            user_id: user.id,
+            match_id: matchId,
+            video_url: highlightUrl,
+            status: "pending",
+            title: `Match Video - ${matchId.slice(0, 8)}`,
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      toast.success("Video submitted for admin analysis!");
+      refetchAnalysisJob();
+    } catch (err: any) {
+      console.error("Submit for analysis error:", err);
+      toast.error(err.message || "Failed to submit for analysis");
+    } finally {
+      setSubmittingForAnalysis(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -300,6 +377,98 @@ export function MatchStatsInput({ matchId, players, existingScore, videoUrl, exi
             <p className="text-xs text-muted-foreground">
               Upload a video or paste a direct video URL.
             </p>
+          )}
+
+          {/* Submit for Analysis Section */}
+          {highlightUrl && (
+            <div className="p-3 border rounded-lg bg-muted/30 space-y-2">
+              {analysisJob ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {analysisJob.status === "pending" && (
+                      <>
+                        <Clock className="h-4 w-4 text-amber-500" />
+                        <span className="text-sm">Pending admin review</span>
+                        <Badge variant="outline" className="text-amber-600 border-amber-500/30">Pending</Badge>
+                      </>
+                    )}
+                    {analysisJob.status === "analyzing" && (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                        <span className="text-sm">Being analyzed</span>
+                        <Badge variant="outline" className="text-blue-600 border-blue-500/30">Analyzing</Badge>
+                      </>
+                    )}
+                    {analysisJob.status === "processing" && (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                        <span className="text-sm">Processing</span>
+                        <Badge variant="outline" className="text-blue-600 border-blue-500/30">Processing</Badge>
+                      </>
+                    )}
+                    {analysisJob.status === "completed" && (
+                      <>
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-sm">Analysis complete</span>
+                        <Badge variant="outline" className="text-green-600 border-green-500/30">Completed</Badge>
+                      </>
+                    )}
+                    {analysisJob.status === "failed" && (
+                      <>
+                        <AlertCircle className="h-4 w-4 text-red-500" />
+                        <span className="text-sm">Analysis failed</span>
+                        <Badge variant="outline" className="text-red-600 border-red-500/30">Failed</Badge>
+                      </>
+                    )}
+                  </div>
+                  {(analysisJob.status === "failed" || analysisJob.status === "completed") && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSubmitForAnalysis}
+                      disabled={submittingForAnalysis}
+                    >
+                      {submittingForAnalysis ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-1" />
+                      )}
+                      Re-submit
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Submit for Admin Tagging</p>
+                    <p className="text-xs text-muted-foreground">
+                      Request admin to tag goals, assists, and highlights
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSubmitForAnalysis}
+                    disabled={submittingForAnalysis}
+                  >
+                    {submittingForAnalysis ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                    ) : (
+                      <Send className="h-4 w-4 mr-1" />
+                    )}
+                    Submit for Analysis
+                  </Button>
+                </div>
+              )}
+              {analysisJob?.admin_notes && (
+                <div className="mt-2 p-2 bg-background rounded text-xs">
+                  <p className="font-medium">Admin Notes:</p>
+                  <p className="text-muted-foreground">{analysisJob.admin_notes}</p>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
