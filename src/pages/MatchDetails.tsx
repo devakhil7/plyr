@@ -555,17 +555,6 @@ export default function MatchDetails() {
                       )
                     )}
                     
-                    {effectiveStatus === "open" && (
-                      <Button className="w-full btn-glow" size="sm" onClick={() => updateStatusMutation.mutate("in_progress")}>
-                        <Play className="h-4 w-4 mr-2" />
-                        Start Match
-                      </Button>
-                    )}
-                    {effectiveStatus === "in_progress" && (
-                      <Button className="w-full btn-glow" size="sm" onClick={() => updateStatusMutation.mutate("completed")}>
-                        Complete Match
-                      </Button>
-                    )}
                     <p className="text-xs text-center text-muted-foreground">You're hosting this match</p>
                   </div>
                 ) : isJoined ? (
