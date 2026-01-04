@@ -64,6 +64,25 @@ export function TurfAvailabilityTab({ turfId, turf, onUpdate }: TurfAvailability
     }
   }, [turf]);
 
+  // Fetch upcoming bookings for preview (only approved ones block slots)
+  const { data: upcomingBookings } = useQuery({
+    queryKey: ["turf-availability-bookings", turfId],
+    queryFn: async () => {
+      if (!turfId) return [];
+      const today = new Date().toISOString().split("T")[0];
+      const weekLater = addDays(new Date(), 7).toISOString().split("T")[0];
+      const { data } = await supabase
+        .from("turf_bookings")
+        .select("booking_date, start_time, end_time, duration_minutes, booking_status")
+        .eq("turf_id", turfId)
+        .gte("booking_date", today)
+        .lte("booking_date", weekLater)
+        .order("booking_date", { ascending: true });
+      return data || [];
+    },
+    enabled: !!turfId,
+  });
+
   // Fetch upcoming matches for preview
   const { data: upcomingMatches } = useQuery({
     queryKey: ["turf-availability-preview", turfId],
@@ -316,6 +335,9 @@ export function TurfAvailabilityTab({ turfId, turf, onUpdate }: TurfAvailability
                 const dayName = format(date, "EEEE").toLowerCase();
                 const isOpen = openingHours[dayName]?.open;
                 const dayMatches = upcomingMatches?.filter(m => m.match_date === dateStr) || [];
+                const dayBookings = upcomingBookings?.filter(b => b.booking_date === dateStr) || [];
+                const approvedBookings = dayBookings.filter(b => b.booking_status === "approved");
+                const pendingBookings = dayBookings.filter(b => b.booking_status === "pending_approval");
 
                 return (
                   <div key={i} className={`p-3 rounded-lg border ${isOpen ? 'bg-background' : 'bg-muted'}`}>
@@ -326,10 +348,28 @@ export function TurfAvailabilityTab({ turfId, turf, onUpdate }: TurfAvailability
                         <p className="text-xs text-muted-foreground">
                           {openingHours[dayName]?.start} - {openingHours[dayName]?.end}
                         </p>
+                        {approvedBookings.length > 0 && (
+                          <div className="space-y-1">
+                            {approvedBookings.map((b: any, j: number) => (
+                              <div key={`b-${j}`} className="text-xs bg-primary/10 text-primary rounded px-1 py-0.5">
+                                {b.start_time?.slice(0, 5)} - Booked
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {pendingBookings.length > 0 && (
+                          <div className="space-y-1">
+                            {pendingBookings.map((b: any, j: number) => (
+                              <div key={`p-${j}`} className="text-xs bg-yellow-500/10 text-yellow-600 rounded px-1 py-0.5">
+                                {b.start_time?.slice(0, 5)} - Pending
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         {dayMatches.length > 0 && (
                           <div className="space-y-1">
                             {dayMatches.map((m: any, j: number) => (
-                              <div key={j} className="text-xs bg-primary/10 text-primary rounded px-1 py-0.5">
+                              <div key={`m-${j}`} className="text-xs bg-primary/10 text-primary rounded px-1 py-0.5">
                                 {m.match_time?.slice(0, 5)} - {m.match_name?.slice(0, 10)}...
                               </div>
                             ))}

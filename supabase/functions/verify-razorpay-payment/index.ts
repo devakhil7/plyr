@@ -69,12 +69,13 @@ serve(async (req) => {
     // Determine payment status based on whether it's an advance payment
     const paymentStatus = body.is_advance ? "advance_paid" : "completed";
 
-    // Update booking status
+    // Update booking status - auto-approve since payment was successful
     const { data: booking, error: updateError } = await supabase
       .from("turf_bookings")
       .update({
         payment_id: body.razorpay_payment_id,
         payment_status: paymentStatus,
+        booking_status: "approved", // Auto-approve on successful payment
       })
       .eq("id", body.booking_id)
       .eq("user_id", user.id)

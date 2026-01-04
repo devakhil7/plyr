@@ -13,7 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { format, parseISO, addDays, subDays } from "date-fns";
-import { CalendarIcon, Plus, Eye, X, Filter } from "lucide-react";
+import { CalendarIcon, Plus, Eye, X, Filter, Check, Clock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -41,6 +41,29 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
     amount: turf?.price_per_hour || 0,
   });
 
+  // Fetch turf_bookings for this turf
+  const { data: turfBookings, isLoading: bookingsLoading } = useQuery({
+    queryKey: ["turf-bookings-direct", turfId, dateRange, statusFilter],
+    queryFn: async () => {
+      if (!turfId) return [];
+      let query = supabase
+        .from("turf_bookings")
+        .select("*, profiles:user_id(name, email)")
+        .eq("turf_id", turfId)
+        .gte("booking_date", format(dateRange.from, "yyyy-MM-dd"))
+        .lte("booking_date", format(dateRange.to, "yyyy-MM-dd"))
+        .order("booking_date", { ascending: true });
+      
+      if (statusFilter !== "all") {
+        query = query.eq("booking_status", statusFilter);
+      }
+      
+      const { data } = await query;
+      return data || [];
+    },
+    enabled: !!turfId,
+  });
+
   // Fetch matches (bookings) for this turf
   const { data: matches, isLoading } = useQuery({
     queryKey: ["turf-bookings-list", turfId, dateRange, statusFilter],
@@ -54,7 +77,7 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
         .lte("match_date", format(dateRange.to, "yyyy-MM-dd"))
         .order("match_date", { ascending: true });
       
-      if (statusFilter !== "all") {
+      if (statusFilter !== "all" && ["open", "full", "in_progress", "completed", "cancelled"].includes(statusFilter)) {
         query = query.eq("status", statusFilter as "open" | "full" | "in_progress" | "completed" | "cancelled");
       }
       
@@ -100,6 +123,42 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
     onError: (error: any) => {
       console.error("Cancel booking error:", error);
       toast.error(error.message || "Failed to cancel booking");
+    },
+  });
+
+  // Approve booking mutation
+  const approveMutation = useMutation({
+    mutationFn: async (bookingId: string) => {
+      const { error } = await supabase
+        .from("turf_bookings")
+        .update({ booking_status: "approved" })
+        .eq("id", bookingId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["turf-bookings-direct"] });
+      toast.success("Booking approved");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to approve booking");
+    },
+  });
+
+  // Reject booking mutation
+  const rejectMutation = useMutation({
+    mutationFn: async (bookingId: string) => {
+      const { error } = await supabase
+        .from("turf_bookings")
+        .update({ booking_status: "rejected" })
+        .eq("id", bookingId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["turf-bookings-direct"] });
+      toast.success("Booking rejected");
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to reject booking");
     },
   });
 
@@ -176,6 +235,20 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
     return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
   };
 
+  const getBookingStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      pending_approval: "secondary",
+      approved: "default",
+      rejected: "destructive",
+    };
+    const labels: Record<string, string> = {
+      pending_approval: "Pending Approval",
+      approved: "Approved",
+      rejected: "Rejected",
+    };
+    return <Badge variant={variants[status] || "outline"}>{labels[status] || status}</Badge>;
+  };
+
   const getPaymentBadge = (matchId: string) => {
     const payment = paymentStatuses?.[matchId];
     if (!payment) return <Badge variant="outline">No payment</Badge>;
@@ -192,6 +265,9 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
       </Badge>
     );
   };
+
+  // Count pending bookings
+  const pendingBookings = turfBookings?.filter((b: any) => b.booking_status === "pending_approval") || [];
 
   return (
     <div className="space-y-6">
@@ -329,16 +405,80 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="full">Full</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="pending_approval">Pending Approval</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="open">Match Open</SelectItem>
+                <SelectItem value="completed">Match Completed</SelectItem>
+                <SelectItem value="cancelled">Match Cancelled</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardContent>
       </Card>
+
+      {/* Pending Approvals Alert */}
+      {pendingBookings.length > 0 && (
+        <Card className="border-yellow-500/50 bg-yellow-500/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Clock className="h-5 w-5 text-yellow-600" />
+              Pending Approvals ({pendingBookings.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Booked By</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingBookings.map((b: any) => (
+                  <TableRow key={b.id}>
+                    <TableCell>{format(parseISO(b.booking_date), "dd MMM yyyy")}</TableCell>
+                    <TableCell>{b.start_time?.slice(0, 5)} - {b.end_time?.slice(0, 5)}</TableCell>
+                    <TableCell>
+                      <p>{b.profiles?.name || b.profiles?.email || "-"}</p>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={b.payment_status === "paid" ? "default" : "secondary"}>
+                        {b.payment_status} {b.amount_paid > 0 ? `(₹${b.amount_paid})` : ""}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => approveMutation.mutate(b.id)}
+                          disabled={approveMutation.isPending}
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => rejectMutation.mutate(b.id)}
+                          disabled={rejectMutation.isPending}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Bookings Table */}
       <Card>

@@ -2125,6 +2125,7 @@ export type Database = {
         Row: {
           amount_paid: number
           booking_date: string
+          booking_status: string
           created_at: string
           duration_minutes: number
           end_time: string
@@ -2141,6 +2142,7 @@ export type Database = {
         Insert: {
           amount_paid?: number
           booking_date: string
+          booking_status?: string
           created_at?: string
           duration_minutes?: number
           end_time: string
@@ -2157,6 +2159,7 @@ export type Database = {
         Update: {
           amount_paid?: number
           booking_date?: string
+          booking_status?: string
           created_at?: string
           duration_minutes?: number
           end_time?: string
@@ -2307,6 +2310,7 @@ export type Database = {
           price_per_hour: number | null
           pricing_rules: Json | null
           refund_policy: string | null
+          require_booking_approval: boolean | null
           rules: string | null
           slot_duration_minutes: number | null
           sport_type: string | null
@@ -2341,6 +2345,7 @@ export type Database = {
           price_per_hour?: number | null
           pricing_rules?: Json | null
           refund_policy?: string | null
+          require_booking_approval?: boolean | null
           rules?: string | null
           slot_duration_minutes?: number | null
           sport_type?: string | null
@@ -2375,6 +2380,7 @@ export type Database = {
           price_per_hour?: number | null
           pricing_rules?: Json | null
           refund_policy?: string | null
+          require_booking_approval?: boolean | null
           rules?: string | null
           slot_duration_minutes?: number | null
           sport_type?: string | null
