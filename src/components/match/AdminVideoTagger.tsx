@@ -341,7 +341,7 @@ export function AdminVideoTagger({
           <video
             ref={videoRef}
             src={videoUrl}
-            className="w-full rounded-lg bg-black max-h-[400px]"
+            className="w-full rounded-lg bg-black max-h-[200px] sm:max-h-[300px] md:max-h-[400px]"
             crossOrigin="anonymous"
             playsInline
             webkit-playsinline="true"
