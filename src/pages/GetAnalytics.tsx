@@ -168,21 +168,41 @@ const GetAnalytics = () => {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ jobId, status, adminNotes }: { jobId: string; status: string; adminNotes?: string }) => {
+    mutationFn: async ({ jobId, status, adminNotes, matchIdToLink, videoUrl }: { 
+      jobId: string; 
+      status: string; 
+      adminNotes?: string;
+      matchIdToLink?: string;
+      videoUrl?: string;
+    }) => {
       const updateData: any = { status };
       if (adminNotes !== undefined) updateData.admin_notes = adminNotes;
+      if (matchIdToLink && matchIdToLink !== "none") updateData.match_id = matchIdToLink;
       
       const { error } = await supabase
         .from("video_analysis_jobs")
         .update(updateData)
         .eq("id", jobId);
       if (error) throw error;
+
+      // Sync video_url to the linked match when completing
+      if (status === "completed" && matchIdToLink && matchIdToLink !== "none" && videoUrl) {
+        const { error: matchError } = await supabase
+          .from("matches")
+          .update({ video_url: videoUrl })
+          .eq("id", matchIdToLink);
+        if (matchError) {
+          console.error("Failed to sync video URL to match:", matchError);
+        }
+      }
     },
     onSuccess: () => {
       toast.success("Status updated!");
       queryClient.invalidateQueries({ queryKey: ["my-video-submissions"] });
       queryClient.invalidateQueries({ queryKey: ["all-video-submissions"] });
+      queryClient.invalidateQueries({ queryKey: ["match"] });
       setSelectedJob(null);
+      setSelectedMatchId("");
     },
     onError: (error) => {
       toast.error("Failed to update: " + error.message);
@@ -494,6 +514,8 @@ const GetAnalytics = () => {
                         jobId: selectedJob.id,
                         status: "completed",
                         adminNotes: notes,
+                        matchIdToLink: selectedMatchId,
+                        videoUrl: selectedJob.video_url,
                       });
                     }}
                   >
