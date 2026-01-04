@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.analyze-video]
 verify_jwt = true
+
+[functions.create-tournament-razorpay-order]
+verify_jwt = false
+
+[functions.verify-tournament-razorpay-payment]
+verify_jwt = false
+
+[functions.process-razorpay-payout]
+verify_jwt = false
