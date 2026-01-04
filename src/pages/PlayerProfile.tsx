@@ -292,7 +292,6 @@ export default function PlayerProfile() {
                 position: player.position,
                 city: player.city,
                 profile_photo_url: player.profile_photo_url,
-                favourite_club: player.favourite_club,
               }}
               stats={{
                 overall: stats?.overall || null,

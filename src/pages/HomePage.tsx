@@ -593,7 +593,6 @@ export default function HomePage() {
                         position: profile?.position || null,
                         city: profile?.city || null,
                         profile_photo_url: profile?.profile_photo_url || null,
-                        favourite_club: userStats?.favourite_club || null,
                       }}
                       stats={{
                         overall: userStats?.rating || null,
