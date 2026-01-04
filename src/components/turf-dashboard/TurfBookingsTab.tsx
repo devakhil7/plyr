@@ -97,6 +97,10 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
       queryClient.invalidateQueries({ queryKey: ["turf-bookings-list"] });
       toast.success("Booking cancelled");
     },
+    onError: (error: any) => {
+      console.error("Cancel booking error:", error);
+      toast.error(error.message || "Failed to cancel booking");
+    },
   });
 
   // Add manual booking mutation
