@@ -31,7 +31,9 @@ export function AppLayout({ children, showBottomNav = true }: AppLayoutProps) {
       style={{ minHeight: 'calc(var(--vh, 1vh) * 100)' }}
     >
       <AppNavbar />
-      <main className="flex-1 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0 overflow-x-hidden">
+      {/* Spacer for fixed navbar */}
+      <div className="h-[calc(3rem+env(safe-area-inset-top))] md:h-[calc(3.5rem+env(safe-area-inset-top))] flex-shrink-0" />
+      <main className="flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0 overflow-x-hidden">
         {children}
       </main>
       {showBottomNav && <BottomNav />}
