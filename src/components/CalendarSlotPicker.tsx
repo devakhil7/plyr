@@ -204,95 +204,107 @@ export const CalendarSlotPicker: React.FC<CalendarSlotPickerProps> = ({
           are split across different nested overflow containers.
         */}
         <div className="overflow-auto touch-pan-x overscroll-contain max-h-[280px] md:max-h-[350px]">
-          <div className="min-w-[600px]">
-            {/* Day headers */}
-            <div className="grid grid-cols-[50px_repeat(7,1fr)] border-b bg-muted/50 sticky top-0 z-20">
-              <div className="p-2 text-center text-xs font-medium text-muted-foreground sticky left-0 top-0 bg-muted/50 z-30 border-r">
-                Time
-              </div>
-              {weekDays.map((day) => (
-                <div
-                  key={day.toISOString()}
-                  className={cn(
-                    "p-2 text-center border-l",
-                    isToday(day) && "bg-primary/10",
-                    isSameDay(day, selectedDate) && "bg-primary/20"
-                  )}
-                >
-                  <div className="text-xs font-medium text-muted-foreground">
-                    {format(day, 'EEE')}
+            <div className="min-w-[600px]">
+              {/* Day headers */}
+              <div className="sticky top-0 z-20 bg-muted/50 border-b">
+                <div className="flex">
+                  <div className="w-[50px] shrink-0 p-2 text-center text-xs font-medium text-muted-foreground sticky left-0 top-0 bg-muted/50 z-30 border-r">
+                    Time
                   </div>
-                  <div
-                    className={cn(
-                      "text-sm font-semibold",
-                      isToday(day) && "text-primary"
-                    )}
-                  >
-                    {format(day, 'd')}
+                  <div className="grid grid-cols-7 flex-1">
+                    {weekDays.map((day) => (
+                      <div
+                        key={day.toISOString()}
+                        className={cn(
+                          "p-2 text-center border-l",
+                          isToday(day) && "bg-primary/10",
+                          isSameDay(day, selectedDate) && "bg-primary/20"
+                        )}
+                      >
+                        <div className="text-xs font-medium text-muted-foreground">
+                          {format(day, 'EEE')}
+                        </div>
+                        <div
+                          className={cn(
+                            "text-sm font-semibold",
+                            isToday(day) && "text-primary"
+                          )}
+                        >
+                          {format(day, 'd')}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
+              </div>
+
+              {/* Time slots */}
+              {HOURS.map((hour) => (
+                <React.Fragment key={hour}>
+                  {/* Full hour row */}
+                  <div className="border-b">
+                    <div className="flex">
+                      <div className="w-[50px] shrink-0 p-1 text-xs text-muted-foreground text-right pr-2 border-r sticky left-0 bg-background z-20">
+                        {formatHour(hour)}
+                      </div>
+                      <div className="grid grid-cols-7 flex-1">
+                        {weekDays.map((day) => {
+                          const available = isSlotAvailable(day, hour, false);
+                          const selected = isSlotSelected(day, hour, false);
+                          const booked = isSlotBooked(day, hour);
+
+                          return (
+                            <button
+                              key={`${day.toISOString()}-${hour}-0`}
+                              type="button"
+                              disabled={!available}
+                              onClick={() => handleSlotClick(day, hour, false)}
+                              className={cn(
+                                "h-6 border-l transition-colors",
+                                available && !selected && "hover:bg-primary/20 cursor-pointer",
+                                selected && "bg-primary text-primary-foreground",
+                                booked && "bg-destructive/20 cursor-not-allowed",
+                                !available && !booked && "bg-muted/50 cursor-not-allowed"
+                              )}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Half hour row */}
+                  <div className="border-b border-dashed">
+                    <div className="flex">
+                      <div className="w-[50px] shrink-0 p-1 text-xs text-muted-foreground text-right pr-2 border-r sticky left-0 bg-background z-20" />
+                      <div className="grid grid-cols-7 flex-1">
+                        {weekDays.map((day) => {
+                          const available = isSlotAvailable(day, hour, true);
+                          const selected = isSlotSelected(day, hour, true);
+                          const booked = isSlotBooked(day, hour + 0.5);
+
+                          return (
+                            <button
+                              key={`${day.toISOString()}-${hour}-30`}
+                              type="button"
+                              disabled={!available}
+                              onClick={() => handleSlotClick(day, hour, true)}
+                              className={cn(
+                                "h-6 border-l transition-colors",
+                                available && !selected && "hover:bg-primary/20 cursor-pointer",
+                                selected && "bg-primary text-primary-foreground",
+                                booked && "bg-destructive/20 cursor-not-allowed",
+                                !available && !booked && "bg-muted/50 cursor-not-allowed"
+                              )}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </React.Fragment>
               ))}
             </div>
-
-            {/* Time slots */}
-            {HOURS.map((hour) => (
-              <React.Fragment key={hour}>
-                {/* Full hour row */}
-                <div className="grid grid-cols-[50px_repeat(7,1fr)] border-b">
-                  <div className="p-1 text-xs text-muted-foreground text-right pr-2 border-r sticky left-0 bg-background z-20">
-                    {formatHour(hour)}
-                  </div>
-                  {weekDays.map((day) => {
-                    const available = isSlotAvailable(day, hour, false);
-                    const selected = isSlotSelected(day, hour, false);
-                    const booked = isSlotBooked(day, hour);
-
-                    return (
-                      <button
-                        key={`${day.toISOString()}-${hour}-0`}
-                        type="button"
-                        disabled={!available}
-                        onClick={() => handleSlotClick(day, hour, false)}
-                        className={cn(
-                          "h-6 border-l border-b-0 transition-colors",
-                          available && !selected && "hover:bg-primary/20 cursor-pointer",
-                          selected && "bg-primary text-primary-foreground",
-                          booked && "bg-destructive/20 cursor-not-allowed",
-                          !available && !booked && "bg-muted/50 cursor-not-allowed"
-                        )}
-                      />
-                    );
-                  })}
-                </div>
-
-                {/* Half hour row */}
-                <div className="grid grid-cols-[50px_repeat(7,1fr)] border-b border-dashed">
-                  <div className="p-1 text-xs text-muted-foreground text-right pr-2 border-r sticky left-0 bg-background z-20" />
-                  {weekDays.map((day) => {
-                    const available = isSlotAvailable(day, hour, true);
-                    const selected = isSlotSelected(day, hour, true);
-                    const booked = isSlotBooked(day, hour + 0.5);
-
-                    return (
-                      <button
-                        key={`${day.toISOString()}-${hour}-30`}
-                        type="button"
-                        disabled={!available}
-                        onClick={() => handleSlotClick(day, hour, true)}
-                        className={cn(
-                          "h-6 border-l transition-colors",
-                          available && !selected && "hover:bg-primary/20 cursor-pointer",
-                          selected && "bg-primary text-primary-foreground",
-                          booked && "bg-destructive/20 cursor-not-allowed",
-                          !available && !booked && "bg-muted/50 cursor-not-allowed"
-                        )}
-                      />
-                    );
-                  })}
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
         </div>
       </Card>
 
