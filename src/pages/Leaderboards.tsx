@@ -181,7 +181,11 @@ export default function Leaderboards() {
     entries: LeaderboardEntry[];
     formatValue: (v: number) => string;
     secondaryLabel?: string;
-  }>({ open: false, title: "", entries: [], formatValue: (v) => v.toString() });
+    page: number;
+  }>({ open: false, title: "", entries: [], formatValue: (v) => v.toString(), page: 0 });
+
+  const ITEMS_PER_PAGE = 50;
+  const MAX_ENTRIES = 100;
 
   // Calculate date range based on selected period
   const dateRange = useMemo(() => {
@@ -626,7 +630,8 @@ export default function Leaderboards() {
   const matchesLeaderboardTop10 = matchesLeaderboard.slice(0, 10);
 
   const openViewAll = (title: string, entries: LeaderboardEntry[], formatValue: (v: number) => string, secondaryLabel?: string) => {
-    setViewAllDialog({ open: true, title, entries, formatValue, secondaryLabel });
+    // Limit to MAX_ENTRIES (100) for performance
+    setViewAllDialog({ open: true, title, entries: entries.slice(0, MAX_ENTRIES), formatValue, secondaryLabel, page: 0 });
   };
 
   return (
@@ -862,48 +867,80 @@ export default function Leaderboards() {
 
     {/* View All Dialog */}
     <Dialog open={viewAllDialog.open} onOpenChange={(open) => setViewAllDialog(prev => ({ ...prev, open }))}>
-      <DialogContent className="max-w-lg max-h-[80vh]">
+      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{viewAllDialog.title}</DialogTitle>
+          <p className="text-xs text-muted-foreground">
+            Showing {Math.min(viewAllDialog.entries.length, ITEMS_PER_PAGE)} of {viewAllDialog.entries.length} players
+          </p>
         </DialogHeader>
-        <ScrollArea className="max-h-[60vh] pr-4">
+        <ScrollArea className="flex-1 pr-4">
           <div className="space-y-2">
-            {viewAllDialog.entries.map((entry, index) => (
-              <Link
-                key={entry.id}
-                to={`/players/${entry.id}`}
-                onClick={() => setViewAllDialog(prev => ({ ...prev, open: false }))}
-                className={`flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50 ${
-                  index < 3 ? getRankBadgeClass(index + 1) + " border" : ""
-                }`}
-              >
-                <div className="flex items-center justify-center w-6">
-                  {getRankIcon(index + 1)}
-                </div>
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={entry.profile_photo_url || undefined} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                    {entry.name?.charAt(0).toUpperCase() || "?"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{entry.name || "Unknown"}</p>
-                  {entry.city && (
-                    <p className="text-xs text-muted-foreground truncate">{entry.city}</p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-primary">{viewAllDialog.formatValue(entry.value)}</p>
-                  {viewAllDialog.secondaryLabel && entry.secondaryValue !== undefined && (
-                    <p className="text-xs text-muted-foreground">
-                      {entry.secondaryValue} {viewAllDialog.secondaryLabel}
-                    </p>
-                  )}
-                </div>
-              </Link>
-            ))}
+            {viewAllDialog.entries
+              .slice(viewAllDialog.page * ITEMS_PER_PAGE, (viewAllDialog.page + 1) * ITEMS_PER_PAGE)
+              .map((entry, idx) => {
+                const globalIndex = viewAllDialog.page * ITEMS_PER_PAGE + idx;
+                return (
+                  <Link
+                    key={entry.id}
+                    to={`/players/${entry.id}`}
+                    onClick={() => setViewAllDialog(prev => ({ ...prev, open: false }))}
+                    className={`flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-muted/50 ${
+                      globalIndex < 3 ? getRankBadgeClass(globalIndex + 1) + " border" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-center w-6">
+                      {getRankIcon(globalIndex + 1)}
+                    </div>
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={entry.profile_photo_url || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                        {entry.name?.charAt(0).toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{entry.name || "Unknown"}</p>
+                      {entry.city && (
+                        <p className="text-xs text-muted-foreground truncate">{entry.city}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-primary">{viewAllDialog.formatValue(entry.value)}</p>
+                      {viewAllDialog.secondaryLabel && entry.secondaryValue !== undefined && (
+                        <p className="text-xs text-muted-foreground">
+                          {entry.secondaryValue} {viewAllDialog.secondaryLabel}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
           </div>
         </ScrollArea>
+        {/* Pagination controls */}
+        {viewAllDialog.entries.length > ITEMS_PER_PAGE && (
+          <div className="flex items-center justify-between pt-4 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={viewAllDialog.page === 0}
+              onClick={() => setViewAllDialog(prev => ({ ...prev, page: prev.page - 1 }))}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              Page {viewAllDialog.page + 1} of {Math.ceil(viewAllDialog.entries.length / ITEMS_PER_PAGE)}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={(viewAllDialog.page + 1) * ITEMS_PER_PAGE >= viewAllDialog.entries.length}
+              onClick={() => setViewAllDialog(prev => ({ ...prev, page: prev.page + 1 }))}
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
     </>
