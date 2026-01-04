@@ -127,42 +127,80 @@ export default function HomePage() {
     enabled: !!user?.id,
   });
 
-  // Fetch top 3 leaderboard players
+  const TOP_PLAYERS_QUERY_VERSION = 2;
+
+  // Fetch top 3 leaderboard players (same ranking logic as /leaderboards)
   const { data: topPlayers } = useQuery({
-    queryKey: ["top-leaderboard-players"],
+    queryKey: ["top-leaderboard-players", TOP_PLAYERS_QUERY_VERSION],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("player_ratings")
-        .select(`
-          rated_user_id,
-          rating,
-          profiles!player_ratings_rated_user_id_fkey(id, name, profile_photo_url, city)
-        `)
-        .eq("moderation_status", "approved");
+      const PAGE_SIZE = 1000;
 
-      if (!data) return [];
+      const all: Array<{ rated_user_id: string; rating: number }> = [];
+      for (let from = 0; ; from += PAGE_SIZE) {
+        const { data, error } = await supabase
+          .from("player_ratings")
+          .select("rated_user_id, rating")
+          .eq("moderation_status", "approved")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
 
-      const playerRatings: Record<string, { total: number; count: number; profile: any }> = {};
-      data.forEach((r: any) => {
-        if (!r.profiles) return;
-        const id = r.rated_user_id;
-        if (!playerRatings[id]) {
-          playerRatings[id] = { total: 0, count: 0, profile: r.profiles };
-        }
-        playerRatings[id].total += r.rating;
-        playerRatings[id].count += 1;
+        if (error) throw error;
+        const rows = (data || []) as Array<{ rated_user_id: string; rating: number }>;
+        all.push(...rows);
+        if (rows.length < PAGE_SIZE) break;
+      }
+
+      if (!all.length) return [];
+
+      // Aggregate by player
+      const statsByPlayer = new Map<string, { sum: number; count: number }>();
+      all.forEach((r) => {
+        const current = statsByPlayer.get(r.rated_user_id) || { sum: 0, count: 0 };
+        statsByPlayer.set(r.rated_user_id, {
+          sum: current.sum + r.rating,
+          count: current.count + 1,
+        });
       });
 
-      return Object.entries(playerRatings)
-        .map(([id, data]) => ({
-          id,
-          name: data.profile.name,
-          city: data.profile.city,
-          profile_photo_url: data.profile.profile_photo_url,
-          avgRating: data.total / data.count,
-        }))
-        .sort((a, b) => b.avgRating - a.avgRating)
+      const maxCount = Math.max(...Array.from(statsByPlayer.values()).map((s) => s.count), 1);
+
+      const ranked = Array.from(statsByPlayer.entries())
+        .map(([id, s]) => {
+          const avg = s.sum / s.count;
+          const avgRounded = parseFloat(avg.toFixed(2));
+          const normalizedCount = (s.count / maxCount) * 5;
+          const weightedScore = avgRounded * 0.75 + normalizedCount * 0.25;
+          return { id, avgRating: avgRounded, ratingCount: s.count, weightedScore };
+        })
+        .sort((a, b) => b.weightedScore - a.weightedScore)
         .slice(0, 3);
+
+      const topIds = ranked.map((r) => r.id);
+      if (!topIds.length) return [];
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, name, profile_photo_url, city")
+        .in("id", topIds);
+
+      if (profilesError) throw profilesError;
+
+      const profileById = new Map((profiles || []).map((p) => [p.id, p] as const));
+
+      return ranked
+        .map((r) => {
+          const p = profileById.get(r.id);
+          if (!p) return null;
+          return {
+            id: r.id,
+            name: p.name,
+            city: p.city,
+            profile_photo_url: p.profile_photo_url,
+            avgRating: r.avgRating,
+            ratingCount: r.ratingCount,
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => Boolean(item));
     },
   });
 
