@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, MapPin } from "lucide-react";
+import { useId } from "react";
 
 interface PlayerStats {
   overall: number | null;
@@ -59,6 +60,8 @@ const tierColors = {
 };
 
 export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
+  const uniqueId = useId();
+  
   // Convert 1-5 scale to 1-100 scale
   const convertTo100 = (value: number | null): number | null => {
     if (value === null || value === 0) return null;
@@ -135,16 +138,16 @@ export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
           style={{ width: '280px', height: '400px' }}
         >
           <defs>
-            <linearGradient id={`cardGradient-${tier}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id={`cardGradient-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor={`hsl(${colors.primary})`} stopOpacity="0.1" />
               <stop offset="100%" stopColor={`hsl(${colors.secondary})`} stopOpacity="0.2" />
             </linearGradient>
-            <linearGradient id={`tierGradient-${tier}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id={`tierGradient-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor={`hsl(${colors.primary})`} />
               <stop offset="50%" stopColor={`hsl(${colors.accent})`} />
               <stop offset="100%" stopColor={`hsl(${colors.secondary})`} />
             </linearGradient>
-            <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <filter id={`cardShadow-${uniqueId}`} x="-20%" y="-20%" width="140%" height="140%">
               <feDropShadow dx="0" dy="4" stdDeviation="8" floodOpacity="0.4" />
             </filter>
           </defs>
@@ -162,9 +165,9 @@ export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
                L 0 20 
                Q 0 0 20 0"
             fill={tier === "gold" ? "#1a1508" : tier === "silver" ? "#151820" : "#1a1210"}
-            stroke={`url(#tierGradient-${tier})`}
+            stroke={`url(#tierGradient-${uniqueId})`}
             strokeWidth="3"
-            filter="url(#cardShadow)"
+            filter={`url(#cardShadow-${uniqueId})`}
           />
           {/* Inner decorative lines */}
           <path
@@ -180,14 +183,14 @@ export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
                L 10 25 
                Q 10 10 25 10"
             fill="none"
-            stroke={`url(#tierGradient-${tier})`}
+            stroke={`url(#tierGradient-${uniqueId})`}
             strokeWidth="0.5"
             opacity="0.4"
           />
           {/* Diagonal shine effect */}
           <path
             d="M 60 0 L 140 0 L 80 120 L 0 120 L 0 60 Z"
-            fill={`url(#tierGradient-${tier})`}
+            fill={`url(#tierGradient-${uniqueId})`}
             opacity="0.08"
           />
         </svg>
