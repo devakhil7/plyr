@@ -37,7 +37,7 @@ export function AppNavbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/30 bg-background/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/30 bg-background/95 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/80" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <nav className="container-app flex h-12 md:h-14 items-center justify-between">
         {/* Logo */}
         <Link to="/home" className="flex items-center gap-2 active:scale-95 transition-transform">
