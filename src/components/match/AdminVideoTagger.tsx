@@ -345,6 +345,7 @@ export function AdminVideoTagger({
             crossOrigin="anonymous"
             playsInline
             webkit-playsinline="true"
+            disablePictureInPicture
           />
           
           {/* Timeline */}
