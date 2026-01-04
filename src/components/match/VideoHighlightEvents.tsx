@@ -429,6 +429,13 @@ export function VideoHighlightEvents({ events, videoUrl, matchId, matchName }: V
                             {event.jersey_number && ` (#${event.jersey_number})`}
                           </div>
                         )}
+                        {/* Show assist for goals in highlight clips */}
+                        {event.event_type === "goal" && event.assist_player_name && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <ArrowRightLeft className="h-3 w-3" />
+                            Assist: {event.assist_player_name}
+                          </div>
+                        )}
                       </div>
                       
                       {/* Action buttons */}
