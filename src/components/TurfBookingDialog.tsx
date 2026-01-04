@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { calculateBookingPrice, PricingRules } from '@/lib/turfPricing';
 
 interface TurfBookingDialogProps {
   open: boolean;
@@ -62,14 +63,14 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
   const [paymentOption, setPaymentOption] = useState<PaymentOption>('full');
   const [step, setStep] = useState<'slot' | 'payment'>('slot');
 
-  // Fetch turf payment settings
+  // Fetch turf payment settings including pricing rules
   const { data: turfSettings } = useQuery({
     queryKey: ['turf-payment-settings', turf?.id],
     queryFn: async () => {
       if (!turf?.id) return null;
       const { data } = await supabase
         .from('turfs')
-        .select('allow_advance_payment, advance_amount_type, advance_amount_value, allow_pay_at_ground')
+        .select('allow_advance_payment, advance_amount_type, advance_amount_value, allow_pay_at_ground, pricing_rules, price_per_hour')
         .eq('id', turf.id)
         .single();
       return data;
@@ -78,7 +79,10 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
   });
 
   const pricePerHour = turf?.price_per_hour || 0;
-  const totalAmount = (pricePerHour * duration) / 60;
+  // Calculate total using peak pricing rules if available
+  const totalAmount = selectedTime 
+    ? calculateBookingPrice(pricePerHour, turfSettings?.pricing_rules as PricingRules | null, selectedDate, selectedTime, duration)
+    : (pricePerHour * duration) / 60;
 
   // Calculate advance amount
   const advanceAmount = turfSettings?.advance_amount_type === 'percentage'
