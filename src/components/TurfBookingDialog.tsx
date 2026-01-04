@@ -114,6 +114,7 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
       const endTime = minutesToTime(endMinutes);
 
       // Create booking directly with pay_at_ground status
+      // booking_status is pending_approval since no payment was made (turf owner needs to approve)
       const { data: booking, error } = await supabase
         .from('turf_bookings')
         .insert({
@@ -125,13 +126,16 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
           duration_minutes: duration,
           amount_paid: 0,
           payment_status: 'pay_at_ground',
+          booking_status: 'pending_approval',
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      toast.success('Booking confirmed! Please pay at the ground.');
+      toast.success('Booking request sent! Waiting for turf owner approval.');
+      onOpenChange(false);
+      onBookingComplete?.();
       onOpenChange(false);
       onBookingComplete?.();
     } catch (error: any) {

@@ -113,6 +113,7 @@ serve(async (req) => {
     console.log("Razorpay order created:", razorpayOrder.id);
 
     // Create booking record with pending status
+    // booking_status is 'approved' since payment is being initiated (will be confirmed on verification)
     const paymentStatus = body.is_advance ? "advance_pending" : "pending";
     const { data: booking, error: bookingError } = await supabase
       .from("turf_bookings")
@@ -127,6 +128,7 @@ serve(async (req) => {
         amount_paid: body.amount,
         razorpay_order_id: razorpayOrder.id,
         payment_status: paymentStatus,
+        booking_status: "pending_approval", // Will be auto-approved on payment verification
       })
       .select()
       .single();

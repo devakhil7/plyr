@@ -36,6 +36,7 @@ export function TurfSettingsTab({ turfId, turf, onUpdate }: TurfSettingsTabProps
     advance_amount_type: "percentage",
     advance_amount_value: 50,
     allow_pay_at_ground: false,
+    require_booking_approval: true,
   });
 
   // Notifications
@@ -80,6 +81,7 @@ export function TurfSettingsTab({ turfId, turf, onUpdate }: TurfSettingsTabProps
         advance_amount_type: turf.advance_amount_type || "percentage",
         advance_amount_value: turf.advance_amount_value ?? 50,
         allow_pay_at_ground: turf.allow_pay_at_ground ?? false,
+        require_booking_approval: turf.require_booking_approval ?? true,
       });
     }
   }, [turf]);
@@ -118,6 +120,7 @@ export function TurfSettingsTab({ turfId, turf, onUpdate }: TurfSettingsTabProps
           advance_amount_type: paymentSettings.advance_amount_type,
           advance_amount_value: paymentSettings.advance_amount_value,
           allow_pay_at_ground: paymentSettings.allow_pay_at_ground,
+          require_booking_approval: paymentSettings.require_booking_approval,
           updated_at: new Date().toISOString(),
         })
         .eq("id", turfId);
@@ -241,6 +244,17 @@ export function TurfSettingsTab({ turfId, turf, onUpdate }: TurfSettingsTabProps
               <Switch
                 checked={paymentSettings.allow_pay_at_ground}
                 onCheckedChange={(checked) => setPaymentSettings({ ...paymentSettings, allow_pay_at_ground: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div>
+                <p className="font-medium">Require Approval for Unpaid Bookings</p>
+                <p className="text-sm text-muted-foreground">Unpaid bookings need your approval before slot is confirmed. Paid bookings are auto-approved.</p>
+              </div>
+              <Switch
+                checked={paymentSettings.require_booking_approval}
+                onCheckedChange={(checked) => setPaymentSettings({ ...paymentSettings, require_booking_approval: checked })}
               />
             </div>
 
