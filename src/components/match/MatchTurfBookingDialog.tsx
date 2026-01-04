@@ -24,13 +24,13 @@ interface MatchTurfBookingDialogProps {
     match_date: string;
     match_time: string;
     duration_minutes: number;
-    turf_id: string;
-    turfs: {
+    turf_id: string | null;
+    turfs?: {
       id: string;
       name: string;
       location: string;
       price_per_hour: number | null;
-    };
+    } | null;
   } | null;
   onBookingComplete?: () => void;
 }
@@ -68,24 +68,28 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentOption, setPaymentOption] = useState<PaymentOption>('full');
 
-  // Fetch turf payment settings
-  const { data: turfSettings } = useQuery({
-    queryKey: ['turf-payment-settings', match?.turf_id],
+  // Fetch turf data if not provided in match object
+  const { data: turfData, isLoading: turfLoading } = useQuery({
+    queryKey: ['turf-data', match?.turf_id],
     queryFn: async () => {
       if (!match?.turf_id) return null;
       const { data } = await supabase
         .from('turfs')
-        .select('allow_advance_payment, advance_amount_type, advance_amount_value, allow_pay_at_ground')
+        .select('id, name, location, price_per_hour, allow_advance_payment, advance_amount_type, advance_amount_value, allow_pay_at_ground')
         .eq('id', match.turf_id)
         .single();
       return data;
     },
-    enabled: !!match?.turf_id,
+    enabled: open && !!match?.turf_id,
   });
 
-  if (!match || !match.turfs) return null;
+  // Use provided turfs data or fetched turf data
+  const turf = match?.turfs || turfData;
+  const turfSettings = turfData;
 
-  const pricePerHour = match.turfs.price_per_hour || 0;
+  if (!match || !match.turf_id) return null;
+
+  const pricePerHour = turf?.price_per_hour || 0;
   const totalAmount = (pricePerHour * match.duration_minutes) / 60;
 
   // Calculate advance amount
@@ -188,8 +192,8 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
         currency: orderData.currency,
         name: 'SPORTIQ',
         description: isAdvance 
-          ? `Advance Payment - ${match.turfs.name} (₹${remainingAmount} to be paid at ground)`
-          : `Turf Booking - ${match.turfs.name}`,
+          ? `Advance Payment - ${turf?.name || 'Turf'} (₹${remainingAmount} to be paid at ground)`
+          : `Turf Booking - ${turf?.name || 'Turf'}`,
         order_id: orderData.order_id,
         handler: async (razorpayResponse: any) => {
           try {
@@ -289,10 +293,22 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
           </DialogTitle>
           <DialogDescription className="flex items-center gap-1">
             <MapPin className="h-4 w-4" />
-            {match.turfs.name} - {match.turfs.location}
+            {turf ? `${turf.name} - ${turf.location}` : 'Loading turf details...'}
           </DialogDescription>
         </DialogHeader>
 
+        {turfLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : !turf ? (
+          <div className="py-8 text-center text-muted-foreground">
+            <p>Unable to load turf details. Please try again.</p>
+            <Button variant="outline" className="mt-4" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
+          </div>
+        ) : (
         <div className="space-y-6 mt-4">
           {/* Booking Summary */}
           <Card className="p-4 bg-muted/50">
@@ -375,6 +391,7 @@ export const MatchTurfBookingDialog: React.FC<MatchTurfBookingDialogProps> = ({
             )}
           </Button>
         </div>
+        )}
       </DialogContent>
     </Dialog>
   );
