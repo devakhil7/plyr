@@ -1,7 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Copy, MessageCircle, Instagram, Link } from "lucide-react";
+import { Copy, MessageCircle, Instagram, Link, Youtube } from "lucide-react";
 import { toast } from "sonner";
+import { shareToWhatsApp, shareToInstagram, shareToYouTube, copyLink } from "@/lib/shareUtils";
 
 interface ShareDialogProps {
   open: boolean;
@@ -23,55 +24,19 @@ export function ShareDialog({ open, onOpenChange, postId, caption, onShare }: Sh
   };
 
   const handleWhatsAppShare = () => {
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n\n${postUrl}`)}`;
+    shareToWhatsApp({ title: "SPORTIQ Highlight", text: shareText, url: postUrl });
     onShare();
     onOpenChange(false);
-    window.location.href = whatsappUrl;
   };
 
   const handleInstagramShare = async () => {
-    // Try native share API first (works on mobile and can trigger Instagram)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "SPORTIQ Highlight",
-          text: shareText,
-          url: postUrl,
-        });
-        onShare();
-        onOpenChange(false);
-        return;
-      } catch (error) {
-        // User cancelled or share failed, fall back to clipboard
-        if ((error as Error).name !== "AbortError") {
-          console.error("Share failed:", error);
-        }
-      }
-    }
-    
-    // Fallback: Copy link and guide user to Instagram
-    await navigator.clipboard.writeText(postUrl);
-    
-    // Try to open Instagram app with the link
-    const instagramUrl = `instagram://share?text=${encodeURIComponent(`${shareText}\n\n${postUrl}`)}`;
-    
-    // Create a hidden iframe to try opening the app
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = instagramUrl;
-    document.body.appendChild(iframe);
-    
-    // Remove iframe after attempt
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-    }, 1000);
-    
-    toast.success("Link copied! Paste in your Instagram story or DM.", {
-      action: {
-        label: "Open Instagram",
-        onClick: () => window.open("https://instagram.com", "_blank"),
-      },
-    });
+    await shareToInstagram({ title: "SPORTIQ Highlight", text: shareText, url: postUrl });
+    onShare();
+    onOpenChange(false);
+  };
+
+  const handleYouTubeShare = async () => {
+    await shareToYouTube({ title: "SPORTIQ Highlight", text: shareText, url: postUrl });
     onShare();
     onOpenChange(false);
   };
@@ -82,16 +47,16 @@ export function ShareDialog({ open, onOpenChange, postId, caption, onShare }: Sh
         <DialogHeader>
           <DialogTitle className="text-center">Share Highlight</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-3 gap-4 py-4">
+        <div className="grid grid-cols-4 gap-3 py-4">
           <Button
             variant="outline"
             className="flex flex-col items-center gap-2 h-auto py-4 hover:bg-green-500/10 hover:border-green-500"
             onClick={handleWhatsAppShare}
           >
-            <div className="h-12 w-12 rounded-full bg-green-500 flex items-center justify-center">
-              <MessageCircle className="h-6 w-6 text-white" />
+            <div className="h-10 w-10 rounded-full bg-green-500 flex items-center justify-center">
+              <MessageCircle className="h-5 w-5 text-white" />
             </div>
-            <span className="text-sm font-medium">WhatsApp</span>
+            <span className="text-xs font-medium">WhatsApp</span>
           </Button>
           
           <Button
@@ -99,10 +64,21 @@ export function ShareDialog({ open, onOpenChange, postId, caption, onShare }: Sh
             className="flex flex-col items-center gap-2 h-auto py-4 hover:bg-pink-500/10 hover:border-pink-500"
             onClick={handleInstagramShare}
           >
-            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
-              <Instagram className="h-6 w-6 text-white" />
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
+              <Instagram className="h-5 w-5 text-white" />
             </div>
-            <span className="text-sm font-medium">Instagram</span>
+            <span className="text-xs font-medium">Instagram</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="flex flex-col items-center gap-2 h-auto py-4 hover:bg-red-500/10 hover:border-red-500"
+            onClick={handleYouTubeShare}
+          >
+            <div className="h-10 w-10 rounded-full bg-red-600 flex items-center justify-center">
+              <Youtube className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-xs font-medium">YouTube</span>
           </Button>
           
           <Button
@@ -110,10 +86,10 @@ export function ShareDialog({ open, onOpenChange, postId, caption, onShare }: Sh
             className="flex flex-col items-center gap-2 h-auto py-4 hover:bg-primary/10 hover:border-primary"
             onClick={handleCopyLink}
           >
-            <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center">
-              <Link className="h-6 w-6 text-primary-foreground" />
+            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+              <Link className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-sm font-medium">Copy Link</span>
+            <span className="text-xs font-medium">Copy Link</span>
           </Button>
         </div>
         
