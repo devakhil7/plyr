@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { CreditCard, Loader2, MapPin, Clock, Calendar } from 'lucide-react';
+import { CreditCard, Loader2, MapPin, Clock, Calendar, Wallet, Banknote, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,8 @@ import { CalendarSlotPicker } from '@/components/CalendarSlotPicker';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
 
 interface TurfBookingDialogProps {
   open: boolean;
@@ -26,6 +28,8 @@ interface TurfBookingDialogProps {
   } | null;
   onBookingComplete?: () => void;
 }
+
+type PaymentOption = 'full' | 'advance' | 'ground';
 
 declare global {
   interface Window {
@@ -55,9 +59,33 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [duration, setDuration] = useState<number>(60);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentOption, setPaymentOption] = useState<PaymentOption>('full');
+  const [step, setStep] = useState<'slot' | 'payment'>('slot');
+
+  // Fetch turf payment settings
+  const { data: turfSettings } = useQuery({
+    queryKey: ['turf-payment-settings', turf?.id],
+    queryFn: async () => {
+      if (!turf?.id) return null;
+      const { data } = await supabase
+        .from('turfs')
+        .select('allow_advance_payment, advance_amount_type, advance_amount_value, allow_pay_at_ground')
+        .eq('id', turf.id)
+        .single();
+      return data;
+    },
+    enabled: !!turf?.id,
+  });
 
   const pricePerHour = turf?.price_per_hour || 0;
   const totalAmount = (pricePerHour * duration) / 60;
+
+  // Calculate advance amount
+  const advanceAmount = turfSettings?.advance_amount_type === 'percentage'
+    ? Math.round((totalAmount * (turfSettings?.advance_amount_value || 50)) / 100)
+    : (turfSettings?.advance_amount_value || 0);
+  
+  const remainingAmount = totalAmount - advanceAmount;
 
   const loadRazorpayScript = (): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -73,7 +101,7 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
     });
   };
 
-  const handleBooking = async () => {
+  const handlePayAtGround = async () => {
     if (!user || !turf || !selectedTime) {
       toast.error('Please select a time slot');
       return;
@@ -82,7 +110,47 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
     setIsProcessing(true);
 
     try {
-      // Load Razorpay script
+      const endMinutes = timeToMinutes(selectedTime) + duration;
+      const endTime = minutesToTime(endMinutes);
+
+      // Create booking directly with pay_at_ground status
+      const { data: booking, error } = await supabase
+        .from('turf_bookings')
+        .insert({
+          turf_id: turf.id,
+          user_id: user.id,
+          booking_date: format(selectedDate, 'yyyy-MM-dd'),
+          start_time: selectedTime,
+          end_time: endTime,
+          duration_minutes: duration,
+          amount_paid: 0,
+          payment_status: 'pay_at_ground',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Booking confirmed! Please pay at the ground.');
+      onOpenChange(false);
+      onBookingComplete?.();
+    } catch (error: any) {
+      console.error('Booking error:', error);
+      toast.error(error.message || 'Failed to create booking');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleOnlinePayment = async (amount: number, isAdvance: boolean) => {
+    if (!user || !turf || !selectedTime) {
+      toast.error('Please select a time slot');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
         throw new Error('Failed to load payment gateway');
@@ -92,7 +160,6 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
       const endTime = minutesToTime(endMinutes);
 
       // Create order
-      const { data: session } = await supabase.auth.getSession();
       const response = await supabase.functions.invoke('create-razorpay-order', {
         body: {
           turf_id: turf.id,
@@ -100,7 +167,9 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
           start_time: selectedTime,
           end_time: endTime,
           duration_minutes: duration,
-          amount: totalAmount,
+          amount: amount,
+          total_amount: totalAmount,
+          is_advance: isAdvance,
         },
       });
 
@@ -116,17 +185,19 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'SPORTIQ',
-        description: `Turf Booking - ${turf.name}`,
+        description: isAdvance 
+          ? `Advance Payment - ${turf.name} (₹${remainingAmount} to be paid at ground)`
+          : `Turf Booking - ${turf.name}`,
         order_id: orderData.order_id,
         handler: async (response: any) => {
           try {
-            // Verify payment
             const verifyResponse = await supabase.functions.invoke('verify-razorpay-payment', {
               body: {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 booking_id: orderData.booking_id,
+                is_advance: isAdvance,
               },
             });
 
@@ -134,7 +205,11 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
               throw new Error('Payment verification failed');
             }
 
-            toast.success('Booking confirmed! Your slot has been reserved.');
+            const successMessage = isAdvance
+              ? `Advance of ₹${amount} paid! Remaining ₹${remainingAmount} to be paid at ground.`
+              : 'Booking confirmed! Your slot has been reserved.';
+            
+            toast.success(successMessage);
             onOpenChange(false);
             onBookingComplete?.();
           } catch (error: any) {
@@ -165,10 +240,61 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
     }
   };
 
+  const handleConfirmPayment = () => {
+    if (paymentOption === 'ground') {
+      handlePayAtGround();
+    } else if (paymentOption === 'advance') {
+      handleOnlinePayment(advanceAmount, true);
+    } else {
+      handleOnlinePayment(totalAmount, false);
+    }
+  };
+
+  const handleContinueToPayment = () => {
+    if (!selectedTime) {
+      toast.error('Please select a time slot');
+      return;
+    }
+    setStep('payment');
+  };
+
   if (!turf) return null;
 
+  const paymentOptions = [
+    {
+      id: 'full' as PaymentOption,
+      title: 'Pay Full Amount',
+      description: 'Pay the complete amount now',
+      amount: totalAmount,
+      icon: CreditCard,
+      enabled: true,
+    },
+    {
+      id: 'advance' as PaymentOption,
+      title: 'Pay Advance',
+      description: `Pay ₹${advanceAmount} now, ₹${remainingAmount} at ground`,
+      amount: advanceAmount,
+      icon: Wallet,
+      enabled: turfSettings?.allow_advance_payment !== false,
+    },
+    {
+      id: 'ground' as PaymentOption,
+      title: 'Pay at Ground',
+      description: 'No online payment, pay full amount at venue',
+      amount: 0,
+      icon: Banknote,
+      enabled: turfSettings?.allow_pay_at_ground === true,
+    },
+  ];
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      if (!newOpen) {
+        setStep('slot');
+        setPaymentOption('full');
+      }
+      onOpenChange(newOpen);
+    }}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -181,34 +307,113 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
-          <CalendarSlotPicker
-            turfId={turf.id}
-            selectedDate={selectedDate}
-            selectedTime={selectedTime}
-            duration={duration}
-            onDateChange={setSelectedDate}
-            onTimeChange={setSelectedTime}
-            onDurationChange={setDuration}
-          />
+        {step === 'slot' ? (
+          <div className="space-y-6 mt-4">
+            <CalendarSlotPicker
+              turfId={turf.id}
+              selectedDate={selectedDate}
+              selectedTime={selectedTime}
+              duration={duration}
+              onDateChange={setSelectedDate}
+              onTimeChange={setSelectedTime}
+              onDurationChange={setDuration}
+            />
 
-          {/* Pricing summary */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  ₹{pricePerHour}/hour × {duration / 60} hours
-                </span>
+            {/* Pricing summary */}
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    ₹{pricePerHour}/hour × {duration / 60} hours
+                  </span>
+                </div>
+                <div className="text-2xl font-bold text-primary">
+                  ₹{totalAmount.toLocaleString('en-IN')}
+                </div>
               </div>
-              <div className="text-2xl font-bold text-primary">
-                ₹{totalAmount.toLocaleString('en-IN')}
+
+              <Button
+                onClick={handleContinueToPayment}
+                disabled={!selectedTime}
+                className="w-full"
+                size="lg"
+              >
+                Continue to Payment
+              </Button>
+            </Card>
+          </div>
+        ) : (
+          <div className="space-y-6 mt-4">
+            {/* Back button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setStep('slot')}
+              className="mb-2"
+            >
+              ← Change slot
+            </Button>
+
+            {/* Booking Summary */}
+            <Card className="p-4 bg-muted/50">
+              <div className="flex items-center justify-between text-sm">
+                <div className="space-y-1">
+                  <p className="font-medium">{format(selectedDate, 'EEEE, MMMM d, yyyy')}</p>
+                  <p className="text-muted-foreground">
+                    {selectedTime} - {minutesToTime(timeToMinutes(selectedTime) + duration)} ({duration} mins)
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-primary">₹{totalAmount.toLocaleString('en-IN')}</p>
+                  <p className="text-xs text-muted-foreground">Total Amount</p>
+                </div>
               </div>
+            </Card>
+
+            {/* Payment Options */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-lg">Choose Payment Method</h3>
+              
+              {paymentOptions.filter(opt => opt.enabled).map((option) => (
+                <Card
+                  key={option.id}
+                  className={cn(
+                    "p-4 cursor-pointer transition-all border-2",
+                    paymentOption === option.id 
+                      ? "border-primary bg-primary/5" 
+                      : "border-transparent hover:border-muted-foreground/20"
+                  )}
+                  onClick={() => setPaymentOption(option.id)}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center",
+                      paymentOption === option.id ? "bg-primary text-primary-foreground" : "bg-muted"
+                    )}>
+                      <option.icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium">{option.title}</p>
+                        {option.amount > 0 && (
+                          <p className="font-bold text-lg">₹{option.amount.toLocaleString('en-IN')}</p>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{option.description}</p>
+                    </div>
+                    {paymentOption === option.id && (
+                      <Check className="h-5 w-5 text-primary" />
+                    )}
+                  </div>
+                </Card>
+              ))}
             </div>
 
+            {/* Confirm Button */}
             <Button
-              onClick={handleBooking}
-              disabled={!selectedTime || isProcessing}
+              onClick={handleConfirmPayment}
+              disabled={isProcessing}
               className="w-full"
               size="lg"
             >
@@ -217,15 +422,20 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                   Processing...
                 </>
+              ) : paymentOption === 'ground' ? (
+                <>
+                  <Banknote className="h-5 w-5 mr-2" />
+                  Confirm Booking
+                </>
               ) : (
                 <>
                   <CreditCard className="h-5 w-5 mr-2" />
-                  Pay ₹{totalAmount.toLocaleString('en-IN')} & Book
+                  Pay ₹{paymentOption === 'advance' ? advanceAmount.toLocaleString('en-IN') : totalAmount.toLocaleString('en-IN')} Now
                 </>
               )}
             </Button>
-          </Card>
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

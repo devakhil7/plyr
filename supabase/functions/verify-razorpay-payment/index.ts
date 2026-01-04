@@ -11,6 +11,7 @@ interface VerifyPaymentRequest {
   razorpay_payment_id: string;
   razorpay_signature: string;
   booking_id: string;
+  is_advance?: boolean;
 }
 
 serve(async (req) => {
@@ -65,12 +66,15 @@ serve(async (req) => {
       throw new Error("Payment verification failed");
     }
 
+    // Determine payment status based on whether it's an advance payment
+    const paymentStatus = body.is_advance ? "advance_paid" : "completed";
+
     // Update booking status
     const { data: booking, error: updateError } = await supabase
       .from("turf_bookings")
       .update({
         payment_id: body.razorpay_payment_id,
-        payment_status: "completed",
+        payment_status: paymentStatus,
       })
       .eq("id", body.booking_id)
       .eq("user_id", user.id)
@@ -82,7 +86,7 @@ serve(async (req) => {
       throw new Error("Failed to update booking");
     }
 
-    console.log("Payment verified successfully for booking:", booking.id);
+    console.log("Payment verified successfully for booking:", booking.id, "Status:", paymentStatus);
 
     return new Response(
       JSON.stringify({ success: true, booking }),

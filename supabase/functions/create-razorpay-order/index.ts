@@ -13,6 +13,8 @@ interface CreateOrderRequest {
   end_time: string;
   duration_minutes: number;
   amount: number;
+  total_amount?: number;
+  is_advance?: boolean;
   match_id?: string;
 }
 
@@ -75,6 +77,7 @@ serve(async (req) => {
     // Create Razorpay order - receipt must be <= 40 chars
     const shortId = body.turf_id.slice(0, 8);
     const timestamp = Date.now().toString().slice(-10);
+    const paymentDescription = body.is_advance ? "advance" : "full";
     const orderData = {
       amount: Math.round(body.amount * 100), // Razorpay expects amount in paise
       currency: "INR",
@@ -85,6 +88,8 @@ serve(async (req) => {
         booking_date: body.booking_date,
         start_time: body.start_time,
         end_time: body.end_time,
+        payment_type: paymentDescription,
+        total_amount: body.total_amount || body.amount,
       },
     };
 
@@ -108,6 +113,7 @@ serve(async (req) => {
     console.log("Razorpay order created:", razorpayOrder.id);
 
     // Create booking record with pending status
+    const paymentStatus = body.is_advance ? "advance_pending" : "pending";
     const { data: booking, error: bookingError } = await supabase
       .from("turf_bookings")
       .insert({
@@ -120,7 +126,7 @@ serve(async (req) => {
         duration_minutes: body.duration_minutes,
         amount_paid: body.amount,
         razorpay_order_id: razorpayOrder.id,
-        payment_status: "pending",
+        payment_status: paymentStatus,
       })
       .select()
       .single();

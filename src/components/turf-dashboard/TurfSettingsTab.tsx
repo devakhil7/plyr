@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Save, User, Building, Bell } from "lucide-react";
+import { Save, User, Building, Bell, CreditCard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface TurfSettingsTabProps {
@@ -27,6 +28,14 @@ export function TurfSettingsTab({ turfId, turf, onUpdate }: TurfSettingsTabProps
     account_number: "",
     ifsc_code: "",
     upi_id: "",
+  });
+
+  // Payment settings
+  const [paymentSettings, setPaymentSettings] = useState({
+    allow_advance_payment: true,
+    advance_amount_type: "percentage",
+    advance_amount_value: 50,
+    allow_pay_at_ground: false,
   });
 
   // Notifications
@@ -63,6 +72,18 @@ export function TurfSettingsTab({ turfId, turf, onUpdate }: TurfSettingsTabProps
     }
   }, [existingPayoutDetails]);
 
+  // Initialize payment settings from turf
+  useEffect(() => {
+    if (turf) {
+      setPaymentSettings({
+        allow_advance_payment: turf.allow_advance_payment ?? true,
+        advance_amount_type: turf.advance_amount_type || "percentage",
+        advance_amount_value: turf.advance_amount_value ?? 50,
+        allow_pay_at_ground: turf.allow_pay_at_ground ?? false,
+      });
+    }
+  }, [turf]);
+
   const savePayoutMutation = useMutation({
     mutationFn: async () => {
       if (!turfId) return;
@@ -83,6 +104,33 @@ export function TurfSettingsTab({ turfId, turf, onUpdate }: TurfSettingsTabProps
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to save payout details");
+    },
+  });
+
+  const savePaymentSettingsMutation = useMutation({
+    mutationFn: async () => {
+      if (!turfId) return;
+      
+      const { error } = await supabase
+        .from("turfs")
+        .update({
+          allow_advance_payment: paymentSettings.allow_advance_payment,
+          advance_amount_type: paymentSettings.advance_amount_type,
+          advance_amount_value: paymentSettings.advance_amount_value,
+          allow_pay_at_ground: paymentSettings.allow_pay_at_ground,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", turfId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["turf", turfId] });
+      toast.success("Payment settings saved!");
+      onUpdate();
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to save payment settings");
     },
   });
 
@@ -124,6 +172,86 @@ export function TurfSettingsTab({ turfId, turf, onUpdate }: TurfSettingsTabProps
                 Edit this in the Listing & Details tab
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Payment Options */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Payment Options
+            </CardTitle>
+            <CardDescription>Configure how players can pay for bookings</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Allow Advance Payment</p>
+                <p className="text-sm text-muted-foreground">Players pay partial amount online, rest at ground</p>
+              </div>
+              <Switch
+                checked={paymentSettings.allow_advance_payment}
+                onCheckedChange={(checked) => setPaymentSettings({ ...paymentSettings, allow_advance_payment: checked })}
+              />
+            </div>
+            
+            {paymentSettings.allow_advance_payment && (
+              <div className="space-y-3 pl-4 border-l-2 border-muted">
+                <div className="space-y-2">
+                  <Label>Advance Amount Type</Label>
+                  <Select 
+                    value={paymentSettings.advance_amount_type} 
+                    onValueChange={(v) => setPaymentSettings({ ...paymentSettings, advance_amount_type: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentage of Total</SelectItem>
+                      <SelectItem value="fixed">Fixed Amount</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>
+                    {paymentSettings.advance_amount_type === "percentage" ? "Advance Percentage (%)" : "Advance Amount (₹)"}
+                  </Label>
+                  <Input
+                    type="number"
+                    min={paymentSettings.advance_amount_type === "percentage" ? 10 : 100}
+                    max={paymentSettings.advance_amount_type === "percentage" ? 90 : 10000}
+                    value={paymentSettings.advance_amount_value}
+                    onChange={(e) => setPaymentSettings({ ...paymentSettings, advance_amount_value: Number(e.target.value) })}
+                  />
+                  {paymentSettings.advance_amount_type === "percentage" && (
+                    <p className="text-xs text-muted-foreground">
+                      For a ₹1,500 booking, advance would be ₹{Math.round(1500 * paymentSettings.advance_amount_value / 100)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-4 border-t">
+              <div>
+                <p className="font-medium">Allow Pay at Ground</p>
+                <p className="text-sm text-muted-foreground">Players can book without any online payment</p>
+              </div>
+              <Switch
+                checked={paymentSettings.allow_pay_at_ground}
+                onCheckedChange={(checked) => setPaymentSettings({ ...paymentSettings, allow_pay_at_ground: checked })}
+              />
+            </div>
+
+            <Button 
+              onClick={() => savePaymentSettingsMutation.mutate()} 
+              disabled={savePaymentSettingsMutation.isPending}
+              className="w-full"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {savePaymentSettingsMutation.isPending ? "Saving..." : "Save Payment Settings"}
+            </Button>
           </CardContent>
         </Card>
 
@@ -200,7 +328,7 @@ export function TurfSettingsTab({ turfId, turf, onUpdate }: TurfSettingsTabProps
         </Card>
 
         {/* Notifications */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
