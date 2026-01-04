@@ -78,8 +78,8 @@ export function TournamentMatchScheduler({
     round: "group",
     match_date: "",
     match_time: "",
-    team_a_id: "",
-    team_b_id: "",
+    team_a_id: "tbd",
+    team_b_id: "tbd",
   });
 
   // Fetch tournament teams (approved teams only - including pay at ground)
@@ -299,8 +299,8 @@ export function TournamentMatchScheduler({
         throw new Error("Date and time are required");
       }
 
-      const teamA = teams.find((t) => t.id === newMatch.team_a_id);
-      const teamB = teams.find((t) => t.id === newMatch.team_b_id);
+      const teamA = newMatch.team_a_id !== "tbd" ? teams.find((t) => t.id === newMatch.team_a_id) : null;
+      const teamB = newMatch.team_b_id !== "tbd" ? teams.find((t) => t.id === newMatch.team_b_id) : null;
 
       const roundLabel = ROUND_OPTIONS.find((r) => r.value === newMatch.round)?.label || newMatch.round;
       const matchName = teamA && teamB 
@@ -332,8 +332,8 @@ export function TournamentMatchScheduler({
           tournament_id: tournamentId,
           match_id: match.id,
           round: newMatch.round,
-          team_a_id: newMatch.team_a_id || null,
-          team_b_id: newMatch.team_b_id || null,
+          team_a_id: newMatch.team_a_id === "tbd" ? null : newMatch.team_a_id || null,
+          team_b_id: newMatch.team_b_id === "tbd" ? null : newMatch.team_b_id || null,
           match_order: scheduledMatches.length + 1,
         });
 
@@ -349,8 +349,8 @@ export function TournamentMatchScheduler({
         round: "group",
         match_date: "",
         match_time: "",
-        team_a_id: "",
-        team_b_id: "",
+        team_a_id: "tbd",
+        team_b_id: "tbd",
       });
     },
     onError: (error) => {
@@ -513,9 +513,9 @@ export function TournamentMatchScheduler({
                       <SelectValue placeholder="Select team or leave empty (TBD)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">TBD (To Be Decided)</SelectItem>
+                      <SelectItem value="tbd">TBD (To Be Decided)</SelectItem>
                       {teams
-                        .filter((t) => t.id !== newMatch.team_b_id)
+                        .filter((t) => t.id !== newMatch.team_b_id && newMatch.team_b_id !== "tbd" ? t.id !== newMatch.team_b_id : true)
                         .map((team) => (
                           <SelectItem key={team.id} value={team.id}>
                             {team.team_name}
@@ -535,9 +535,9 @@ export function TournamentMatchScheduler({
                       <SelectValue placeholder="Select team or leave empty (TBD)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">TBD (To Be Decided)</SelectItem>
+                      <SelectItem value="tbd">TBD (To Be Decided)</SelectItem>
                       {teams
-                        .filter((t) => t.id !== newMatch.team_a_id)
+                        .filter((t) => newMatch.team_a_id !== "tbd" ? t.id !== newMatch.team_a_id : true)
                         .map((team) => (
                           <SelectItem key={team.id} value={team.id}>
                             {team.team_name}
