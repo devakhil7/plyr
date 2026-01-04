@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Send, Rss, Copy, Search, Loader2, Check } from "lucide-react";
+import { Send, Rss, Copy, Search, Loader2, Check, MessageCircle, Instagram, Youtube, Link } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { shareToWhatsApp, shareToInstagram, shareToYouTube, copyLink } from "@/lib/shareUtils";
 
 interface HighlightShareDialogProps {
   open: boolean;
@@ -359,8 +360,63 @@ export function HighlightShareDialog({
             )}
           </TabsContent>
 
-          {/* Copy Link */}
+          {/* Share to Apps */}
           <TabsContent value="link" className="space-y-4 pt-4">
+            <div className="grid grid-cols-4 gap-2">
+              <Button
+                variant="outline"
+                className="flex flex-col items-center gap-1 h-auto py-3"
+                onClick={() => {
+                  const text = `Check out this ${highlight.event_type}${highlight.player_name ? ` by ${highlight.player_name}` : ""}! 🔥`;
+                  shareToWhatsApp({ title: matchName || "Match Highlight", text, url: highlightUrl, videoUrl: mediaUrlToUse });
+                }}
+              >
+                <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                  <MessageCircle className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-xs">WhatsApp</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="flex flex-col items-center gap-1 h-auto py-3"
+                onClick={() => {
+                  const text = `Check out this ${highlight.event_type}${highlight.player_name ? ` by ${highlight.player_name}` : ""}! 🔥`;
+                  shareToInstagram({ title: matchName || "Match Highlight", text, url: highlightUrl, videoUrl: mediaUrlToUse });
+                }}
+              >
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
+                  <Instagram className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-xs">Instagram</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="flex flex-col items-center gap-1 h-auto py-3"
+                onClick={() => {
+                  const text = `Check out this ${highlight.event_type}${highlight.player_name ? ` by ${highlight.player_name}` : ""}! 🔥`;
+                  shareToYouTube({ title: matchName || "Match Highlight", text, url: highlightUrl, videoUrl: mediaUrlToUse });
+                }}
+              >
+                <div className="h-8 w-8 rounded-full bg-red-600 flex items-center justify-center">
+                  <Youtube className="h-4 w-4 text-white" />
+                </div>
+                <span className="text-xs">YouTube</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="flex flex-col items-center gap-1 h-auto py-3"
+                onClick={handleCopyLink}
+              >
+                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                  <Link className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <span className="text-xs">Copy Link</span>
+              </Button>
+            </div>
+
             <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
               <input
                 type="text"

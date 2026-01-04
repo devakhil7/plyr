@@ -3,8 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Share2, Copy, Trophy, Target, MessageCircle, Instagram, Link } from "lucide-react";
+import { Share2, Copy, Trophy, Target, MessageCircle, Instagram, Link, Youtube } from "lucide-react";
 import { toast } from "sonner";
+import { shareToWhatsApp, shareToInstagram, shareToYouTube, copyLink } from "@/lib/shareUtils";
 
 interface MatchEvent {
   id: string;
@@ -274,13 +275,13 @@ export function MatchEventsShareDialog({
 
         {/* Share Actions */}
         <div className="space-y-3 mt-2">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <Button
               variant="outline"
               className="flex flex-col items-center gap-1 h-auto py-3"
               onClick={() => {
-                const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(generateShareText())}`;
-                window.location.href = whatsappUrl;
+                const url = `${window.location.origin}/matches/${matchId}`;
+                shareToWhatsApp({ title: matchName, text: generateShareText(), url });
               }}
             >
               <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
@@ -292,12 +293,29 @@ export function MatchEventsShareDialog({
             <Button
               variant="outline"
               className="flex flex-col items-center gap-1 h-auto py-3"
-              onClick={handleShare}
+              onClick={() => {
+                const url = `${window.location.origin}/matches/${matchId}`;
+                shareToInstagram({ title: matchName, text: generateShareText(), url });
+              }}
             >
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
                 <Instagram className="h-4 w-4 text-white" />
               </div>
               <span className="text-xs">Instagram</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="flex flex-col items-center gap-1 h-auto py-3"
+              onClick={() => {
+                const url = `${window.location.origin}/matches/${matchId}`;
+                shareToYouTube({ title: matchName, text: generateShareText(), url });
+              }}
+            >
+              <div className="h-8 w-8 rounded-full bg-red-600 flex items-center justify-center">
+                <Youtube className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-xs">YouTube</span>
             </Button>
 
             <Button
