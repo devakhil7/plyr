@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, MapPin, Heart } from "lucide-react";
+import { User, MapPin } from "lucide-react";
 
 interface PlayerStats {
   overall: number | null;
@@ -21,7 +21,6 @@ interface PlayerCardProps {
     position: string | null;
     city: string | null;
     profile_photo_url: string | null;
-    favourite_club: string | null;
   };
   stats: PlayerStats;
   className?: string;
@@ -336,16 +335,6 @@ export function PlayerCard({ player, stats, className = "" }: PlayerCardProps) {
             </div>
           </div>
 
-          {/* Club Badge */}
-          {player.favourite_club && (
-            <div 
-              className="flex items-center justify-center gap-1 text-xs"
-              style={{ color: `hsl(${colors.textSecondary})` }}
-            >
-              <Heart className="h-3 w-3" style={{ color: `hsl(${colors.primary})`, fill: `hsl(${colors.primary})` }} />
-              <span className="truncate max-w-[150px]">{player.favourite_club}</span>
-            </div>
-          )}
         </div>
       </div>
     </div>

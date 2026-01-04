@@ -318,7 +318,6 @@ export default function Profile() {
                 position: formData.position || profile?.position || null,
                 city: formData.city || profile?.city || null,
                 profile_photo_url: profilePhotoUrl || profile?.profile_photo_url || null,
-                favourite_club: getFinalClub(),
               }}
               stats={{
                 overall: stats?.overall || null,
@@ -348,7 +347,6 @@ export default function Profile() {
                   position: formData.position || profile?.position || null,
                   city: formData.city || profile?.city || null,
                   profile_photo_url: profilePhotoUrl || profile?.profile_photo_url || null,
-                  favourite_club: getFinalClub(),
                 }}
                 stats={{
                   overall: stats?.overall || null,
