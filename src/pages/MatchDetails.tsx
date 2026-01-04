@@ -21,6 +21,7 @@ import { PlayerRatingsSection } from "@/components/match/PlayerRatingsSection";
 import { AdminVideoTagger } from "@/components/match/AdminVideoTagger";
 import { VideoHighlightEvents } from "@/components/match/VideoHighlightEvents";
 import { MatchEventsShareDialog } from "@/components/match/MatchEventsShareDialog";
+import { MatchTurfBookingDialog } from "@/components/match/MatchTurfBookingDialog";
 import { computeMatchStatus, type ComputedMatchStatus } from "@/lib/matchStatus";
 
 const statusVariants: Record<string, "open" | "full" | "progress" | "completed" | "cancelled"> = {
@@ -37,7 +38,7 @@ export default function MatchDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
-  const [bookingTurf, setBookingTurf] = useState(false);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
 
   const { data: match, isLoading, refetch } = useQuery({
     queryKey: ["match", id],
@@ -265,114 +266,13 @@ export default function MatchDetails() {
     },
   });
 
-  // Helper to convert time to end time
-  const calculateEndTime = (startTime: string, durationMinutes: number): string => {
-    const [hours, minutes] = startTime.split(':').map(Number);
-    const totalMinutes = hours * 60 + minutes + durationMinutes;
-    const endHours = Math.floor(totalMinutes / 60);
-    const endMins = totalMinutes % 60;
-    return `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}:00`;
+  // Helper to open booking dialog
+  const handleBookTurf = () => {
+    setBookingDialogOpen(true);
   };
 
-  // Load Razorpay script
-  const loadRazorpayScript = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if ((window as any).Razorpay) {
-        resolve(true);
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-  // Book turf for this match
-  const handleBookTurf = async () => {
-    if (!user || !match || !match.turfs) return;
-
-    setBookingTurf(true);
-    try {
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        throw new Error('Failed to load payment gateway');
-      }
-
-      const amount = (match.turfs.price_per_hour || 0) * (match.duration_minutes / 60);
-      const endTime = calculateEndTime(match.match_time, match.duration_minutes);
-
-      // Create order
-      const response = await supabase.functions.invoke('create-razorpay-order', {
-        body: {
-          turf_id: match.turf_id,
-          booking_date: match.match_date,
-          start_time: match.match_time,
-          end_time: endTime,
-          duration_minutes: match.duration_minutes,
-          amount: amount,
-          match_id: match.id,
-        },
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to create order');
-      }
-
-      const orderData = response.data;
-
-      // Open Razorpay checkout
-      const options = {
-        key: orderData.key_id,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: 'SPORTIQ',
-        description: `Turf Booking - ${match.turfs.name}`,
-        order_id: orderData.order_id,
-        handler: async (razorpayResponse: any) => {
-          try {
-            const verifyResponse = await supabase.functions.invoke('verify-razorpay-payment', {
-              body: {
-                razorpay_order_id: razorpayResponse.razorpay_order_id,
-                razorpay_payment_id: razorpayResponse.razorpay_payment_id,
-                razorpay_signature: razorpayResponse.razorpay_signature,
-                booking_id: orderData.booking_id,
-              },
-            });
-
-            if (verifyResponse.error) {
-              throw new Error('Payment verification failed');
-            }
-
-            toast.success('Turf booked successfully! Your slot is now reserved.');
-            queryClient.invalidateQueries({ queryKey: ["match-turf-booking", id] });
-          } catch (error: any) {
-            console.error('Payment verification error:', error);
-            toast.error('Payment verification failed. Please contact support.');
-          }
-        },
-        prefill: {
-          email: user.email,
-        },
-        theme: {
-          color: '#0A3D91',
-        },
-        modal: {
-          ondismiss: () => {
-            setBookingTurf(false);
-          },
-        },
-      };
-
-      const razorpay = new (window as any).Razorpay(options);
-      razorpay.open();
-    } catch (error: any) {
-      console.error('Booking error:', error);
-      toast.error(error.message || 'Failed to process booking');
-    } finally {
-      setBookingTurf(false);
-    }
+  const handleBookingComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ["match-turf-booking", id] });
   };
 
   const updateStatusMutation = useMutation({
@@ -609,19 +509,9 @@ export default function MatchDetails() {
                           variant="outline"
                           size="sm"
                           onClick={handleBookTurf}
-                          disabled={bookingTurf}
                         >
-                          {bookingTurf ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <CreditCard className="h-4 w-4 mr-2" />
-                              Book Turf (₹{((match.turfs?.price_per_hour || 0) * match.duration_minutes / 60).toLocaleString('en-IN')})
-                            </>
-                          )}
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Book Turf (₹{((match.turfs?.price_per_hour || 0) * match.duration_minutes / 60).toLocaleString('en-IN')})
                         </Button>
                       )
                     )}
@@ -1121,6 +1011,14 @@ export default function MatchDetails() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Turf Booking Dialog */}
+        <MatchTurfBookingDialog
+          open={bookingDialogOpen}
+          onOpenChange={setBookingDialogOpen}
+          match={match}
+          onBookingComplete={handleBookingComplete}
+        />
       </div>
     </AppLayout>
   );
