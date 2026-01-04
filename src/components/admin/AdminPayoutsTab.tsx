@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, parseISO, subDays, startOfWeek, endOfWeek } from "date-fns";
-import { CalendarIcon, Plus, DollarSign, CheckCircle, Clock, AlertCircle, Eye } from "lucide-react";
+import { CalendarIcon, Plus, DollarSign, CheckCircle, Clock, AlertCircle, Eye, Send, Banknote } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function AdminPayoutsTab() {
   const queryClient = useQueryClient();
@@ -331,6 +332,8 @@ function PayoutActionsDialog({ payout, onSuccess }: { payout: any; onSuccess: ()
   const [status, setStatus] = useState(payout.status);
   const [reference, setReference] = useState(payout.payout_reference || "");
   const [saving, setSaving] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [bankDetails, setBankDetails] = useState<any>(null);
 
   const { data: linkedPayments } = useQuery({
     queryKey: ["payout-payments", payout.id],
@@ -340,6 +343,19 @@ function PayoutActionsDialog({ payout, onSuccess }: { payout: any; onSuccess: ()
         .select("*, matches(match_name)")
         .eq("payout_id", payout.id);
       return data || [];
+    },
+    enabled: open,
+  });
+
+  const { data: payoutDetails } = useQuery({
+    queryKey: ["turf-payout-details", payout.turf_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("turf_payout_details")
+        .select("*")
+        .eq("turf_id", payout.turf_id)
+        .maybeSingle();
+      return data;
     },
     enabled: open,
   });
@@ -365,6 +381,45 @@ function PayoutActionsDialog({ payout, onSuccess }: { payout: any; onSuccess: ()
     }
   };
 
+  const handleProcessPayout = async () => {
+    setProcessing(true);
+    setBankDetails(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await supabase.functions.invoke("process-razorpay-payout", {
+        body: { payout_id: payout.id },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to process payout");
+      }
+
+      const result = response.data;
+
+      if (result.manual) {
+        // Razorpay X not enabled - show bank details for manual transfer
+        setBankDetails(result.bank_details);
+        setReference(result.reference);
+        toast.info("Razorpay X not enabled. Please process payout manually using the bank details shown.");
+      } else {
+        toast.success(`Payout processed successfully! UTR: ${result.utr || result.razorpay_payout_id}`);
+        setOpen(false);
+        onSuccess();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to process payout");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const maskAccountNumber = (num: string) => {
+    if (!num || num.length < 4) return num;
+    return "XXXX XXXX " + num.slice(-4);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -375,6 +430,63 @@ function PayoutActionsDialog({ payout, onSuccess }: { payout: any; onSuccess: ()
           <DialogTitle>Payout Details</DialogTitle>
         </DialogHeader>
         <div className="space-y-6">
+          {/* Bank Details Section */}
+          {payoutDetails ? (
+            <div className="p-4 rounded-lg border bg-card">
+              <h4 className="font-medium mb-3 flex items-center gap-2">
+                <Banknote className="h-4 w-4" />
+                Turf Bank Details
+              </h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Account Name:</span>
+                  <p className="font-medium">{payoutDetails.account_name || "-"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Bank:</span>
+                  <p className="font-medium">{payoutDetails.bank_name || "-"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Account Number:</span>
+                  <p className="font-medium">{maskAccountNumber(payoutDetails.account_number) || "-"}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">IFSC:</span>
+                  <p className="font-medium">{payoutDetails.ifsc_code || "-"}</p>
+                </div>
+                {payoutDetails.upi_id && (
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">UPI:</span>
+                    <p className="font-medium">{payoutDetails.upi_id}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <Alert variant="destructive">
+              <AlertDescription>
+                Bank details not configured for this turf. Please ask the turf owner to add their bank details in the dashboard settings.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Manual transfer bank details (shown after processing attempt) */}
+          {bankDetails && (
+            <Alert>
+              <Banknote className="h-4 w-4" />
+              <AlertDescription>
+                <p className="font-medium mb-2">Manual Transfer Required</p>
+                <p className="text-sm">Transfer ₹{Number(bankDetails.amount).toLocaleString()} to:</p>
+                <div className="mt-2 p-2 bg-muted rounded text-sm font-mono">
+                  <p>Name: {bankDetails.account_name}</p>
+                  <p>Bank: {bankDetails.bank_name}</p>
+                  <p>A/C: XXXX{bankDetails.account_number}</p>
+                  <p>IFSC: {bankDetails.ifsc_code}</p>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Status</Label>
@@ -438,9 +550,22 @@ function PayoutActionsDialog({ payout, onSuccess }: { payout: any; onSuccess: ()
             )}
           </div>
 
-          <Button onClick={handleUpdate} disabled={saving} className="w-full">
-            {saving ? "Saving..." : "Update Payout"}
-          </Button>
+          <div className="flex gap-2">
+            {payout.status !== "paid" && payoutDetails && (
+              <Button 
+                onClick={handleProcessPayout} 
+                disabled={processing || !payoutDetails.account_number} 
+                variant="default"
+                className="flex-1"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {processing ? "Processing..." : "Process Payout via Razorpay"}
+              </Button>
+            )}
+            <Button onClick={handleUpdate} disabled={saving} variant="outline" className="flex-1">
+              {saving ? "Saving..." : "Update Manually"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
