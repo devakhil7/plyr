@@ -2280,6 +2280,10 @@ export type Database = {
       turfs: {
         Row: {
           active: boolean | null
+          advance_amount_type: string | null
+          advance_amount_value: number | null
+          allow_advance_payment: boolean | null
+          allow_pay_at_ground: boolean | null
           amenities: string[] | null
           blocked_slots: Json | null
           cancellation_policy: string | null
@@ -2310,6 +2314,10 @@ export type Database = {
         }
         Insert: {
           active?: boolean | null
+          advance_amount_type?: string | null
+          advance_amount_value?: number | null
+          allow_advance_payment?: boolean | null
+          allow_pay_at_ground?: boolean | null
           amenities?: string[] | null
           blocked_slots?: Json | null
           cancellation_policy?: string | null
@@ -2340,6 +2348,10 @@ export type Database = {
         }
         Update: {
           active?: boolean | null
+          advance_amount_type?: string | null
+          advance_amount_value?: number | null
+          allow_advance_payment?: boolean | null
+          allow_pay_at_ground?: boolean | null
           amenities?: string[] | null
           blocked_slots?: Json | null
           cancellation_policy?: string | null
