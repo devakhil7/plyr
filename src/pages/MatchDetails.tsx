@@ -763,7 +763,7 @@ export default function MatchDetails() {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-4">
-            {match.status === "completed" ? (
+            {effectiveStatus === "completed" ? (
               <>
                 {/* Share Scorecard Button */}
                 {(() => {
