@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Users, Search, Plus, Filter, User } from "lucide-react";
 import { MatchCard } from "@/components/match/MatchCard";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { computeMatchStatus, getDisplayStatus } from "@/lib/matchStatus";
 
 export default function BrowseMatches() {
   const { user } = useAuth();
@@ -77,22 +78,27 @@ export default function BrowseMatches() {
         query = query.eq("visibility", "public" as const);
       }
 
-      // Only filter to future matches if not showing "all" or "completed"
-      if (viewMode !== "my" && statusFilter !== "all" && statusFilter !== "completed") {
-        query = query.gte("match_date", new Date().toISOString().split("T")[0]);
-      }
-
       // Exclude tournament matches (only for "all" view)
       if (viewMode !== "my" && tournamentMatchIds.length > 0) {
         query = query.not("id", "in", `(${tournamentMatchIds.join(",")})`);
       }
 
-      if (statusFilter !== "all") {
-        query = query.eq("status", statusFilter as "open" | "full" | "in_progress" | "completed" | "cancelled");
-      }
-
       const { data } = await query;
-      return data || [];
+      
+      // Filter by computed status (time-based) instead of DB status
+      if (!data) return [];
+      
+      return data.filter((match: any) => {
+        const computedStatus = computeMatchStatus({
+          match_date: match.match_date,
+          match_time: match.match_time,
+          duration_minutes: match.duration_minutes || 60,
+        });
+        const displayStatus = getDisplayStatus(computedStatus);
+        
+        if (statusFilter === "all") return true;
+        return displayStatus === statusFilter;
+      });
     },
   });
 
