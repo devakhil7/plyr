@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import athletexLogo from "@/assets/athletex-logo.png";
 
 export function Footer() {
   return (
@@ -8,13 +9,11 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary">
-                <span className="text-lg font-bold text-primary-foreground">S</span>
-              </div>
-              <span className="text-xl font-bold font-display text-foreground">SPORTIQ</span>
+              <img src={athletexLogo} alt="AthleteX" className="h-9 w-9 object-contain" />
+              <span className="text-xl font-bold font-display text-foreground">AthleteX</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Host, join, and analyze local matches. Build your sports identity.
+              Pro-grade analytics, discovery and community for athletes.
             </p>
           </div>
 
@@ -22,7 +21,7 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/about" className="hover:text-foreground transition-colors">About SportsIQ</Link></li>
+              <li><Link to="/about" className="hover:text-foreground transition-colors">About AthleteX</Link></li>
               <li><Link to="/matches" className="hover:text-foreground transition-colors">Browse Matches</Link></li>
               <li><Link to="/turfs" className="hover:text-foreground transition-colors">Find Turfs</Link></li>
               <li><Link to="/feed" className="hover:text-foreground transition-colors">Community Feed</Link></li>
@@ -54,7 +53,7 @@ export function Footer() {
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} SPORTIQ. All rights reserved.
+            © {new Date().getFullYear()} AthleteX. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">Made with ❤️ for Indian sports</span>

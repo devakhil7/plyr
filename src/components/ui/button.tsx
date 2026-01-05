@@ -15,7 +15,7 @@ const buttonVariants = cva(
         secondary: "bg-muted/60 text-foreground hover:bg-muted/80 border border-border/50 backdrop-blur-sm",
         ghost: "hover:bg-muted/50 text-foreground",
         link: "text-accent underline-offset-4 hover:underline",
-        // SPORTIQ custom variants
+        // AthleteX custom variants
         hero: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-glow hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200",
         "hero-secondary": "bg-muted/40 backdrop-blur-xl text-foreground border border-border/40 hover:bg-muted/60 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200",
         accent: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-md hover:shadow-glow-accent active:scale-[0.98]",

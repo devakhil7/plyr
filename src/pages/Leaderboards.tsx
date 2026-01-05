@@ -646,7 +646,7 @@ export default function Leaderboards() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-primary-foreground">Leaderboards</h1>
-              <p className="text-sm text-primary-foreground/70">Top performers on SPORTIQ</p>
+              <p className="text-sm text-primary-foreground/70">Top performers on AthleteX</p>
             </div>
           </div>
         </div>

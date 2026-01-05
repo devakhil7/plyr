@@ -116,7 +116,7 @@ export default function ImproveFootball() {
   return (
     <AppLayout>
       <Helmet>
-        <title>Improve Your Football Skills | SPORTIQ</title>
+        <title>Improve Your Football Skills | AthleteX</title>
         <meta name="description" content="Master football with position guides, skill tutorials, and training drills. Learn from goalkeeper to striker, passing to shooting." />
       </Helmet>
 

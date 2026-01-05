@@ -102,7 +102,7 @@ const PartnerWithUs = () => {
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-primary mb-3">Partner With Us</h1>
             <p className="text-muted-foreground text-lg">
-              List your turf or sports facility on SPORTIQ and reach thousands of players
+              List your turf or sports facility on AthleteX and reach thousands of players
             </p>
           </div>
 

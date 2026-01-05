@@ -182,7 +182,7 @@ export default function Feed() {
             <div>
               <h1 className="text-3xl font-bold mb-2">Community Feed</h1>
               <p className="text-muted-foreground">
-                Highlights, matches, and events from the SPORTIQ community
+                Highlights, matches, and events from the AthleteX community
               </p>
             </div>
             <CreatePostDialog />

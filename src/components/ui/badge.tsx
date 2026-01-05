@@ -12,7 +12,7 @@ const badgeVariants = cva(
         secondary: "border-border/40 bg-muted/40 text-foreground hover:bg-muted/60",
         destructive: "border-destructive/30 bg-destructive/20 text-destructive hover:bg-destructive/30",
         outline: "border-border/50 bg-transparent text-foreground hover:bg-muted/30",
-        // SPORTIQ status variants
+        // AthleteX status variants
         open: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
         full: "bg-amber-500/20 text-amber-400 border-amber-500/30",
         progress: "bg-primary/20 text-primary border-primary/30",
