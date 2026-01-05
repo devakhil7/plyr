@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { AppNavbar } from "./AppNavbar";
 import { BottomNav } from "./BottomNav";
+import { useUserRoles } from "@/hooks/useUserRoles";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -8,6 +9,8 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, showBottomNav = true }: AppLayoutProps) {
+  const { isTurfOwner, loading } = useUserRoles();
+  
   // Ensure proper viewport height on PWA/mobile browsers
   useEffect(() => {
     const setVh = () => {
@@ -25,6 +28,9 @@ export function AppLayout({ children, showBottomNav = true }: AppLayoutProps) {
     };
   }, []);
 
+  // Turf owners don't see bottom nav
+  const shouldShowBottomNav = showBottomNav && !isTurfOwner && !loading;
+
   return (
     <div 
       className="min-h-screen min-h-[100dvh] flex flex-col bg-background"
@@ -33,10 +39,10 @@ export function AppLayout({ children, showBottomNav = true }: AppLayoutProps) {
       <AppNavbar />
       {/* Spacer for fixed navbar */}
       <div className="h-12 md:h-14 flex-shrink-0" />
-      <main className="flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0 overflow-y-auto overflow-x-hidden">
+      <main className={`flex-1 ${shouldShowBottomNav ? 'pb-[calc(4.5rem+env(safe-area-inset-bottom))]' : ''} md:pb-0 overflow-y-auto overflow-x-hidden`}>
         {children}
       </main>
-      {showBottomNav && <BottomNav />}
+      {shouldShowBottomNav && <BottomNav />}
     </div>
   );
 }
