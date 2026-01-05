@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
+  BarChart3,
   Package,
   Plus,
   Search,
@@ -40,6 +41,7 @@ import { RecordSaleDialog } from "./inventory/RecordSaleDialog";
 import { AdjustStockDialog } from "./inventory/AdjustStockDialog";
 import { ItemDetailDialog } from "./inventory/ItemDetailDialog";
 import { OpeningStockDialog } from "./inventory/OpeningStockDialog";
+import { InventoryReportsDialog } from "./inventory/InventoryReportsDialog";
 
 interface TurfInventoryTabProps {
   turfId: string;
@@ -77,6 +79,7 @@ export function TurfInventoryTab({ turfId, turf }: TurfInventoryTabProps) {
   const [showAdjustStock, setShowAdjustStock] = useState(false);
   const [showItemDetail, setShowItemDetail] = useState(false);
   const [showOpeningStock, setShowOpeningStock] = useState(false);
+  const [showReports, setShowReports] = useState(false);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   // Fetch inventory with on-hand calculations
@@ -189,6 +192,15 @@ export function TurfInventoryTab({ turfId, turf }: TurfInventoryTabProps) {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          {totalItems > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setShowReports(true)}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Reports
+            </Button>
+          )}
           {totalItems > 0 && !hasOpeningStock && (
             <Button
               variant="outline"
@@ -472,6 +484,13 @@ export function TurfInventoryTab({ turfId, turf }: TurfInventoryTabProps) {
         turfId={turfId}
         items={inventoryItems || []}
         onSuccess={handleRefresh}
+      />
+
+      <InventoryReportsDialog
+        open={showReports}
+        onOpenChange={setShowReports}
+        turfId={turfId}
+        items={inventoryItems || []}
       />
     </div>
   );
