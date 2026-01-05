@@ -67,7 +67,7 @@ export default function Install() {
             </div>
             <h1 className="text-3xl font-bold mb-4">App Installed!</h1>
             <p className="text-muted-foreground">
-              AthleteX is now installed on your device. You can access it from your home screen.
+              SPORTIQ is now installed on your device. You can access it from your home screen.
             </p>
           </div>
         </div>
@@ -83,7 +83,7 @@ export default function Install() {
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center mx-auto mb-6 shadow-lg">
               <Smartphone className="h-10 w-10 text-white" />
             </div>
-            <h1 className="text-3xl font-bold mb-3">Install AthleteX</h1>
+            <h1 className="text-3xl font-bold mb-3">Install SPORTIQ</h1>
             <p className="text-muted-foreground">
               Get the full app experience on your phone. Fast, reliable, and works offline.
             </p>
@@ -110,7 +110,7 @@ export default function Install() {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="text-lg">Install on iPhone/iPad</CardTitle>
-                <CardDescription>Follow these steps to add AthleteX to your home screen</CardDescription>
+                <CardDescription>Follow these steps to add SPORTIQ to your home screen</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-start gap-4">
@@ -141,7 +141,7 @@ export default function Install() {
                   </div>
                   <div>
                     <p className="font-medium">Tap "Add" to confirm</p>
-                    <p className="text-sm text-muted-foreground">AthleteX will appear on your home screen</p>
+                    <p className="text-sm text-muted-foreground">SPORTIQ will appear on your home screen</p>
                   </div>
                 </div>
               </CardContent>
@@ -153,7 +153,7 @@ export default function Install() {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="text-lg">Install on Android</CardTitle>
-                <CardDescription>Follow these steps to add AthleteX to your home screen</CardDescription>
+                <CardDescription>Follow these steps to add SPORTIQ to your home screen</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-start gap-4">
@@ -182,7 +182,7 @@ export default function Install() {
                   </div>
                   <div>
                     <p className="font-medium">Tap "Add" to confirm</p>
-                    <p className="text-sm text-muted-foreground">AthleteX will appear on your home screen</p>
+                    <p className="text-sm text-muted-foreground">SPORTIQ will appear on your home screen</p>
                   </div>
                 </div>
               </CardContent>

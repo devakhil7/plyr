@@ -14,7 +14,7 @@ interface ShareDialogProps {
 
 export function ShareDialog({ open, onOpenChange, postId, caption, onShare }: ShareDialogProps) {
   const postUrl = `${window.location.origin}/feed?post=${postId}`;
-  const shareText = caption || "Check out this highlight on AthleteX!";
+  const shareText = caption || "Check out this highlight on SPORTIQ!";
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(postUrl);
@@ -24,19 +24,19 @@ export function ShareDialog({ open, onOpenChange, postId, caption, onShare }: Sh
   };
 
   const handleWhatsAppShare = () => {
-    shareToWhatsApp({ title: "AthleteX Highlight", text: shareText, url: postUrl });
+    shareToWhatsApp({ title: "SPORTIQ Highlight", text: shareText, url: postUrl });
     onShare();
     onOpenChange(false);
   };
 
   const handleInstagramShare = async () => {
-    await shareToInstagram({ title: "AthleteX Highlight", text: shareText, url: postUrl });
+    await shareToInstagram({ title: "SPORTIQ Highlight", text: shareText, url: postUrl });
     onShare();
     onOpenChange(false);
   };
 
   const handleYouTubeShare = async () => {
-    await shareToYouTube({ title: "AthleteX Highlight", text: shareText, url: postUrl });
+    await shareToYouTube({ title: "SPORTIQ Highlight", text: shareText, url: postUrl });
     onShare();
     onOpenChange(false);
   };

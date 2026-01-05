@@ -192,7 +192,7 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
         key: orderData.key_id,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: 'AthleteX',
+        name: 'SPORTIQ',
         description: isAdvance 
           ? `Advance Payment - ${turf.name} (₹${remainingAmount} to be paid at ground)`
           : `Turf Booking - ${turf.name}`,

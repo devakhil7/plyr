@@ -234,7 +234,7 @@ export default function TournamentRegister() {
         key: orderData.razorpayKeyId,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "AthleteX",
+        name: "SPORTIQ",
         description: `Tournament Entry: ${tournament.name}`,
         order_id: orderData.orderId,
         handler: async function (response: any) {

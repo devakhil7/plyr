@@ -35,14 +35,14 @@
     
     --radius: 1rem;
     
-    /* AthleteX custom colors */
-    --athletex-primary: 165 55% 22%;
-    --athletex-secondary: 68 65% 50%;
-    --athletex-accent: 68 70% 55%;
-    --athletex-background: 85 25% 82%;
-    --athletex-surface: 0 0% 99%;
-    --athletex-text: 165 50% 15%;
-    --athletex-text-muted: 165 30% 40%;
+    /* Sportiq custom colors */
+    --sportiq-primary: 165 55% 22%;
+    --sportiq-secondary: 68 65% 50%;
+    --sportiq-accent: 68 70% 55%;
+    --sportiq-background: 85 25% 82%;
+    --sportiq-surface: 0 0% 99%;
+    --sportiq-text: 165 50% 15%;
+    --sportiq-text-muted: 165 30% 40%;
     
     /* Status colors */
     --success: 142 71% 40%;
@@ -96,14 +96,14 @@
     --input: 165 45% 18%;
     --ring: 68 65% 55%;
     
-    /* AthleteX custom colors - Dark mode */
-    --athletex-primary: 68 65% 55%;
-    --athletex-secondary: 165 45% 30%;
-    --athletex-accent: 68 70% 60%;
-    --athletex-background: 165 55% 10%;
-    --athletex-surface: 165 50% 15%;
-    --athletex-text: 85 20% 95%;
-    --athletex-text-muted: 85 15% 60%;
+    /* Sportiq custom colors - Dark mode */
+    --sportiq-primary: 68 65% 55%;
+    --sportiq-secondary: 165 45% 30%;
+    --sportiq-accent: 68 70% 60%;
+    --sportiq-background: 165 55% 10%;
+    --sportiq-surface: 165 50% 15%;
+    --sportiq-text: 85 20% 95%;
+    --sportiq-text-muted: 85 15% 60%;
     
     /* Status colors - Dark mode */
     --success: 142 71% 45%;

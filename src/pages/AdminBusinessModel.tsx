@@ -168,7 +168,7 @@ Every athlete can:
       { app: "HUDL/Veo", use: "for the masses" },
       { app: "Shopify", use: "for turfs" },
     ],
-    tagline: "Every stat, match, highlight, and fitness insight lives on AthleteX.",
+    tagline: "Every stat, match, highlight, and fitness insight lives on SPORTIQ.",
     color: "from-violet-600 via-purple-600 to-primary",
   },
 ];

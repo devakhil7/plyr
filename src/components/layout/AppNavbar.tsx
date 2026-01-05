@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { useUnreadMessageCount } from "@/hooks/useNotifications";
 import { Badge } from "@/components/ui/badge";
-import athletexLogo from "@/assets/athletex-logo.png";
 
 const desktopNav = [
   { name: "Home", href: "/home" },
@@ -42,8 +41,10 @@ export function AppNavbar() {
       <nav className="container-app flex h-12 md:h-14 items-center justify-between">
         {/* Logo */}
         <Link to="/home" className="flex items-center gap-2 active:scale-95 transition-transform">
-          <img src={athletexLogo} alt="AthleteX" className="h-7 w-7 md:h-8 md:w-8 object-contain" />
-          <span className="text-base md:text-lg font-bold font-display text-foreground hidden sm:block">AthleteX</span>
+          <div className="flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-accent shadow-glow">
+            <span className="text-xs md:text-sm font-bold text-primary-foreground">S</span>
+          </div>
+          <span className="text-base md:text-lg font-bold font-display text-foreground hidden sm:block">SPORTIQ</span>
         </Link>
 
         {/* Desktop Navigation */}
