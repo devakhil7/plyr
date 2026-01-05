@@ -154,7 +154,21 @@ export default function Turfs() {
             {sortedTurfs.map((turf: any) => (
               <Link key={turf.id} to={`/turfs/${turf.id}`}>
                 <Card className="h-full card-hover overflow-hidden">
-                  <div className="h-40 bg-gradient-to-br from-primary/20 to-secondary/20 relative flex items-center justify-center">
+                  <div className="h-40 relative">
+                    {/* Show first image if available, otherwise gradient placeholder */}
+                    {turf.photos && turf.photos.length > 0 && !turf.photos[0].includes('video') ? (
+                      <img 
+                        src={turf.photos[0]} 
+                        alt={turf.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-2xl">⚽</span>
+                        </div>
+                      </div>
+                    )}
                     {turf.is_featured && (
                       <Badge className="absolute top-3 right-3 bg-amber-500 text-white">
                         <Star className="h-3 w-3 mr-1" /> Featured
@@ -166,9 +180,6 @@ export default function Turfs() {
                         {formatDistance(turf.distance)}
                       </Badge>
                     )}
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-2xl">⚽</span>
-                    </div>
                   </div>
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between mb-2">
