@@ -305,31 +305,41 @@ export function MatchScorecard({
         return;
       }
 
-      const file = new File([imageBlob], `${matchName.replace(/\s+/g, "-")}-scorecard.png`, { type: "image/png" });
-      const shareText = `⚽ ${matchName} - Final Score: ${teamAScore} - ${teamBScore}${motm ? ` | MOTM: ${motm.name}` : ""}\n\n${matchUrl}`;
+      const fileName = `${matchName.replace(/\s+/g, "-")}-scorecard.png`;
+      const file = new File([imageBlob], fileName, { type: "image/png" });
 
       // Check if Web Share API with files is supported
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: matchName,
-          text: shareText,
-        });
-        toast.success("Shared successfully!");
-      } else {
-        // Fallback: download image and copy text
-        const downloadUrl = URL.createObjectURL(imageBlob);
-        const a = document.createElement("a");
-        a.href = downloadUrl;
-        a.download = `${matchName.replace(/\s+/g, "-")}-scorecard.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(downloadUrl);
+      if (navigator.share && navigator.canShare) {
+        const shareData: ShareData = { files: [file] };
         
-        await navigator.clipboard.writeText(shareText);
-        toast.success("Image downloaded & text copied! Share manually.");
+        if (navigator.canShare(shareData)) {
+          try {
+            // Share only the file - WhatsApp/Instagram handle images better without text
+            await navigator.share(shareData);
+            toast.success("Shared successfully!");
+            return;
+          } catch (shareError: any) {
+            if (shareError.name === "AbortError") {
+              return;
+            }
+            console.log("File share failed, trying fallback:", shareError);
+          }
+        }
       }
+      
+      // Fallback: download image and copy text
+      const downloadUrl = URL.createObjectURL(imageBlob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+      
+      const shareText = `⚽ ${matchName} - Final Score: ${teamAScore} - ${teamBScore}${motm ? ` | MOTM: ${motm.name}` : ""}\n\n${matchUrl}`;
+      await navigator.clipboard.writeText(shareText);
+      toast.success("Image downloaded & text copied! Share manually.");
     } catch (error: any) {
       if (error.name !== "AbortError") {
         console.error("Share failed:", error);
