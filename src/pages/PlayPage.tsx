@@ -6,11 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Users, Play, BarChart3, MapPin, Calendar, Trophy, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { computeMatchStatus } from "@/lib/matchStatus";
 
 export default function PlayPage() {
   const { user, profile } = useAuth();
 
-  // Fetch nearby/upcoming matches
+  // Fetch nearby/upcoming matches - filter by computed status
   const { data: upcomingMatches } = useQuery({
     queryKey: ["play-upcoming-matches", profile?.city],
     queryFn: async () => {
@@ -18,13 +19,21 @@ export default function PlayPage() {
         .from("matches")
         .select("*, turfs(name, city)")
         .eq("visibility", "public")
-        .eq("status", "open")
-        .gte("match_date", new Date().toISOString().split("T")[0])
         .order("match_date", { ascending: true })
-        .limit(5);
+        .limit(20); // Fetch more to filter client-side
 
       const { data } = await query;
-      return data || [];
+      if (!data) return [];
+      
+      // Filter to only show matches that are actually upcoming based on time
+      return data.filter((match: any) => {
+        const computedStatus = computeMatchStatus({
+          match_date: match.match_date,
+          match_time: match.match_time,
+          duration_minutes: match.duration_minutes || 60,
+        });
+        return computedStatus === 'upcoming';
+      }).slice(0, 5);
     },
   });
 

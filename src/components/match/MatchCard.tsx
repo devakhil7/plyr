@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar, Users, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { computeMatchStatus, getDisplayStatus } from "@/lib/matchStatus";
 
 interface MatchCardProps {
   match: {
@@ -76,6 +77,14 @@ function calculateOverallFromStats(stats: {
 }
 
 export function MatchCard({ match }: MatchCardProps) {
+  // Compute real-time status based on match time
+  const computedStatus = computeMatchStatus({
+    match_date: match.match_date,
+    match_time: match.match_time,
+    duration_minutes: match.duration_minutes,
+  });
+  const displayStatus = getDisplayStatus(computedStatus);
+  
   const confirmedPlayerIds = match.match_players
     ?.filter((p) => p.join_status === "confirmed" && p.user_id)
     .map((p) => p.user_id) || [];
@@ -180,8 +189,8 @@ export function MatchCard({ match }: MatchCardProps) {
                 </Badge>
               )}
             </div>
-            <Badge variant={statusVariants[match.status] || "secondary"}>
-              {match.status === "in_progress" ? "In Progress" : match.status.charAt(0).toUpperCase() + match.status.slice(1)}
+            <Badge variant={statusVariants[displayStatus] || "secondary"}>
+              {displayStatus === "in_progress" ? "In Progress" : displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
             </Badge>
           </div>
           
