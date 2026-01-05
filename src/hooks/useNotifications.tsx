@@ -32,6 +32,12 @@ export type NotificationType =
   | "rating_rejected"
   | "new_message"
   | "new_follower"
+  | "turf_booking_request"
+  | "turf_booking_approved"
+  | "turf_booking_rejected"
+  | "turf_booking_cancelled"
+  | "turf_payment_received"
+  | "turf_booking_lapsed"
   | "system";
 
 export function useNotifications(userId: string | null) {
@@ -171,6 +177,48 @@ export async function createNotification({
   if (error) {
     console.error("Error creating notification:", error);
     throw error;
+  }
+}
+
+// Helper function to notify turf owners about booking events
+export async function notifyTurfOwners(
+  turfId: string,
+  type: NotificationType,
+  title: string,
+  message: string,
+  link?: string,
+  metadata?: Record<string, any>
+) {
+  // Get all owners of this turf
+  const { data: owners, error: ownersError } = await supabase
+    .from("turf_owners")
+    .select("user_id")
+    .eq("turf_id", turfId);
+
+  if (ownersError) {
+    console.error("Error fetching turf owners:", ownersError);
+    return;
+  }
+
+  if (!owners || owners.length === 0) {
+    console.log("No owners found for turf:", turfId);
+    return;
+  }
+
+  // Create notification for each owner
+  for (const owner of owners) {
+    try {
+      await createNotification({
+        userId: owner.user_id,
+        type,
+        title,
+        message,
+        link,
+        metadata,
+      });
+    } catch (error) {
+      console.error("Error creating notification for owner:", owner.user_id, error);
+    }
   }
 }
 

@@ -89,6 +89,38 @@ serve(async (req) => {
 
     console.log("Payment verified successfully for booking:", booking.id, "Status:", paymentStatus);
 
+    // Get turf details for notification
+    const { data: turf } = await supabase
+      .from("turfs")
+      .select("name")
+      .eq("id", booking.turf_id)
+      .single();
+
+    // Get turf owners and notify them
+    const { data: owners } = await supabase
+      .from("turf_owners")
+      .select("user_id")
+      .eq("turf_id", booking.turf_id);
+
+    if (owners && owners.length > 0) {
+      const notificationPromises = owners.map((owner) =>
+        supabase.from("notifications").insert({
+          user_id: owner.user_id,
+          type: "turf_payment_received",
+          title: "Payment Received",
+          message: `₹${booking.amount_paid} payment received for ${turf?.name || "your turf"} on ${booking.booking_date}`,
+          link: "/turf-dashboard",
+          metadata: {
+            booking_id: booking.id,
+            amount: booking.amount_paid,
+            is_advance: body.is_advance,
+          },
+        })
+      );
+      await Promise.all(notificationPromises);
+      console.log("Notified turf owners about payment");
+    }
+
     return new Response(
       JSON.stringify({ success: true, booking }),
       {

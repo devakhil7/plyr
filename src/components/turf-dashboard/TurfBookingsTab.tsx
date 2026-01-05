@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { computeBookingStatus, isBookingActionable } from "@/lib/bookingStatus";
 import { computeMatchStatus } from "@/lib/matchStatus";
+import { createNotification } from "@/hooks/useNotifications";
 
 interface TurfBookingsTabProps {
   turfId: string;
@@ -130,16 +131,33 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
 
   // Approve booking mutation
   const approveMutation = useMutation({
-    mutationFn: async (bookingId: string) => {
+    mutationFn: async (booking: any) => {
       const { error } = await supabase
         .from("turf_bookings")
         .update({ booking_status: "approved" })
-        .eq("id", bookingId);
+        .eq("id", booking.id);
       if (error) throw error;
+      return booking;
     },
-    onSuccess: () => {
+    onSuccess: async (booking) => {
       queryClient.invalidateQueries({ queryKey: ["turf-bookings-direct"] });
       toast.success("Booking approved");
+      
+      // Notify the user who made the booking
+      if (booking.user_id) {
+        try {
+          await createNotification({
+            userId: booking.user_id,
+            type: "turf_booking_approved",
+            title: "Booking Approved!",
+            message: `Your booking for ${turf?.name || "the turf"} on ${format(parseISO(booking.booking_date), "MMM d")} at ${booking.start_time?.slice(0, 5)} has been approved.`,
+            link: "/turfs",
+            metadata: { booking_id: booking.id },
+          });
+        } catch (err) {
+          console.error("Failed to notify user:", err);
+        }
+      }
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to approve booking");
@@ -148,16 +166,33 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
 
   // Reject booking mutation
   const rejectMutation = useMutation({
-    mutationFn: async (bookingId: string) => {
+    mutationFn: async (booking: any) => {
       const { error } = await supabase
         .from("turf_bookings")
         .update({ booking_status: "rejected" })
-        .eq("id", bookingId);
+        .eq("id", booking.id);
       if (error) throw error;
+      return booking;
     },
-    onSuccess: () => {
+    onSuccess: async (booking) => {
       queryClient.invalidateQueries({ queryKey: ["turf-bookings-direct"] });
       toast.success("Booking rejected");
+      
+      // Notify the user who made the booking
+      if (booking.user_id) {
+        try {
+          await createNotification({
+            userId: booking.user_id,
+            type: "turf_booking_rejected",
+            title: "Booking Declined",
+            message: `Your booking for ${turf?.name || "the turf"} on ${format(parseISO(booking.booking_date), "MMM d")} at ${booking.start_time?.slice(0, 5)} was not approved.`,
+            link: "/turfs",
+            metadata: { booking_id: booking.id },
+          });
+        } catch (err) {
+          console.error("Failed to notify user:", err);
+        }
+      }
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to reject booking");
@@ -499,7 +534,7 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
                         <Button
                           variant="default"
                           size="sm"
-                          onClick={() => approveMutation.mutate(b.id)}
+                          onClick={() => approveMutation.mutate(b)}
                           disabled={approveMutation.isPending}
                         >
                           <Check className="h-4 w-4 mr-1" />
@@ -508,7 +543,7 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => rejectMutation.mutate(b.id)}
+                          onClick={() => rejectMutation.mutate(b)}
                           disabled={rejectMutation.isPending}
                         >
                           <X className="h-4 w-4 mr-1" />
