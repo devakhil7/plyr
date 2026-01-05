@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
   ChevronLeft, ChevronRight, Building, LayoutDashboard, FileText, Clock,
-  CalendarDays, CreditCard, BarChart3, Settings
+  CalendarDays, CreditCard, BarChart3, Settings, Package
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,12 +23,14 @@ import { TurfBookingsTab } from "@/components/turf-dashboard/TurfBookingsTab";
 import { TurfPaymentsTab } from "@/components/turf-dashboard/TurfPaymentsTab";
 import { TurfReportsTab } from "@/components/turf-dashboard/TurfReportsTab";
 import { TurfSettingsTab } from "@/components/turf-dashboard/TurfSettingsTab";
+import { TurfInventoryTab } from "@/components/turf-dashboard/TurfInventoryTab";
 
 const TABS = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "listing", label: "Listing & Details", icon: FileText },
   { id: "availability", label: "Availability & Pricing", icon: Clock },
   { id: "bookings", label: "Bookings", icon: CalendarDays },
+  { id: "inventory", label: "Inventory", icon: Package },
   { id: "payments", label: "Payments & Payouts", icon: CreditCard },
   { id: "reports", label: "Reports & Export", icon: BarChart3 },
   { id: "settings", label: "Settings", icon: Settings },
@@ -128,6 +130,8 @@ export default function TurfDashboard() {
         return <TurfAvailabilityTab turfId={selectedTurfId} turf={selectedTurf} onUpdate={handleTurfUpdate} />;
       case "bookings":
         return <TurfBookingsTab turfId={selectedTurfId} turf={selectedTurf} />;
+      case "inventory":
+        return <TurfInventoryTab turfId={selectedTurfId} turf={selectedTurf} />;
       case "payments":
         return <TurfPaymentsTab turfId={selectedTurfId} turf={selectedTurf} />;
       case "reports":
