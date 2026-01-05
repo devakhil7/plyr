@@ -744,6 +744,126 @@ export type Database = {
           },
         ]
       }
+      inventory_items: {
+        Row: {
+          category: string
+          cost_price: number | null
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          name: string
+          reorder_level: number | null
+          selling_price: number | null
+          sku_code: string
+          turf_id: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          cost_price?: number | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          name: string
+          reorder_level?: number | null
+          selling_price?: number | null
+          sku_code: string
+          turf_id: string
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          cost_price?: number | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          reorder_level?: number | null
+          selling_price?: number | null
+          sku_code?: string
+          turf_id?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_turf_id_fkey"
+            columns: ["turf_id"]
+            isOneToOne: false
+            referencedRelation: "turfs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          created_at: string
+          created_by: string
+          direction: string
+          id: string
+          item_id: string
+          movement_type: string
+          notes: string | null
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+          turf_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          direction: string
+          id?: string
+          item_id: string
+          movement_type: string
+          notes?: string | null
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+          turf_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          direction?: string
+          id?: string
+          item_id?: string
+          movement_type?: string
+          notes?: string | null
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          turf_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_on_hand"
+            referencedColumns: ["item_id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_turf_id_fkey"
+            columns: ["turf_id"]
+            isOneToOne: false
+            referencedRelation: "turfs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       likes: {
         Row: {
           created_at: string | null
@@ -2614,6 +2734,33 @@ export type Database = {
       }
     }
     Views: {
+      inventory_on_hand: {
+        Row: {
+          category: string | null
+          cost_price: number | null
+          is_active: boolean | null
+          item_id: string | null
+          last_movement_at: string | null
+          name: string | null
+          on_hand: number | null
+          reorder_level: number | null
+          selling_price: number | null
+          sku_code: string | null
+          total_in: number | null
+          total_out: number | null
+          turf_id: string | null
+          unit: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_turf_id_fkey"
+            columns: ["turf_id"]
+            isOneToOne: false
+            referencedRelation: "turfs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           bio: string | null
