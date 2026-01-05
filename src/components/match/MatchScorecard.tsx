@@ -9,13 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Share2, Copy, Trophy, Star, Target, MessageCircle, Instagram, Link, Youtube, Rss, Send, Search, Loader2, Check } from "lucide-react";
+import { Share2, Copy, Trophy, Star, Target, MessageCircle, Instagram, Link, Youtube, Rss, Send, Search, Loader2, Check, Download, Image } from "lucide-react";
 import { toast } from "sonner";
-import { shareToWhatsApp, shareToInstagram, shareToYouTube } from "@/lib/shareUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-
+import { toPng } from "html-to-image";
 interface MatchEvent {
   id: string;
   team: string;
@@ -274,6 +273,99 @@ export function MatchScorecard({
     },
     enabled: searchQuery.length >= 2,
   });
+
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
+  const generateScorecardImage = async (): Promise<Blob | null> => {
+    if (!scorecardRef.current) return null;
+    
+    try {
+      const dataUrl = await toPng(scorecardRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+      });
+      
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      return blob;
+    } catch (error) {
+      console.error("Failed to generate image:", error);
+      return null;
+    }
+  };
+
+  const handleShareWithImage = async (platform: "whatsapp" | "instagram" | "general") => {
+    setIsGeneratingImage(true);
+    try {
+      const imageBlob = await generateScorecardImage();
+      
+      if (!imageBlob) {
+        toast.error("Failed to generate scorecard image");
+        return;
+      }
+
+      const file = new File([imageBlob], `${matchName.replace(/\s+/g, "-")}-scorecard.png`, { type: "image/png" });
+      const shareText = `⚽ ${matchName} - Final Score: ${teamAScore} - ${teamBScore}${motm ? ` | MOTM: ${motm.name}` : ""}\n\n${matchUrl}`;
+
+      // Check if Web Share API with files is supported
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: matchName,
+          text: shareText,
+        });
+        toast.success("Shared successfully!");
+      } else {
+        // Fallback: download image and copy text
+        const downloadUrl = URL.createObjectURL(imageBlob);
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = `${matchName.replace(/\s+/g, "-")}-scorecard.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+        
+        await navigator.clipboard.writeText(shareText);
+        toast.success("Image downloaded & text copied! Share manually.");
+      }
+    } catch (error: any) {
+      if (error.name !== "AbortError") {
+        console.error("Share failed:", error);
+        toast.error("Failed to share. Try downloading instead.");
+      }
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    setIsGeneratingImage(true);
+    try {
+      const imageBlob = await generateScorecardImage();
+      
+      if (!imageBlob) {
+        toast.error("Failed to generate image");
+        return;
+      }
+
+      const downloadUrl = URL.createObjectURL(imageBlob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `${matchName.replace(/\s+/g, "-")}-scorecard.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+      toast.success("Image downloaded!");
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error("Failed to download image");
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(matchUrl);
@@ -686,17 +778,23 @@ export function MatchScorecard({
 
           {/* Link/Share Tab */}
           <TabsContent value="link" className="space-y-4 pt-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Share the scorecard image to your favorite platform
+            </p>
+            
             <div className="grid grid-cols-4 gap-2">
               <Button
                 variant="outline"
                 className="flex flex-col items-center gap-1 h-auto py-3"
-                onClick={() => {
-                  const text = `${matchName} - Final Score: ${teamAScore} - ${teamBScore}${motm ? ` | MOTM: ${motm.name}` : ""}`;
-                  shareToWhatsApp({ title: matchName, text, url: matchUrl });
-                }}
+                onClick={() => handleShareWithImage("whatsapp")}
+                disabled={isGeneratingImage}
               >
                 <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
-                  <MessageCircle className="h-4 w-4 text-white" />
+                  {isGeneratingImage ? (
+                    <Loader2 className="h-4 w-4 text-white animate-spin" />
+                  ) : (
+                    <MessageCircle className="h-4 w-4 text-white" />
+                  )}
                 </div>
                 <span className="text-xs">WhatsApp</span>
               </Button>
@@ -704,13 +802,15 @@ export function MatchScorecard({
               <Button
                 variant="outline"
                 className="flex flex-col items-center gap-1 h-auto py-3"
-                onClick={() => {
-                  const text = `${matchName} - Final Score: ${teamAScore} - ${teamBScore}${motm ? ` | MOTM: ${motm.name}` : ""}`;
-                  shareToInstagram({ title: matchName, text, url: matchUrl });
-                }}
+                onClick={() => handleShareWithImage("instagram")}
+                disabled={isGeneratingImage}
               >
                 <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
-                  <Instagram className="h-4 w-4 text-white" />
+                  {isGeneratingImage ? (
+                    <Loader2 className="h-4 w-4 text-white animate-spin" />
+                  ) : (
+                    <Instagram className="h-4 w-4 text-white" />
+                  )}
                 </div>
                 <span className="text-xs">Instagram</span>
               </Button>
@@ -718,26 +818,33 @@ export function MatchScorecard({
               <Button
                 variant="outline"
                 className="flex flex-col items-center gap-1 h-auto py-3"
-                onClick={() => {
-                  const text = `${matchName} - Final Score: ${teamAScore} - ${teamBScore}${motm ? ` | MOTM: ${motm.name}` : ""}`;
-                  shareToYouTube({ title: matchName, text, url: matchUrl });
-                }}
+                onClick={() => handleShareWithImage("general")}
+                disabled={isGeneratingImage}
               >
-                <div className="h-8 w-8 rounded-full bg-red-600 flex items-center justify-center">
-                  <Youtube className="h-4 w-4 text-white" />
+                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+                  {isGeneratingImage ? (
+                    <Loader2 className="h-4 w-4 text-primary-foreground animate-spin" />
+                  ) : (
+                    <Share2 className="h-4 w-4 text-primary-foreground" />
+                  )}
                 </div>
-                <span className="text-xs">YouTube</span>
+                <span className="text-xs">Share</span>
               </Button>
               
               <Button
                 variant="outline"
                 className="flex flex-col items-center gap-1 h-auto py-3"
-                onClick={handleCopyLink}
+                onClick={handleDownloadImage}
+                disabled={isGeneratingImage}
               >
-                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                  <Link className="h-4 w-4 text-primary-foreground" />
+                <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
+                  {isGeneratingImage ? (
+                    <Loader2 className="h-4 w-4 text-secondary-foreground animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4 text-secondary-foreground" />
+                  )}
                 </div>
-                <span className="text-xs">Copy Link</span>
+                <span className="text-xs">Download</span>
               </Button>
             </div>
             
