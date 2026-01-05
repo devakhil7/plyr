@@ -196,17 +196,45 @@ export default function MatchDetails() {
     enabled: !!id,
   });
 
-  // Fetch video events (manually tagged events)
+  // Fetch video events (manually tagged events) - also check linked analysis jobs
   const { data: videoEvents = [], refetch: refetchVideoEvents } = useQuery({
     queryKey: ["match-video-events", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First, get events directly linked to this match
+      const { data: directEvents, error } = await supabase
         .from("match_video_events")
         .select("*")
         .eq("match_id", id)
         .order("timestamp_seconds", { ascending: true });
       if (error) throw error;
-      return data || [];
+      
+      // Also fetch events from any linked video_analysis_job for this match
+      const { data: linkedJobs } = await supabase
+        .from("video_analysis_jobs")
+        .select("id")
+        .eq("match_id", id);
+      
+      if (linkedJobs && linkedJobs.length > 0) {
+        const jobIds = linkedJobs.map((j: any) => j.id);
+        const { data: jobEvents } = await supabase
+          .from("match_video_events")
+          .select("*")
+          .in("video_analysis_job_id", jobIds)
+          .order("timestamp_seconds", { ascending: true });
+        
+        // Merge unique events (avoid duplicates by id)
+        const allEvents = [...(directEvents || [])];
+        const existingIds = new Set(allEvents.map((e: any) => e.id));
+        (jobEvents || []).forEach((e: any) => {
+          if (!existingIds.has(e.id)) {
+            allEvents.push(e);
+          }
+        });
+        
+        return allEvents.sort((a: any, b: any) => a.timestamp_seconds - b.timestamp_seconds);
+      }
+      
+      return directEvents || [];
     },
     enabled: !!id,
   });

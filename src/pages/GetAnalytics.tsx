@@ -81,18 +81,26 @@ const GetAnalytics = () => {
     enabled: !!viewingJob?.id,
   });
 
-  // Fetch completed matches for linking
+  // Fetch completed matches for linking - use computed status based on time
   const { data: completedMatches = [] } = useQuery({
     queryKey: ["completed-matches-for-linking"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("matches")
-        .select("id, match_name, match_date, turfs(name)")
-        .eq("status", "completed")
+        .select("id, match_name, match_date, match_time, duration_minutes, turfs(name)")
         .order("match_date", { ascending: false })
-        .limit(50);
+        .limit(100);
       if (error) throw error;
-      return data;
+      
+      // Filter by computed status (time-based) - include matches that are actually completed
+      const now = new Date();
+      return (data || []).filter((match: any) => {
+        const [hours, minutes] = (match.match_time || "00:00").split(':').map(Number);
+        const matchStart = new Date(match.match_date);
+        matchStart.setHours(hours, minutes, 0, 0);
+        const matchEnd = new Date(matchStart.getTime() + ((match.duration_minutes || 60) * 60 * 1000));
+        return now > matchEnd; // Match has ended
+      });
     },
     enabled: isAdmin,
   });
@@ -194,6 +202,15 @@ const GetAnalytics = () => {
         if (matchError) {
           console.error("Failed to sync video URL to match:", matchError);
         }
+        
+        // Also update all video events from this job to have the match_id
+        const { error: eventsError } = await supabase
+          .from("match_video_events")
+          .update({ match_id: matchIdToLink })
+          .eq("video_analysis_job_id", jobId);
+        if (eventsError) {
+          console.error("Failed to update video events with match_id:", eventsError);
+        }
       }
     },
     onSuccess: () => {
@@ -201,6 +218,7 @@ const GetAnalytics = () => {
       queryClient.invalidateQueries({ queryKey: ["my-video-submissions"] });
       queryClient.invalidateQueries({ queryKey: ["all-video-submissions"] });
       queryClient.invalidateQueries({ queryKey: ["match"] });
+      queryClient.invalidateQueries({ queryKey: ["match-video-events"] });
       setSelectedJob(null);
       setSelectedMatchId("");
     },
