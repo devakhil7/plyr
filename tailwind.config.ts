@@ -65,12 +65,12 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // SPORTIQ Custom Colors
-        sportiq: {
-          primary: "hsl(var(--sportiq-primary))",
-          secondary: "hsl(var(--sportiq-secondary))",
-          accent: "hsl(var(--sportiq-accent))",
-          surface: "hsl(var(--sportiq-surface))",
+        // AthleteX Custom Colors
+        athletex: {
+          primary: "hsl(var(--athletex-primary))",
+          secondary: "hsl(var(--athletex-secondary))",
+          accent: "hsl(var(--athletex-accent))",
+          surface: "hsl(var(--athletex-surface))",
         },
         status: {
           open: "hsl(var(--status-open))",
