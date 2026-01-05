@@ -57,11 +57,27 @@ export default function AuthPage() {
         if (error) {
           toast.error("Invalid email or password");
         } else {
-          toast.success("Welcome back!");
-          // Prevent an immediate forced redirect to Complete Profile right after login
-          sessionStorage.setItem("skipProfileCompletionRedirect", "1");
-          sessionStorage.removeItem("redirectAfterAuth");
-          navigate(redirectUrl || "/home");
+          // Check if user is a turf owner
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (currentUser) {
+            const { data: roles } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", currentUser.id);
+            
+            const isTurfOwner = roles?.some(r => r.role === "turf_owner");
+            
+            toast.success("Welcome back!");
+            sessionStorage.setItem("skipProfileCompletionRedirect", "1");
+            sessionStorage.removeItem("redirectAfterAuth");
+            
+            // Redirect turf owners to their dashboard
+            if (isTurfOwner) {
+              navigate("/turf-dashboard");
+            } else {
+              navigate(redirectUrl || "/home");
+            }
+          }
         }
       }
     } catch (err) {
