@@ -13,10 +13,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { format, parseISO, addDays, subDays } from "date-fns";
-import { CalendarIcon, Plus, Eye, X, Filter, Check, Clock } from "lucide-react";
+import { CalendarIcon, Plus, Eye, X, Filter, Check, Clock, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { computeBookingStatus, isBookingActionable } from "@/lib/bookingStatus";
+import { computeMatchStatus } from "@/lib/matchStatus";
 
 interface TurfBookingsTabProps {
   turfId: string;
@@ -224,29 +226,45 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
     },
   });
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (match: any) => {
+    const effectiveStatus = getEffectiveMatchStatus(match);
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      open: "default",
-      full: "secondary",
-      in_progress: "default",
+      upcoming: "default",
+      in_progress: "secondary",
       completed: "outline",
-      cancelled: "destructive",
     };
-    return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
+    const labels: Record<string, string> = {
+      upcoming: "Open",
+      in_progress: "In Progress",
+      completed: "Completed",
+    };
+    // If DB status is cancelled, show that
+    if (match.status === 'cancelled') {
+      return <Badge variant="destructive">Cancelled</Badge>;
+    }
+    return <Badge variant={variants[effectiveStatus] || "outline"}>{labels[effectiveStatus] || effectiveStatus}</Badge>;
   };
 
-  const getBookingStatusBadge = (status: string) => {
+  const getBookingStatusBadge = (booking: any) => {
+    const effectiveStatus = computeBookingStatus({
+      booking_date: booking.booking_date,
+      start_time: booking.start_time,
+      booking_status: booking.booking_status,
+    });
+    
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       pending_approval: "secondary",
       approved: "default",
       rejected: "destructive",
+      lapsed: "outline",
     };
     const labels: Record<string, string> = {
       pending_approval: "Pending Approval",
       approved: "Approved",
       rejected: "Rejected",
+      lapsed: "Lapsed",
     };
-    return <Badge variant={variants[status] || "outline"}>{labels[status] || status}</Badge>;
+    return <Badge variant={variants[effectiveStatus] || "outline"}>{labels[effectiveStatus] || effectiveStatus}</Badge>;
   };
 
   const getPaymentBadge = (matchId: string) => {
@@ -266,8 +284,33 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
     );
   };
 
-  // Count pending bookings
-  const pendingBookings = turfBookings?.filter((b: any) => b.booking_status === "pending_approval") || [];
+  // Count pending and lapsed bookings
+  const pendingBookings = turfBookings?.filter((b: any) => {
+    const effectiveStatus = computeBookingStatus({
+      booking_date: b.booking_date,
+      start_time: b.start_time,
+      booking_status: b.booking_status,
+    });
+    return effectiveStatus === 'pending_approval';
+  }) || [];
+
+  const lapsedBookings = turfBookings?.filter((b: any) => {
+    const effectiveStatus = computeBookingStatus({
+      booking_date: b.booking_date,
+      start_time: b.start_time,
+      booking_status: b.booking_status,
+    });
+    return effectiveStatus === 'lapsed';
+  }) || [];
+
+  // Get effective match status
+  const getEffectiveMatchStatus = (match: any) => {
+    return computeMatchStatus({
+      match_date: match.match_date,
+      match_time: match.match_time,
+      duration_minutes: match.duration_minutes || 60,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -406,6 +449,7 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="pending_approval">Pending Approval</SelectItem>
+                <SelectItem value="lapsed">Lapsed</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
                 <SelectItem value="open">Match Open</SelectItem>
@@ -480,7 +524,55 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
         </Card>
       )}
 
-      {/* Bookings Table */}
+      {/* Lapsed Bookings Alert */}
+      {lapsedBookings.length > 0 && (
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Lapsed Bookings ({lapsedBookings.length})
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              These pay-at-ground bookings were not approved before start time and have automatically lapsed.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Booked By</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lapsedBookings.map((b: any) => (
+                  <TableRow key={b.id} className="opacity-60">
+                    <TableCell>{format(parseISO(b.booking_date), "dd MMM yyyy")}</TableCell>
+                    <TableCell>{b.start_time?.slice(0, 5)} - {b.end_time?.slice(0, 5)}</TableCell>
+                    <TableCell>
+                      <p>{b.profiles?.name || b.profiles?.email || "-"}</p>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {b.payment_status} {b.amount_paid > 0 ? `(₹${b.amount_paid})` : ""}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-destructive border-destructive">
+                        Lapsed
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -521,7 +613,7 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
                         <p>{m.profiles?.name || m.profiles?.email || "-"}</p>
                       )}
                     </TableCell>
-                    <TableCell>{getStatusBadge(m.status)}</TableCell>
+                    <TableCell>{getStatusBadge(m)}</TableCell>
                     <TableCell>{getPaymentBadge(m.id)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -530,7 +622,7 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        {m.status !== "cancelled" && m.status !== "completed" && (
+                        {m.status !== "cancelled" && getEffectiveMatchStatus(m) !== "completed" && (
                           <Button
                             variant="ghost"
                             size="sm"
