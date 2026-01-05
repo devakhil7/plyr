@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { calculateBookingPrice, PricingRules } from '@/lib/turfPricing';
+import { notifyTurfOwners } from '@/hooks/useNotifications';
 
 interface TurfBookingDialogProps {
   open: boolean;
@@ -137,9 +138,22 @@ export const TurfBookingDialog: React.FC<TurfBookingDialogProps> = ({
 
       if (error) throw error;
 
+      // Notify turf owners about the booking request
+      await notifyTurfOwners(
+        turf.id,
+        'turf_booking_request',
+        'New Booking Request',
+        `New pay-at-ground booking for ${format(selectedDate, 'MMM d')} at ${selectedTime}`,
+        '/turf-dashboard',
+        {
+          booking_id: booking.id,
+          booking_date: format(selectedDate, 'yyyy-MM-dd'),
+          start_time: selectedTime,
+          duration: duration,
+        }
+      );
+
       toast.success('Booking request sent! Waiting for turf owner approval.');
-      onOpenChange(false);
-      onBookingComplete?.();
       onOpenChange(false);
       onBookingComplete?.();
     } catch (error: any) {
