@@ -108,13 +108,13 @@ export function TurfListingTab({ turfId, turf, onUpdate }: TurfListingTabProps) 
         const fileName = `${turfId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
         
         const { error: uploadError } = await supabase.storage
-          .from('profile-photos')
+          .from('turf-media')
           .upload(fileName, file);
 
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
-          .from('profile-photos')
+          .from('turf-media')
           .getPublicUrl(fileName);
 
         uploadedUrls.push(publicUrl);
@@ -163,13 +163,13 @@ export function TurfListingTab({ turfId, turf, onUpdate }: TurfListingTabProps) 
       const fileName = `${turfId}/video-${Date.now()}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
-        .from('match-videos')
+        .from('turf-media')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('match-videos')
+        .from('turf-media')
         .getPublicUrl(fileName);
 
       setVideoUrl(publicUrl);
