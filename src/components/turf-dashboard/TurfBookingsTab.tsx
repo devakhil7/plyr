@@ -319,25 +319,6 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
     );
   };
 
-  // Count pending and lapsed bookings
-  const pendingBookings = turfBookings?.filter((b: any) => {
-    const effectiveStatus = computeBookingStatus({
-      booking_date: b.booking_date,
-      start_time: b.start_time,
-      booking_status: b.booking_status,
-    });
-    return effectiveStatus === 'pending_approval';
-  }) || [];
-
-  const lapsedBookings = turfBookings?.filter((b: any) => {
-    const effectiveStatus = computeBookingStatus({
-      booking_date: b.booking_date,
-      start_time: b.start_time,
-      booking_status: b.booking_status,
-    });
-    return effectiveStatus === 'lapsed';
-  }) || [];
-
   // Get effective match status
   const getEffectiveMatchStatus = (match: any) => {
     return computeMatchStatus({
@@ -496,138 +477,83 @@ export function TurfBookingsTab({ turfId, turf }: TurfBookingsTabProps) {
         </CardContent>
       </Card>
 
-      {/* Pending Approvals Alert */}
-      {pendingBookings.length > 0 && (
-        <Card className="border-yellow-500/50 bg-yellow-500/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="h-5 w-5 text-yellow-600" />
-              Pending Approvals ({pendingBookings.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Booked By</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingBookings.map((b: any) => (
-                  <TableRow key={b.id}>
-                    <TableCell>{format(parseISO(b.booking_date), "dd MMM yyyy")}</TableCell>
-                    <TableCell>{b.start_time?.slice(0, 5)} - {b.end_time?.slice(0, 5)}</TableCell>
-                    <TableCell>
-                      <p>{b.profiles?.name || b.profiles?.email || "-"}</p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={b.payment_status === "paid" ? "default" : "secondary"}>
-                        {b.payment_status} {b.amount_paid > 0 ? `(₹${b.amount_paid})` : ""}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => approveMutation.mutate(b)}
-                          disabled={approveMutation.isPending}
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => rejectMutation.mutate(b)}
-                          disabled={rejectMutation.isPending}
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Reject
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Lapsed Bookings Alert */}
-      {lapsedBookings.length > 0 && (
-        <Card className="border-destructive/50 bg-destructive/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              Lapsed Bookings ({lapsedBookings.length})
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              These pay-at-ground bookings were not approved before start time and have automatically lapsed.
-            </p>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Booked By</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {lapsedBookings.map((b: any) => (
-                  <TableRow key={b.id} className="opacity-60">
-                    <TableCell>{format(parseISO(b.booking_date), "dd MMM yyyy")}</TableCell>
-                    <TableCell>{b.start_time?.slice(0, 5)} - {b.end_time?.slice(0, 5)}</TableCell>
-                    <TableCell>
-                      <p>{b.profiles?.name || b.profiles?.email || "-"}</p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">
-                        {b.payment_status} {b.amount_paid > 0 ? `(₹${b.amount_paid})` : ""}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-destructive border-destructive">
-                        Lapsed
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-
+      {/* Unified Bookings Table */}
       <Card>
         <CardContent className="p-0">
-          {isLoading ? (
+          {bookingsLoading && isLoading ? (
             <div className="p-8 text-center text-muted-foreground">Loading...</div>
-          ) : matches && matches.length > 0 ? (
+          ) : (turfBookings && turfBookings.length > 0) || (matches && matches.length > 0) ? (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Time</TableHead>
-                  <TableHead>Match Name</TableHead>
-                  <TableHead>Host/Contact</TableHead>
+                  <TableHead>Booking / Match</TableHead>
+                  <TableHead>Booked By</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Payment</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {matches.map((m: any) => (
-                  <TableRow key={m.id}>
+                {/* Turf Bookings (direct bookings) */}
+                {turfBookings?.map((b: any) => {
+                  const effectiveStatus = computeBookingStatus({
+                    booking_date: b.booking_date,
+                    start_time: b.start_time,
+                    booking_status: b.booking_status,
+                  });
+                  const isActionable = effectiveStatus === 'pending_approval';
+                  
+                  return (
+                    <TableRow key={`booking-${b.id}`} className={effectiveStatus === 'lapsed' ? 'opacity-60' : ''}>
+                      <TableCell>{format(parseISO(b.booking_date), "dd MMM yyyy")}</TableCell>
+                      <TableCell>{b.start_time?.slice(0, 5)} - {b.end_time?.slice(0, 5)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">Slot Booking</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <p>{b.profiles?.name || b.profiles?.email || "-"}</p>
+                      </TableCell>
+                      <TableCell>{getBookingStatusBadge(b)}</TableCell>
+                      <TableCell>
+                        <Badge variant={b.payment_status === "paid" || b.payment_status === "completed" ? "default" : "secondary"}>
+                          {b.payment_status} {b.amount_paid > 0 ? `(₹${b.amount_paid})` : ""}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {isActionable ? (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => approveMutation.mutate(b)}
+                              disabled={approveMutation.isPending}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => rejectMutation.mutate(b)}
+                              disabled={rejectMutation.isPending}
+                            >
+                              <X className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                
+                {/* Matches */}
+                {matches?.map((m: any) => (
+                  <TableRow key={`match-${m.id}`}>
                     <TableCell>{format(parseISO(m.match_date), "dd MMM yyyy")}</TableCell>
                     <TableCell>{m.match_time?.slice(0, 5)}</TableCell>
                     <TableCell>
