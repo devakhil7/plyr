@@ -30,6 +30,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import {
   BarChart3,
   AlertTriangle,
   TrendingUp,
@@ -37,6 +44,9 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   DollarSign,
+  Download,
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
 
 interface InventoryItem {
@@ -151,14 +161,138 @@ export function InventoryReportsDialog({
     return acc;
   }, {} as Record<string, typeof movements>);
 
+  // Export functions
+  const downloadCSV = (data: (string | number)[][], filename: string) => {
+    const csvContent = data.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    toast.success("Report exported successfully");
+  };
+
+  const exportStockOnHand = () => {
+    const headers = ["SKU", "Item Name", "Category", "Unit", "On Hand", "Cost Price", "Selling Price", "Stock Value", "Reorder Level", "Status"];
+    const rows = items.map(item => [
+      item.sku_code,
+      item.name,
+      item.category,
+      item.unit,
+      item.on_hand,
+      item.cost_price || 0,
+      item.selling_price || 0,
+      item.on_hand * (item.cost_price || 0),
+      item.reorder_level || 0,
+      item.reorder_level !== null && item.on_hand <= item.reorder_level ? "Low Stock" : "In Stock"
+    ]);
+    downloadCSV([headers, ...rows], "stock_on_hand");
+  };
+
+  const exportLowStock = () => {
+    const headers = ["SKU", "Item Name", "Category", "Unit", "On Hand", "Reorder Level", "Shortfall"];
+    const rows = lowStockItems.map(item => [
+      item.sku_code,
+      item.name,
+      item.category,
+      item.unit,
+      item.on_hand,
+      item.reorder_level || 0,
+      (item.reorder_level || 0) - item.on_hand
+    ]);
+    downloadCSV([headers, ...rows], "low_stock_report");
+  };
+
+  const exportTopSelling = () => {
+    const headers = ["Rank", "SKU", "Item Name", "Category", "Qty Sold", "Selling Price", "Revenue"];
+    const rows = topSellingItems.map((entry, index) => [
+      index + 1,
+      entry.item?.sku_code || "",
+      entry.item?.name || "",
+      entry.item?.category || "",
+      entry.quantity,
+      entry.item?.selling_price || 0,
+      entry.revenue
+    ]);
+    downloadCSV([headers, ...rows], `top_selling_${dateRange}days`);
+  };
+
+  const exportMovements = () => {
+    const headers = ["Date", "Time", "SKU", "Item Name", "Type", "Direction", "Quantity", "Notes"];
+    const rows = (movements || []).map(m => {
+      const item = items.find(i => i.item_id === m.item_id);
+      return [
+        format(new Date(m.created_at), "yyyy-MM-dd"),
+        format(new Date(m.created_at), "HH:mm"),
+        item?.sku_code || "",
+        item?.name || "",
+        m.movement_type,
+        m.direction,
+        m.quantity,
+        m.notes || ""
+      ];
+    });
+    downloadCSV([headers, ...rows], `stock_movements_${dateRange}days`);
+  };
+
+  const exportValuation = () => {
+    const headers = ["SKU", "Item Name", "Category", "Unit", "On Hand", "Cost Price", "Selling Price", "Cost Value", "Retail Value"];
+    const rows = items.map(item => [
+      item.sku_code,
+      item.name,
+      item.category,
+      item.unit,
+      item.on_hand,
+      item.cost_price || 0,
+      item.selling_price || 0,
+      item.on_hand * (item.cost_price || 0),
+      item.on_hand * (item.selling_price || 0)
+    ]);
+    const totalRow = ["", "TOTAL", "", "", "", "", "", totalStockValue, totalRetailValue];
+    downloadCSV([headers, ...rows, totalRow], "stock_valuation");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Inventory Reports
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Inventory Reports
+            </DialogTitle>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={exportStockOnHand}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Stock On Hand (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportLowStock}>
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Low Stock Report (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportTopSelling}>
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Top Selling Items (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportMovements}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Stock Movements (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportValuation}>
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Stock Valuation (CSV)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
